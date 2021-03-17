@@ -8,7 +8,7 @@
  *
  *		Definitions for the CPU module.
  *
- * Version:	@(#)cpu.h	1.0.16	2021/02/12
+ * Version:	@(#)cpu.h	1.0.17	2021/02/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -16,8 +16,8 @@
  *		leilei,
  *
  *		Copyright 2017-2021 Fred N. van Kempen.
- *		Copyright 2016-2019 Miran Grca.
- *		Copyright 2008-2018 Sarah Walker.
+ *		Copyright 2016-2020 Miran Grca.
+ *		Copyright 2008-2020 Sarah Walker.
  *		Copyright 2016-2018 leilei.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -48,6 +48,7 @@
 #define MANU_CYRIX	2
 #define MANU_IDT	3
 #define MANU_NEC	4
+#define MANU_IBM 5
 
 /*
  * Supported CPU types.
@@ -72,18 +73,19 @@
 #define CPU_iDX4	16
 #define CPU_Cx5x86	17
 #define CPU_WINCHIP	18		/* 586 class CPUs */
-#define CPU_PENTIUM	19
-#define CPU_PENTIUM_MMX	20
-#define CPU_Cx6x86 	21
-#define CPU_Cx6x86MX 	22
-#define CPU_Cx6x86L 	23
-#define CPU_CxGX1 	24
-#define CPU_K5		25
-#define CPU_5K86	26
-#define CPU_K6		27
-#define CPU_PENTIUM_PRO	28		/* 686 class CPUs */
-#define CPU_PENTIUM_2	29
-#define CPU_PENTIUM_2D	30
+#define CPU_WINCHIP2 19	
+#define CPU_PENTIUM	20
+#define CPU_PENTIUM_MMX	21
+#define CPU_Cx6x86 	22
+#define CPU_Cx6x86MX 	23
+#define CPU_Cx6x86L 	24
+#define CPU_CxGX1 	25
+#define CPU_K5		26
+#define CPU_5K86	27
+#define CPU_K6		28
+#define CPU_PENTIUM_PRO	29		/* 686 class CPUs */
+#define CPU_PENTIUM_2	30
+#define CPU_PENTIUM_2D	31
 
 #define CPU_SUPPORTS_DYNAREC 1
 #define CPU_REQUIRES_DYNAREC 2
@@ -128,6 +130,7 @@ extern const CPU	cpus_i486[];
 extern const CPU	cpus_Am486[];
 extern const CPU	cpus_Cx486[];
 extern const CPU	cpus_WinChip[];
+extern const CPU	cpus_WinChipSS7[];
 extern const CPU	cpus_Pentium5V[];
 extern const CPU	cpus_Pentium5V50[];
 extern const CPU	cpus_PentiumS5[];
@@ -167,8 +170,8 @@ extern const CPU	cpus_Pentium2D[];
 #define CR4_PVI		(1 << 1)
 #define CR4_PSE		(1 << 4)
 
-#define CPL		((_cs.access>>5)&3)
-#define IOPL		((flags>>12)&3)
+#define CPL		((cpu_state.seg_cs.access>>5)&3)
+#define IOPL		((cpu_state.flags>>12)&3)
 #define IOPLp		((!(msw&1)) || (CPL<=IOPL))
 
 
@@ -182,13 +185,11 @@ typedef union {
 } x86reg;
 
 typedef struct {
-    uint32_t	base;
-    uint32_t	limit;
     uint8_t	access;
+    int8_t	checked; /*Non-zero if selector is known to be valid*/
     uint16_t	seg;
-    uint32_t	limit_low,
+    uint32_t	base, limit, limit_low,
 		limit_high;
-    int		checked; /*Non-zero if selector is known to be valid*/
 } x86seg;
 
 typedef union {
@@ -200,6 +201,7 @@ typedef union {
     int16_t	sw[4];
     uint8_t	b[8];
     int8_t	sb[8];
+    float	f[2];
 } MMX_REG;
 
 typedef struct {
@@ -250,8 +252,8 @@ typedef struct {
     int		_cycles;
     int		cpu_recomp_ins;
 
-    uint16_t	npxs,
-		npxc;
+    uint16_t	npxs,	npxc, flags,eflags,
+              old_npxc,	new_npxc;
 
     double	ST[8];
 
@@ -259,9 +261,11 @@ typedef struct {
 
     MMX_REG	MM[8];
 
-    uint16_t	old_npxc,
-		new_npxc;
     uint32_t	last_ea;
+
+    x86seg	seg_cs, seg_ds, seg_es, seg_ss,
+		seg_fs, seg_gs;
+
 } cpu_state_t;
 
 extern cpu_state_t cpu_state;
@@ -339,11 +343,16 @@ extern int		cpu_cyrix_alignment;	/*Cyrix 5x86/6x86 only has data misalignment
 
 extern int		is8086,	is186, is286, is386, is486;
 extern int		is_nec, is_rapidcad, is_cyrix, is_pentium;
-extern int		cpu_hasrdtsc;
-extern int		cpu_hasMSR;
-extern int		cpu_hasMMX;
-extern int		cpu_hasCR4;
-extern int		cpu_hasVME;
+
+#define CPU_FEATURE_RDTSC (1 << 0)
+#define CPU_FEATURE_MSR   (1 << 1)
+#define CPU_FEATURE_MMX   (1 << 2)
+#define CPU_FEATURE_CR4   (1 << 3)
+#define CPU_FEATURE_VME   (1 << 4)
+#define CPU_FEATURE_CX8   (1 << 5)
+#define CPU_FEATURE_3DNOW (1 << 6)
+
+extern uint32_t cpu_features;
 
 extern uint32_t		cpu_cur_status;
 extern uint64_t		cpu_CR4_mask;
@@ -356,7 +365,6 @@ extern int		cpl_override;
 extern int		CPUID;
 extern int		isa_cycles;
 
-extern uint16_t		flags,eflags;
 extern uint32_t		oldds,oldss,olddslimit,oldsslimit,olddslimitw,oldsslimitw;
 extern int		ins;		// FIXME: get rid of this!
 
@@ -378,25 +386,21 @@ extern uint32_t		dr[8];
 
 
 /*Segments -
-  _cs,_ds,_es,_ss are the segment structures
-  CS,DS,ES,SS is the 16-bit data
-  cs,ds,es,ss are defines to the bases*/
+  CS,DS,ES,SS,FS,GS is the 16-bit data
+  cs,ds,es,ss,gs are defines to the bases*/
 extern x86seg	gdt,ldt,idt,tr;
-extern x86seg	_cs,_ds,_es,_ss,_fs,_gs;
 extern x86seg	_oldds;
-#define CS	_cs.seg
-#define DS	_ds.seg
-#define ES	_es.seg
-#define SS	_ss.seg
-#define FS	_fs.seg
-#define GS	_gs.seg
-#define cs	_cs.base
-#define ds	_ds.base
-#define es	_es.base
-#define ss	_ss.base
-#define seg_fs	_fs.base
-#define gs	_gs.base
-
+#define CS	cpu_state.seg_cs.seg
+#define DS	cpu_state.seg_ds.seg
+#define ES	cpu_state.seg_es.seg
+#define SS	cpu_state.seg_ss.seg
+#define FS	cpu_state.seg_fs.seg
+#define GS	cpu_state.seg_gs.seg
+#define cs	cpu_state.seg_cs.base
+#define ds	cpu_state.seg_ds.base
+#define es	cpu_state.seg_es.base
+#define ss	cpu_state.seg_ss.base
+#define gs	cpu_state.seg_gs.base
 
 #if 1
 # define ISA_CYCLES_SHIFT 6
@@ -405,6 +409,8 @@ extern x86seg	_oldds;
 # define ISA_CYCLES(x)    (x * isa_cycles)
 #endif
 
+/* Functions. */
+extern int cpu_has_feature(int feature);
 
 extern int	cpu_cycles_read, cpu_cycles_read_l,
 		cpu_cycles_write, cpu_cycles_write_l;

@@ -46,13 +46,14 @@
  *
  * NOTE:	The XTA interface is 0-based for sector numbers !!
  *
- * Version:	@(#)hdc_ide_xta.c	1.0.16	2019/05/17
+ * Version:	@(#)hdc_ide_xta.c	1.0.18	2021/03/16
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
  *		Based on my earlier HD20 driver for the EuroPC.
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
+ *		Copyright 2020 Altheos.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -108,21 +109,10 @@
 
 
 #define HDC_TIME	(50*TIMER_USEC)
-#define XTA_NUM		2			/* #supported drives */
+#define XTA_NUM		2			// #supported drives
 
 #define WD_BIOS_FILE	L"disk/xta/idexywd2.bin"
-
-
-enum {
-    STATE_IDLE = 0,
-    STATE_RECV,
-    STATE_RDATA,
-    STATE_RDONE,
-    STATE_SEND,
-    STATE_SDATA,
-    STATE_SDONE,
-    STATE_COMPL
-};
+#define SEAGATE_BIOS_FILE	L"machines/amstrad/pc5086/c800.bin"
 
 
 /* Command values. */
@@ -151,34 +141,34 @@ enum {
 #define CMD_WRITE_LONG		0xe6
 
 /* Status register (reg 1) values. */
-#define STAT_REQ		0x01	/* controller needs data transfer */
-#define STAT_IO			0x02	/* direction of transfer (TO bus) */
-#define STAT_CD			0x04	/* transfer of Command or Data */
-#define STAT_BSY		0x08	/* controller is busy */
-#define STAT_DRQ		0x10	/* DMA requested */
-#define STAT_IRQ		0x20	/* interrupt requested */
-#define STAT_DCB		0x80	/* not seen by driver */
+#define STAT_REQ		0x01	// controller needs data transfer
+#define STAT_IO			0x02	// direction of transfer (TO bus)
+#define STAT_CD			0x04	// transfer of Command or Data
+#define STAT_BSY		0x08	// controller is busy
+#define STAT_DRQ		0x10	// DMA requested
+#define STAT_IRQ		0x20	// interrupt requested
+#define STAT_DCB		0x80	// not seen by driver
 
 /* Sense Error codes. */
-#define ERR_NOERROR		0x00	/* no error detected */
-#define ERR_NOINDEX		0x01	/* drive did not detect IDX pulse */
-#define ERR_NOSEEK		0x02	/* drive did not complete SEEK */
-#define ERR_WRFAULT		0x03	/* write fault during last cmd */
-#define ERR_NOTRDY		0x04	/* drive did not go READY after cmd */
-#define ERR_NOTRK000		0x06	/* drive did not see TRK0 signal */
-#define ERR_LONGSEEK		0x08	/* long seek in progress */
-#define ERR_IDREAD		0x10	/* ECC error during ID field */
-#define ERR_DATA		0x11	/* uncorrectable ECC err in data */
-#define ERR_NOMARK		0x12	/* no address mark detected */
-#define ERR_NOSECT		0x14	/* sector not found */
-#define ERR_SEEK		0x15	/* seek error */
-#define ERR_ECCDATA		0x18	/* ECC corrected data */
-#define ERR_BADTRK		0x19	/* bad track detected */
-#define ERR_ILLCMD		0x20	/* invalid command received */
-#define ERR_ILLADDR		0x21	/* invalid disk address received */
-#define ERR_BADRAM		0x30	/* bad RAM in sector data buffer */
-#define ERR_BADROM		0x31	/* bad checksum in ROM test */
-#define ERR_BADECC		0x32	/* ECC polynomial generator bad */
+#define ERR_NOERROR		0x00	// no error detected
+#define ERR_NOINDEX		0x01	// drive did not detect IDX pulse
+#define ERR_NOSEEK		0x02	// drive did not complete SEEK
+#define ERR_WRFAULT		0x03	// write fault during last cmd
+#define ERR_NOTRDY		0x04	// drive did not go READY after cmd
+#define ERR_NOTRK000		0x06	// drive did not see TRK0 signal
+#define ERR_LONGSEEK		0x08	// long seek in progress
+#define ERR_IDREAD		0x10	// ECC error during ID field
+#define ERR_DATA		0x11	// uncorrectable ECC err in data
+#define ERR_NOMARK		0x12	// no address mark detected
+#define ERR_NOSECT		0x14	// sector not found
+#define ERR_SEEK		0x15	// seek error
+#define ERR_ECCDATA		0x18	// ECC corrected data
+#define ERR_BADTRK		0x19	// bad track detected
+#define ERR_ILLCMD		0x20	// invalid command received
+#define ERR_ILLADDR		0x21	// invalid disk address received
+#define ERR_BADRAM		0x30	// bad RAM in sector data buffer
+#define ERR_BADROM		0x31	// bad checksum in ROM test
+#define ERR_BADECC		0x32	// ECC polynomial generator bad
 
 /* Completion Byte fields. */
 #define COMP_DRIVE		0x20
@@ -188,96 +178,108 @@ enum {
 #define DMA_ENA			0x01
 
 
+enum {
+    STATE_IDLE = 0,
+    STATE_RECV,
+    STATE_RDATA,
+    STATE_RDONE,
+    STATE_SEND,
+    STATE_SDATA,
+    STATE_SDONE,
+    STATE_COMPL
+};
+
+
 /* The device control block (6 bytes) */
 #pragma pack(push,1)
 typedef struct {
-    uint8_t	cmd;			/* [7:5] class, [4:0] opcode	*/
+    uint8_t	cmd;			// [7:5] class, [4:0] opcode
 
-    uint8_t	head		:5,	/* [4:0] head number		*/
-		drvsel		:1,	/* [5] drive select		*/
-		mbz		:2;	/* [7:6] 00			*/
+    uint8_t	head		:5,	// [4:0] head number
+		drvsel		:1,	// [5] drive select
+		mbz		:2;	// [7:6] 00
 
-    uint8_t	sector		:6,	/* [5:0] sector number 0-63	*/
-		cyl_high	:2;	/* [7:6] cylinder [9:8] bits	*/
+    uint8_t	sector		:6,	// [5:0] sector number 0-63
+		cyl_high	:2;	// [7:6] cylinder [9:8] bits
 
-    uint8_t	cyl_low;		/* [7:0] cylinder [7:0] bits	*/
+    uint8_t	cyl_low;		// [7:0] cylinder [7:0] bits
 
-    uint8_t	count;			/* [7:0] blk count / interleave	*/
+    uint8_t	count;			// [7:0] blk count / interleave
 
-    uint8_t	ctrl;			/* [7:0] control field		*/
+    uint8_t	ctrl;			// [7:0] control field
 } dcb_t;
 #pragma pack(pop)
 
 /* The (configured) Drive Parameters. */
 #pragma pack(push,1)
 typedef struct {
-    uint8_t	cyl_high;	/* (MSB) number of cylinders */
-    uint8_t	cyl_low;	/* (LSB) number of cylinders */
-    uint8_t	heads;		/* number of heads per cylinder */
-    uint8_t	rwc_high;	/* (MSB) reduced write current cylinder */
-    uint8_t	rwc_low;	/* (LSB) reduced write current cylinder */
-    uint8_t	wp_high;	/* (MSB) write precompensation cylinder */
-    uint8_t	wp_low;		/* (LSB) write precompensation cylinder */
-    uint8_t	maxecc;		/* max ECC data burst length */
+    uint8_t	cyl_high;		// (MSB) number of cylinders
+    uint8_t	cyl_low;		// (LSB) number of cylinders
+    uint8_t	heads;			// number of heads per cylinder
+    uint8_t	rwc_high	;	// (MSB) reduced write current cylinder
+    uint8_t	rwc_low;		// (LSB) reduced write current cylinder
+    uint8_t	wp_high;		// (MSB) write precompensation cylinder
+    uint8_t	wp_low;			// (LSB) write precompensation cylinder
+    uint8_t	maxecc;			// max ECC data burst length
 } dprm_t;
 #pragma pack(pop)
 
 /* Define an attached drive. */
 typedef struct {
-    int8_t	id,			/* drive ID on bus */
-		present,		/* drive is present */
-		hdd_num,		/* index to global disk table */
-		type;			/* drive type ID */
+    int8_t	id,			// drive ID on bus
+		present,		// drive is present
+		hdd_num,		// index to global disk table
+		type;			// drive type ID
 
-    uint16_t	cur_cyl;		/* last known position of heads */
+    uint16_t	cur_cyl;		// last known position of heads
 
-    uint8_t	spt,			/* active drive parameters */
+    uint8_t	spt,			// active drive parameters
 		hpc;
     uint16_t	tracks;
 
-    uint8_t	cfg_spt,		/* configured drive parameters */
+    uint8_t	cfg_spt,		// configured drive parameters
 		cfg_hpc;
     uint16_t	cfg_tracks;
 } drive_t;
 
 
 typedef struct {
-    const char	*name;			/* controller name */
+    const char	*name;			// controller name
 
-    uint16_t	base;			/* controller base I/O address */
-    int8_t	irq;			/* controller IRQ channel */
-    int8_t	dma;			/* controller DMA channel */
-    int8_t	type;			/* controller type ID */
-    int8_t	spt;			/* sectors per track */
+    uint16_t	base;			// controller base I/O address
+    int8_t	irq;			// controller IRQ channel
+    int8_t	dma;			// controller DMA channel
+    int8_t	type;			// controller type ID
+    int8_t	spt;			// sectors per track
 
-    uint32_t	rom_addr;		/* address where ROM is */
-    rom_t	bios_rom;		/* descriptor for the BIOS */
+    uint32_t	rom_addr;		// address where ROM is
+    rom_t	bios_rom;		// descriptor for the BIOS
 
     /* Controller state. */
-    int8_t	state;			/* controller state */
-    uint8_t	sense;			/* current SENSE ERROR value	*/
-    uint8_t	status;			/* current operational status	*/
+    int8_t	state;			// controller state
+    uint8_t	sense;			// current SENSE ERROR value
+    uint8_t	status;			// current operational status
     uint8_t	intr;
 
     tmrval_t	callback;
 
     /* Data transfer. */
-    int16_t	buf_idx,		/* buffer index and pointer */
+    int16_t	buf_idx,		// buffer index and pointer
 		buf_len;
     uint8_t	*buf_ptr;
 
     /* Current operation parameters. */
-    dcb_t	dcb;			/* device control block */
-    uint16_t	track;			/* requested track# */
-    uint8_t	head,			/* requested head# */
-		sector,			/* requested sector# */
-		comp;			/* operation completion byte */
-    int		count;			/* requested sector count */
+    dcb_t	dcb;			// device control block
+    uint16_t	track;			// requested track#
+    uint8_t	head,			// requested head#
+		sector,			// requested sector#
+		comp;			// operation completion byte
+    int		count;			// requested sector count
 
-    drive_t	drives[XTA_NUM];	/* the attached drive(s) */
+    drive_t	drives[XTA_NUM];	// the attached drive(s)
 
-    uint8_t	data[512];		/* data buffer */
-    uint8_t	sector_buf[512];	/* sector buffer */
+    uint8_t	data[512];		// data buffer
+    uint8_t	sector_buf[512];	// sector buffer
 } hdc_t;
 
 
@@ -299,29 +301,29 @@ static int
 get_sector(hdc_t *dev, drive_t *drive, off64_t *addr)
 {
     if (drive->cur_cyl != dev->track) {
-	DEBUG("%s: get_sector: wrong cylinder %d/%d\n",
+	DEBUG("%s: get_sector: wrong cylinder %i/%i\n",
 	      dev->name, drive->cur_cyl, dev->track);
 	dev->sense = ERR_ILLADDR;
-	return(1);
+	return(0);
     }
 
     if (dev->head >= drive->hpc) {
 	DEBUG("%s: get_sector: past end of heads\n", dev->name);
 	dev->sense = ERR_ILLADDR;
-	return(1);
+	return(0);
     }
 
     if (dev->sector >= drive->spt) {
 	DEBUG("%s: get_sector: past end of sectors\n", dev->name);
 	dev->sense = ERR_ILLADDR;
-	return(1);
+	return(0);
     }
 
     /* Calculate logical address (block number) of desired sector. */
     *addr = ((((off64_t) dev->track*drive->hpc) + \
 	      dev->head)*drive->spt) + dev->sector;
 
-    return(0);
+    return(1);
 }
 
 
@@ -409,7 +411,7 @@ do_fmt:
 				dev->sector = s;
 
 				/* Get address of sector to write. */
-				if (get_sector(dev, drive, &addr)) break;
+				if (! get_sector(dev, drive, &addr)) break;
 
 				/* Write the block to the image. */
 				hdd_image_write(drive->hdd_num, addr, 1,
@@ -475,7 +477,7 @@ hdc_callback(priv_t priv)
 		break;
 		
 	case CMD_READ_SENSE:
-		switch(dev->state) {
+		switch (dev->state) {
 			case STATE_IDLE:
 				DEBUG("%s: sense(%i)\n",
 				      dev->name, dcb->drvsel);
@@ -501,7 +503,6 @@ hdc_callback(priv_t priv)
 	case CMD_READ_VERIFY:
 		no_data = 1;
 		/*FALLTHROUGH*/
-
 	case CMD_READ_SECTORS:
 		if (! drive->present) {
 			dev->comp |= COMP_ERR;
@@ -537,7 +538,7 @@ hdc_callback(priv_t priv)
 				      dev->sector, dev->count);
 do_send:
 				/* Get address of sector to load. */
-				if (get_sector(dev, drive, &addr)) {
+				if (! get_sector(dev, drive, &addr)) {
 					/* De-activate the status icon. */
 					hdd_active(drive->hdd_num, 0);
 					dev->comp |= COMP_ERR;
@@ -618,12 +619,11 @@ do_send:
 		}
 		break;
 
-#if 0
+#ifdef CMD_WRITE_VERIFY
 	case CMD_WRITE_VERIFY:
 		no_data = 1;
 		/*FALLTHROUGH*/
 #endif
-
 	case CMD_WRITE_SECTORS:
 		if (! drive->present) {
 			dev->comp |= COMP_ERR;
@@ -707,7 +707,7 @@ do_recv:
 					       dev->buf_len);
 
 				/* Get address of sector to write. */
-				if (get_sector(dev, drive, &addr)) {
+				if (! get_sector(dev, drive, &addr)) {
 					/* De-activate the status icon. */
 					hdd_active(drive->hdd_num, 0);
 
@@ -775,7 +775,7 @@ do_recv:
 		break;
 
 	case CMD_SET_DRIVE_PARAMS:
-		switch(dev->state) {
+		switch (dev->state) {
 			case STATE_IDLE:
 				dev->state = STATE_RDATA;
 				dev->buf_idx = 0;
@@ -848,7 +848,7 @@ do_recv:
 		break;
 
 	case CMD_RAM_DIAGS:
-		switch(dev->state) {
+		switch (dev->state) {
 			case STATE_IDLE:
 				DEBUG("%s: ram_diags\n", dev->name);
 				dev->state = STATE_RDONE;
@@ -862,7 +862,7 @@ do_recv:
 		break;
 
 	case CMD_DRIVE_DIAGS:
-		switch(dev->state) {
+		switch (dev->state) {
 			case STATE_IDLE:
 				DEBUG("%s: drive_diags(%i) ready=%i\n",
 				      dev->name, dcb->drvsel, drive->present);
@@ -884,7 +884,7 @@ do_recv:
 		break;
 
 	case CMD_CTRL_DIAGS:
-		switch(dev->state) {
+		switch (dev->state) {
 			case STATE_IDLE:
 				DEBUG("%s: ctrl_diags\n", dev->name);
 				dev->state = STATE_RDONE;
@@ -908,7 +908,7 @@ do_recv:
 
 /* Read one of the controller registers. */
 static uint8_t
-hdc_read(uint16_t port, priv_t priv)
+hdc_in(uint16_t port, priv_t priv)
 {
     hdc_t *dev = (hdc_t *)priv;
     uint8_t ret = 0xff;
@@ -955,7 +955,7 @@ hdc_read(uint16_t port, priv_t priv)
 
 /* Write to one of the controller registers. */
 static void
-hdc_write(uint16_t port, uint8_t val, priv_t priv)
+hdc_out(uint16_t port, uint8_t val, priv_t priv)
 {
     hdc_t *dev = (hdc_t *)priv;
 
@@ -1023,7 +1023,7 @@ xta_close(priv_t priv)
 
     /* Remove the I/O handler. */
     io_removehandler(dev->base, 4,
-		     hdc_read,NULL,NULL, hdc_write,NULL,NULL, dev);
+		     hdc_in,NULL,NULL, hdc_out,NULL,NULL, dev);
 
     /* Close all disks and their images. */
     for (d = 0; d < XTA_NUM; d++) {
@@ -1052,31 +1052,40 @@ xta_init(const device_t *info, UNUSED(void *parent))
     bus = (info->local >> 8) & 255;
 
     /* Do per-controller-type setup. */
-    switch(dev->type) {
-	case 0:		/* WDXT-150, with BIOS */
+    switch (dev->type) {
+	case 0:		// WDXT-150, with BIOS
 		dev->name = "WDXT-150";
 		dev->base = device_get_config_hex16("base");
 		dev->irq = device_get_config_int("irq");
 		dev->rom_addr = device_get_config_hex20("bios_addr");
 		dev->dma = 3;
-		dev->spt = 17;	/* MFM */
+		dev->spt = 17;		// MFM
 		break;
 
-	case 1:		/* EuroPC */
+	case 1:		// EuroPC
 		dev->name = "HD20";
 		dev->base = 0x0320;
 		dev->irq = 5;
 		dev->dma = 3;
-		dev->spt = 17;	/* MFM */
+		dev->spt = 17;		// MFM
 		break;
 
-	case 2:		/* Toshiba T1200 */
+	case 2:		// Toshiba T1200
 		dev->name = "T1200-HD";
 		dev->base = 0x0320;
 		dev->irq = 5;
 		dev->dma = 3;
 		dev->rom_addr = 0xc8000;
 		dev->spt = 34;
+		break;
+
+	case 3:		// Amstrad PC5086
+		dev->name = "PC5086-HD";
+		dev->base = 0x0320;
+		dev->irq = 5;
+		dev->dma = 3;
+		dev->rom_addr = 0xc8000;
+		dev->spt = 17;		// MFM
 		break;
     }
 
@@ -1119,7 +1128,8 @@ xta_init(const device_t *info, UNUSED(void *parent))
     }
 
     /* Enable the I/O block. */
-    io_sethandler(dev->base, 4, hdc_read,NULL,NULL, hdc_write,NULL,NULL, dev);
+    io_sethandler(dev->base, 4,
+		  hdc_in,NULL,NULL, hdc_out,NULL,NULL, dev);
 
     /* Load BIOS if it has one. */
     if (dev->rom_addr != 0x000000)
@@ -1208,6 +1218,16 @@ const device_t xta_t1200_device = {
     DEVICE_ISA,
     (HDD_BUS_IDE << 8) | 2,
     NULL,
+    xta_init, xta_close, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL
+};
+
+const device_t xta_pc5086_device = {
+    "Amstrad PC5086 Fixed Disk Controller",
+    DEVICE_ISA,
+    (HDD_BUS_IDE << 8) | 3,
+    SEAGATE_BIOS_FILE,
     xta_init, xta_close, NULL,
     NULL, NULL, NULL, NULL,
     NULL

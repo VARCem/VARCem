@@ -8,13 +8,13 @@
  *
  *		Miscellaneous x86 CPU Instructions.
  *
- * Version:	@(#)x86_ops_atomic.h	1.0.1	2018/02/14
+ * Version:	@(#)x86_ops_atomic.h	1.0.2	2020/12/11
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2008-2018 Sarah Walker.
- *		Copyright 2016-2018 Miran Grca.
+ *		Copyright 2008-2020 Sarah Walker.
+ *		Copyright 2016-2020 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -45,6 +45,7 @@ static int opCMPXCHG_b_a16(uint32_t fetchdat)
                 return 1;
         }
         fetch_ea_16(fetchdat);
+        SEG_CHECK_WRITE(cpu_state.ea_seg);
         temp = geteab();                        if (cpu_state.abrt) return 1;
         if (AL == temp) seteab(getr8(cpu_reg));
         else            AL = temp;
@@ -63,6 +64,7 @@ static int opCMPXCHG_b_a32(uint32_t fetchdat)
                 return 1;
         }
         fetch_ea_32(fetchdat);
+        SEG_CHECK_WRITE(cpu_state.ea_seg);
         temp = geteab();                        if (cpu_state.abrt) return 1;
         if (AL == temp) seteab(getr8(cpu_reg));
         else            AL = temp;
@@ -82,6 +84,7 @@ static int opCMPXCHG_w_a16(uint32_t fetchdat)
                 return 1;
         }
         fetch_ea_16(fetchdat);
+        SEG_CHECK_WRITE(cpu_state.ea_seg);
         temp = geteaw();                        if (cpu_state.abrt) return 1;
         if (AX == temp) seteaw(cpu_state.regs[cpu_reg].w);
         else            AX = temp;
@@ -100,6 +103,7 @@ static int opCMPXCHG_w_a32(uint32_t fetchdat)
                 return 1;
         }
         fetch_ea_32(fetchdat);
+        SEG_CHECK_WRITE(cpu_state.ea_seg);
         temp = geteaw();                        if (cpu_state.abrt) return 1;
         if (AX == temp) seteaw(cpu_state.regs[cpu_reg].w);
         else            AX = temp;
@@ -119,6 +123,7 @@ static int opCMPXCHG_l_a16(uint32_t fetchdat)
                 return 1;
         }
         fetch_ea_16(fetchdat);
+        SEG_CHECK_WRITE(cpu_state.ea_seg);
         temp = geteal();                        if (cpu_state.abrt) return 1;
         if (EAX == temp) seteal(cpu_state.regs[cpu_reg].l);
         else             EAX = temp;
@@ -137,6 +142,7 @@ static int opCMPXCHG_l_a32(uint32_t fetchdat)
                 return 1;
         }
         fetch_ea_32(fetchdat);
+        SEG_CHECK_WRITE(cpu_state.ea_seg);
         temp = geteal();                        if (cpu_state.abrt) return 1;
         if (EAX == temp) seteal(cpu_state.regs[cpu_reg].l);
         else             EAX = temp;
@@ -156,6 +162,7 @@ static int opCMPXCHG8B_a16(uint32_t fetchdat)
                 return 0;
         }
         fetch_ea_16(fetchdat);
+        SEG_CHECK_WRITE(cpu_state.ea_seg);
         temp = geteal();
         temp_hi = readmeml(easeg, cpu_state.eaaddr + 4); if (cpu_state.abrt) return 0;
         if (EAX == temp && EDX == temp_hi)
@@ -171,9 +178,9 @@ static int opCMPXCHG8B_a16(uint32_t fetchdat)
         if (cpu_state.abrt) return 0;
         flags_rebuild();
         if (temp == temp2 && temp_hi == temp2_hi)
-                flags |= Z_FLAG;
+                cpu_state.flags |= Z_FLAG;
         else
-                flags &= ~Z_FLAG;        
+                cpu_state.flags &= ~Z_FLAG;        
         cycles -= (cpu_mod == 3) ? 6 : 10;
         return 0;
 }
@@ -187,6 +194,7 @@ static int opCMPXCHG8B_a32(uint32_t fetchdat)
                 return 0;
         }
         fetch_ea_32(fetchdat);
+        SEG_CHECK_WRITE(cpu_state.ea_seg);
         temp = geteal();
         temp_hi = readmeml(easeg, cpu_state.eaaddr + 4); if (cpu_state.abrt) return 0;
         if (EAX == temp && EDX == temp_hi)
@@ -202,9 +210,9 @@ static int opCMPXCHG8B_a32(uint32_t fetchdat)
         if (cpu_state.abrt) return 0;
         flags_rebuild();
         if (temp == temp2 && temp_hi == temp2_hi)
-                flags |= Z_FLAG;
+                cpu_state.flags |= Z_FLAG;
         else
-                flags &= ~Z_FLAG;        
+                cpu_state.flags &= ~Z_FLAG;        
         cycles -= (cpu_mod == 3) ? 6 : 10;
         return 0;
 }
@@ -219,6 +227,7 @@ static int opXADD_b_a16(uint32_t fetchdat)
                 return 1;
         }
         fetch_ea_16(fetchdat);
+        SEG_CHECK_WRITE(cpu_state.ea_seg);
         temp = geteab();                        if (cpu_state.abrt) return 1;
         seteab(temp + getr8(cpu_reg));              if (cpu_state.abrt) return 1;
         setadd8(temp, getr8(cpu_reg));
@@ -236,6 +245,7 @@ static int opXADD_b_a32(uint32_t fetchdat)
                 return 1;
         }
         fetch_ea_32(fetchdat);
+        SEG_CHECK_WRITE(cpu_state.ea_seg);
         temp = geteab();                        if (cpu_state.abrt) return 1;
         seteab(temp + getr8(cpu_reg));              if (cpu_state.abrt) return 1;
         setadd8(temp, getr8(cpu_reg));
@@ -254,6 +264,7 @@ static int opXADD_w_a16(uint32_t fetchdat)
                 return 1;
         }
         fetch_ea_16(fetchdat);
+        SEG_CHECK_WRITE(cpu_state.ea_seg);
         temp = geteaw();                        if (cpu_state.abrt) return 1;
         seteaw(temp + cpu_state.regs[cpu_reg].w);   if (cpu_state.abrt) return 1;
         setadd16(temp, cpu_state.regs[cpu_reg].w);
@@ -271,6 +282,7 @@ static int opXADD_w_a32(uint32_t fetchdat)
                 return 1;
         }
         fetch_ea_32(fetchdat);
+        SEG_CHECK_WRITE(cpu_state.ea_seg);
         temp = geteaw();                        if (cpu_state.abrt) return 1;
         seteaw(temp + cpu_state.regs[cpu_reg].w);   if (cpu_state.abrt) return 1;
         setadd16(temp, cpu_state.regs[cpu_reg].w);
@@ -289,6 +301,7 @@ static int opXADD_l_a16(uint32_t fetchdat)
                 return 1;
         }
         fetch_ea_16(fetchdat);
+        SEG_CHECK_WRITE(cpu_state.ea_seg);
         temp = geteal();                        if (cpu_state.abrt) return 1;
         seteal(temp + cpu_state.regs[cpu_reg].l);   if (cpu_state.abrt) return 1;
         setadd32(temp, cpu_state.regs[cpu_reg].l);
@@ -306,6 +319,7 @@ static int opXADD_l_a32(uint32_t fetchdat)
                 return 1;
         }
         fetch_ea_32(fetchdat);
+        SEG_CHECK_WRITE(cpu_state.ea_seg);
         temp = geteal();                        if (cpu_state.abrt) return 1;
         seteal(temp + cpu_state.regs[cpu_reg].l);   if (cpu_state.abrt) return 1;
         setadd32(temp, cpu_state.regs[cpu_reg].l);

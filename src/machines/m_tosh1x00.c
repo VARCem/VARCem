@@ -797,7 +797,7 @@ nvram_read(uint16_t addr, priv_t priv)
 		break;
 
 	case 0x00c3:	/* read floppy changeline and NVRAM ready state */
-		tmp = fdc_read(0x03f7, dev->fdc);
+		tmp = fdc_in(0x03f7, dev->fdc);
 		tmp = (tmp & 0x80) >> 3;	/* Bit 4 is changeline */
 		tmp |= (dev->nvr_active & 0xc0);/* Bits 6,7 are r/w mode */
 		tmp |= 0x2e;			/* Bits 5,3,2,1 always 1 */

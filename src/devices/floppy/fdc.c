@@ -9,12 +9,12 @@
  *		Implementation of the NEC uPD-765 and compatible floppy disk
  *		controller.
  *
- * Version:	@(#)fdc.c	1.0.26	2020/06/18
+ * Version:	@(#)fdc.c	1.0.28	2021/03/16
  *
  * Authors:	Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2016-2020 Miran Grca.
+ *		Copyright 2016-2021 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -108,7 +108,9 @@ static int	lastbyte = 0;
 static uint8_t	current_drive = 0;
 
 
-static void fdc_callback(priv_t priv);
+static void call_back(priv_t priv);
+int	fdc_get_bitcell_period(fdc_t *fdc);
+int	fdc_get_bit_rate(fdc_t *fdc);
 
 
 #ifdef _LOGGING
@@ -202,10 +204,6 @@ fdc_get_drive(fdc_t *fdc)
 {
     return(fdc->drive);
 }
-
-
-int		fdc_get_bitcell_period(fdc_t *fdc);
-int		fdc_get_bit_rate(fdc_t *fdc);
 
 
 int
@@ -638,7 +636,7 @@ fdc_implied_seek(fdc_t *fdc)
 
 
 static void
-fdc_bad_command(fdc_t *fdc)
+bad_command(fdc_t *fdc)
 {
     fdc->stat = 0x10;
     fdc->interrupt = 0xfc;
@@ -649,7 +647,7 @@ fdc_bad_command(fdc_t *fdc)
 
 
 static void
-fdc_io_command_phase1(fdc_t *fdc, int out)
+io_command_phase1(fdc_t *fdc, int out)
 {
     fifo_buf_reset(fdc);
     set_rate(fdc, fdc->drive);
@@ -662,7 +660,6 @@ fdc_io_command_phase1(fdc_t *fdc, int out)
     fdc_implied_seek(fdc);
     fdc->rw_track = fdc->params[1];
     fdc->time = 0LL;
-    ui_sb_icon_update(SB_FLOPPY | fdc->drive, 1);
     fdc->stat = out ? 0x90 : 0x50;
     if ((fdc->flags & FDC_FLAG_PCJR) || !fdc->dma)
 	fdc->stat |= 0x20;
@@ -671,6 +668,8 @@ fdc_io_command_phase1(fdc_t *fdc, int out)
 	fdc->pos = 0;
     } else
 	fdc->inread = 1;
+
+    ui_sb_icon_update(SB_FLOPPY | fdc->drive, 1);
 }
 
 
@@ -710,17 +709,16 @@ fdc_sis(fdc_t *fdc)
 
 
 static void
-fdc_write(uint16_t addr, uint8_t val, priv_t priv)
+fdc_out(uint16_t port, uint8_t val, priv_t priv)
 {
     fdc_t *fdc = (fdc_t *) priv;
-
     int drive, i, drive_num;
 
-    DBGLOG(2, "FDC: write %04X %02X\n", addr, val);
+    DBGLOG(2, "FDC: out(%04X, %02X)\n", port, val);
 
     cycles -= ISA_CYCLES(8);
 
-    switch (addr & 7) {
+    switch (port & 7) {
 	case 0:	/*STA*/
 	case 1:	/*STB*/
 		return;
@@ -738,12 +736,12 @@ fdc_write(uint16_t addr, uint8_t val, priv_t priv)
 				timer_update_outstanding();
 				fdc->interrupt = -1;
 //FIXME: why not |drive  ?? --FvK
-				ui_sb_icon_update(SB_FLOPPY | 0, 0);
 				fdc_ctrl_reset(fdc);
 				fdd_changed[0] = 1;
 				fdd_changed[1] = 1;
 				fdd_changed[2] = 1;
 				fdd_changed[3] = 1;
+				ui_sb_icon_update(SB_FLOPPY | 0, 0);
 			}
 			if (!fdd_get_flags(0))
 				val &= 0xfe;
@@ -843,7 +841,16 @@ fdc_write(uint16_t addr, uint8_t val, priv_t priv)
 			fdc->stat |= 0x10;
 			DEBUG("FDC: starting command %02X\n",fdc->command);
 
-			switch (fdc->command & 0x1f) {
+			if (((fdc->command & 0x1f) == 0x02) || ((fdc->command & 0x1f) == 0x05) ||
+				((fdc->command & 0x1f) == 0x06) || ((fdc->command & 0x1f) == 0x0a) ||
+				((fdc->command & 0x1f) == 0x0c) || ((fdc->command & 0x1f) == 0x0d) ||
+				((fdc->command & 0x1f) == 0x11) || ((fdc->command & 0x1f) == 0x16) ||
+				((fdc->command & 0x1f) == 0x19) || ((fdc->command & 0x1f) == 0x1d))
+				fdc->processed_cmd = fdc->command & 0x1f;
+			else
+				fdc->processed_cmd = fdc->command;
+
+			switch (fdc->processed_cmd) {
 				case 0x01: /*Mode*/
 					if (fdc->flags & FDC_FLAG_NSC) {
 						fdc->pnum = 0;
@@ -852,7 +859,7 @@ fdc_write(uint16_t addr, uint8_t val, priv_t priv)
 						fdc->pos = 0;
 						fdc->format_state = 0;
 					} else
-						fdc_bad_command(fdc);
+						bad_command(fdc);
 					break;
 
 				case 0x02: /*Read track*/
@@ -943,7 +950,7 @@ fdc_write(uint16_t addr, uint8_t val, priv_t priv)
 					fdc->lastdrive = fdc->drive;
 					fdc->interrupt = 0x0e;
 					fdc->pos = 0;
-					fdc_callback(fdc);
+					call_back(fdc);
 					break;
 
                                 case 0x0f: /*Seek*/
@@ -954,7 +961,7 @@ fdc_write(uint16_t addr, uint8_t val, priv_t priv)
 
 				case 0x18: /*NSC*/
 					if (!(fdc->flags & FDC_FLAG_NSC)) {
-						fdc_bad_command(fdc);
+						bad_command(fdc);
 						break;
 					}		
 
@@ -964,7 +971,7 @@ fdc_write(uint16_t addr, uint8_t val, priv_t priv)
 					fdc->lastdrive = fdc->drive;
 					fdc->interrupt = fdc->command;
 					fdc->pos = 0;
-					fdc_callback(fdc);
+					call_back(fdc);
 					break;
 
 				case 0x12: /*Set perpendicular mode*/
@@ -974,7 +981,7 @@ fdc_write(uint16_t addr, uint8_t val, priv_t priv)
 						fdc->stat |= 0x90;
 						fdc->pos = 0;
 					} else
-						fdc_bad_command(fdc);
+						bad_command(fdc);
 					break;
 
 				case 0x13: /*Configure*/
@@ -985,7 +992,7 @@ fdc_write(uint16_t addr, uint8_t val, priv_t priv)
 					break;
 
 				default:
-					fdc_bad_command(fdc);
+					bad_command(fdc);
 					break;
 			}
 		} else {
@@ -1004,14 +1011,14 @@ fdc_write(uint16_t addr, uint8_t val, priv_t priv)
 			}
                         if (fdc->pnum == fdc->ptot) {
 				DEBUG("FDC: got all params %02X\n", fdc->command);
-				fdc->interrupt = fdc->command & 0x1F;
+				fdc->interrupt = fdc->processed_cmd;
 				timer_process();
 				fdc->time = 1024LL * (1LL << TIMER_SHIFT);
 				timer_update_outstanding();
 				fdc->reset_stat = 0;
 				switch (fdc->interrupt & 0x1F) {
 					case 2: /*Read a track*/
-						fdc_io_command_phase1(fdc, 0);
+						io_command_phase1(fdc, 0);
 						fdc->read_track_sector.id.c = fdc->params[1];
 						fdc->read_track_sector.id.h = fdc->params[2];
 						fdc->read_track_sector.id.r = 1;
@@ -1048,7 +1055,7 @@ fdc_write(uint16_t addr, uint8_t val, priv_t priv)
 
 					case 5: /*Write data*/
 					case 9: /*Write deleted data*/
-						fdc_io_command_phase1(fdc, 1);
+						io_command_phase1(fdc, 1);
 						if ((fdc->head & 0x01) && !fdd_is_double_sided(real_drive(fdc, fdc->drive))) {
 							fdc_noidam(fdc);
 							return;
@@ -1059,7 +1066,7 @@ fdc_write(uint16_t addr, uint8_t val, priv_t priv)
 					case 0x11: /*Scan equal*/
 					case 0x19: /*Scan low or equal*/
 					case 0x1D: /*Scan high or equal*/
-						fdc_io_command_phase1(fdc, 1);
+						io_command_phase1(fdc, 1);
 						if ((fdc->head & 0x01) && !fdd_is_double_sided(real_drive(fdc, fdc->drive))) {
 							fdc_noidam(fdc);
 							return;
@@ -1072,7 +1079,7 @@ fdc_write(uint16_t addr, uint8_t val, priv_t priv)
 							fdc->sc = fdc->params[7];
 					case 6: /*Read data*/
 					case 0xC: /*Read deleted data*/
-						fdc_io_command_phase1(fdc, 0);
+						io_command_phase1(fdc, 0);
 						if ((fdc->head & 0x01) && !fdd_is_double_sided(real_drive(fdc, fdc->drive))) {
 							fdc_noidam(fdc);
 							return;
@@ -1233,7 +1240,7 @@ fdc_write(uint16_t addr, uint8_t val, priv_t priv)
 
 
 uint8_t
-fdc_read(uint16_t addr, priv_t priv)
+fdc_in(uint16_t addr, priv_t priv)
 {
     fdc_t *fdc = (fdc_t *)priv;
     uint8_t ret = 0xff;
@@ -1412,14 +1419,14 @@ fdc_read(uint16_t addr, priv_t priv)
 		break;
     }
 
-    DBGLOG(2, "FDC: read %04X %02X\n", addr, ret);
+    DBGLOG(2, "FDC: in(%04X) = %02X\n", addr, ret);
 
     return(ret);
 }
 
 
 static void
-fdc_poll_common_finish(fdc_t *fdc, int compare, int st5)
+common_finish(fdc_t *fdc, int compare, int st5)
 {
     fdc_int(fdc);
 
@@ -1468,26 +1475,26 @@ fdc_poll_common_finish(fdc_t *fdc, int compare, int st5)
 
 
 static void
-fdc_poll_readwrite_finish(fdc_t *fdc, int compare)
+readwrite_finish(fdc_t *fdc, int compare)
 {
     fdc->inread = 0;
     fdc->interrupt = -2;
 
-    fdc_poll_common_finish(fdc, compare, 0);
+    common_finish(fdc, compare, 0);
 }
 
 
 static void
-fdc_no_dma_end(fdc_t *fdc, int compare)
+no_dma_end(fdc_t *fdc, int compare)
 {
     fdc->time = 0LL;
 
-    fdc_poll_common_finish(fdc, compare, 0x80);
+    common_finish(fdc, compare, 0x80);
 }
 
 
 static void
-fdc_callback(priv_t priv)
+call_back(priv_t priv)
 {
     fdc_t *fdc = (fdc_t *)priv;
     int compare = 0;
@@ -1524,7 +1531,7 @@ fdc_callback(priv_t priv)
 		fdc->eot[fdc->drive]--;
 		fdc->read_track_sector.id.r++;
 		if (!fdc->eot[fdc->drive] || fdc->tc) {
-			fdc_poll_readwrite_finish(fdc, 2);
+			readwrite_finish(fdc, 2);
 			return;
 		} else {
 			fdd_readsector(real_drive(fdc, fdc->drive), SECTOR_NEXT, fdc->rw_track, fdc->head, fdc->rate, fdc->params[4]);
@@ -1589,7 +1596,7 @@ fdc_callback(priv_t priv)
 				}
 			} else
 				fdc->sector++;
-			fdc_poll_readwrite_finish(fdc, compare);
+			readwrite_finish(fdc, compare);
 			return;
 		}
 		if ((fdc->interrupt == 0x16) && (fdc->params[0] & 0x80)) {
@@ -1597,7 +1604,7 @@ fdc_callback(priv_t priv)
 			fdc->sc--;
 			if (!fdc->sc) {
 				fdc->sector++;
-				fdc_poll_readwrite_finish(fdc, 0);
+				readwrite_finish(fdc, 0);
 				return;
 			}
 			/* The rest is processed normally per MT flag and EOT. */
@@ -1605,7 +1612,7 @@ fdc_callback(priv_t priv)
 			/* VERIFY command, EC clear */
 			if ((fdc->sector == old_sector) && (fdc->head == (fdc->command & 0x80) ? 1 : 0)) {
 				fdc->sector++;
-				fdc_poll_readwrite_finish(fdc, 0);
+				readwrite_finish(fdc, 0);
 				return;
 			}
 		}
@@ -1615,9 +1622,9 @@ fdc_callback(priv_t priv)
 				fdc->rw_track++;
 				fdc->sector = 1;
 				if (!(fdc->flags & FDC_FLAG_PCJR) && fdc->dma && (old_sector == 255))
-					fdc_no_dma_end(fdc, compare);
+					no_dma_end(fdc, compare);
 				else
-					fdc_poll_readwrite_finish(fdc, compare);
+					readwrite_finish(fdc, compare);
 				return;
 			}
 			/* Reached end of track, MT bit is set, head is 1 */
@@ -1627,9 +1634,9 @@ fdc_callback(priv_t priv)
 				fdc->head &= 0xFE;
 				fdd_set_head(real_drive(fdc, fdc->drive), 0);
 				if (!(fdc->flags & FDC_FLAG_PCJR) && fdc->dma && (old_sector == 255))
-					fdc_no_dma_end(fdc, compare);
+					no_dma_end(fdc, compare);
 				else
-					fdc_poll_readwrite_finish(fdc, compare);
+					readwrite_finish(fdc, compare);
 				return;
 			}
 			if ((fdd_get_head(real_drive(fdc, fdc->drive)) == 0)) {
@@ -1742,7 +1749,7 @@ fdc_callback(priv_t priv)
 		fdc->time = 2048LL * (1LL << TIMER_SHIFT);
 		timer_update_outstanding();
 		fdc->stat = 0x80 | (1 << fdc->drive);
-		fdc_callback(fdc);
+		call_back(fdc);
 		return;
 
 	case 0x10: /*Version*/
@@ -1923,7 +1930,7 @@ fdc_track_finishread(fdc_t *fdc, int condition)
     fdc->satisfying_sectors |= condition;
     fdc->inread = 0;
 
-    fdc_callback(fdc);
+    call_back(fdc);
 }
 
 
@@ -1934,7 +1941,7 @@ fdc_sector_finishcompare(fdc_t *fdc, int satisfying)
     fdc->satisfying_sectors++;
     fdc->inread = 0;
 
-    fdc_callback(fdc);
+    call_back(fdc);
 }
 
 
@@ -1944,7 +1951,7 @@ fdc_sector_finishread(fdc_t *fdc)
     fdc->stat = 0x10;
     fdc->inread = 0;
 
-    fdc_callback(fdc);
+    call_back(fdc);
 }
 
 
@@ -2132,15 +2139,15 @@ fdc_set_base(fdc_t *fdc, int base)
 
     if ((fdc->flags & FDC_FLAG_AT) || (fdc->flags & FDC_FLAG_AMSTRAD)) {
 	io_sethandler(base + (super_io ? 2 : 0), super_io ? 4 : 6,
-		      fdc_read,NULL,NULL, fdc_write,NULL,NULL, fdc);
+		      fdc_in,NULL,NULL, fdc_out,NULL,NULL, fdc);
 	io_sethandler(base+7, 1,
-		      fdc_read,NULL,NULL, fdc_write,NULL,NULL, fdc);
+		      fdc_in,NULL,NULL, fdc_out,NULL,NULL, fdc);
     } else {
-	io_sethandler(base+2, 1, NULL,NULL,NULL, fdc_write,NULL,NULL, fdc);
-	io_sethandler(base+4, 1, fdc_read,NULL,NULL, NULL,NULL,NULL, fdc);
-	io_sethandler(base+5, 1, fdc_read,NULL,NULL, fdc_write,NULL,NULL, fdc);
+	io_sethandler(base+2, 1, NULL,NULL,NULL, fdc_out,NULL,NULL, fdc);
+	io_sethandler(base+4, 1, fdc_in,NULL,NULL, NULL,NULL,NULL, fdc);
+	io_sethandler(base+5, 1, fdc_in,NULL,NULL, fdc_out,NULL,NULL, fdc);
 	if (fdc->flags & FDC_FLAG_TOSHIBA)
-		io_sethandler(base+7, 1, fdc_read,NULL,NULL, fdc_write,NULL,NULL, fdc);
+		io_sethandler(base+7, 1, fdc_in,NULL,NULL, fdc_out,NULL,NULL, fdc);
     }
 
     fdc->base_address = base;
@@ -2156,19 +2163,19 @@ fdc_remove(fdc_t *fdc)
 
     if ((fdc->flags & FDC_FLAG_AT) || (fdc->flags & FDC_FLAG_AMSTRAD)) {
 	io_removehandler(fdc->base_address + (super_io?2:0), super_io?4:6,
-			 fdc_read,NULL,NULL, fdc_write,NULL,NULL, fdc);
+			 fdc_in,NULL,NULL, fdc_out,NULL,NULL, fdc);
 	io_removehandler(fdc->base_address+7, 1,
-			 fdc_read,NULL,NULL, fdc_write,NULL,NULL, fdc);
+			 fdc_in,NULL,NULL, fdc_out,NULL,NULL, fdc);
     } else {
 	io_removehandler(fdc->base_address+2, 1,
-			 NULL,NULL,NULL, fdc_write,NULL,NULL, fdc);
+			 NULL,NULL,NULL, fdc_out,NULL,NULL, fdc);
 	io_removehandler(fdc->base_address+4, 1,
-			 fdc_read,NULL,NULL, NULL,NULL,NULL, fdc);
+			 fdc_in,NULL,NULL, NULL,NULL,NULL, fdc);
 	io_removehandler(fdc->base_address+5, 1,
-			 fdc_read,NULL,NULL, fdc_write,NULL,NULL, fdc);
+			 fdc_in,NULL,NULL, fdc_out,NULL,NULL, fdc);
 	if (fdc->flags & FDC_FLAG_TOSHIBA)
 		io_removehandler(fdc->base_address+7, 1,
-				 fdc_read,NULL,NULL, fdc_write,NULL,NULL, fdc);
+				 fdc_in,NULL,NULL, fdc_out,NULL,NULL, fdc);
     }
 
     DEBUG("FDC: removed (%04X)\n", fdc->base_address);
@@ -2275,7 +2282,7 @@ fdc_init(const device_t *info, UNUSED(void *parent))
     DEBUG("FDC: %s (I/O=%04X, flags=%08x)\n",
 	info->name, fdc->base_address, fdc->flags);
 
-    timer_add(fdc_callback, fdc, &fdc->time, &fdc->time);
+    timer_add(call_back, fdc, &fdc->time, &fdc->time);
 
     /* FIXME: should be handled through table. */
     d86f_set_fdc(fdc);

@@ -8,7 +8,7 @@
  *
  *		Definitions for the hard disk image handler.
  *
- * Version:	@(#)hdd.h	1.0.15	2021/03/13
+ * Version:	@(#)hdd.h	1.0.16	2021/03/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -56,29 +56,6 @@ enum {
 };
 #define HDD_BUS_MAX	(HDD_BUS_USB)	// USB exclusive
 
-
-typedef struct {
-    uint8_t	cookie[8];
-    uint32_t	features;
-    uint32_t	version;
-    uint64_t	offset;
-    uint32_t	timestamp;
-    uint8_t	creator[4];
-    uint32_t	creator_vers;
-    uint8_t	creator_host_os[4];
-    uint64_t	orig_size;
-    uint64_t	curr_size;
-    struct {
-	uint16_t	cyl;
-	uint8_t		heads;
-	uint8_t		spt;
-    } geom;
-    uint32_t	type;
-    uint32_t	checksum;
-    uint8_t	uuid[16];
-    uint8_t	saved_state;
-    uint8_t	reserved[427];
-} vhd_footer_t;
 
 /* Define a hard disk table entry. */
 typedef struct {
@@ -153,11 +130,8 @@ extern void	hdd_image_specify(uint8_t id, int hpc, int spt);
 extern void	hdd_image_unload(uint8_t id, int fn_preserve);
 extern void	hdd_image_close(uint8_t id);
 extern void	hdd_image_calc_chs(uint32_t *c, uint32_t *h, uint32_t *s, uint32_t size);
-extern void	vhd_footer_from_bytes(vhd_footer_t *vhd, uint8_t *bytes);
-extern void	vhd_footer_to_bytes(uint8_t *bytes, vhd_footer_t *vhd);
-extern void	new_vhd_footer(vhd_footer_t **vhd);
-extern void	generate_vhd_checksum(vhd_footer_t *vhd);
 
+//FIXME: used in win_settings_disk.h UI !!
 extern int	image_is_hdi(const wchar_t *s);
 extern int	image_is_hdx(const wchar_t *s, int check_signature);
 extern int	image_is_vhd(const wchar_t *s, int check_signature);

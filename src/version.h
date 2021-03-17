@@ -8,7 +8,7 @@
  *
  *		Define application version and build info.
  *
- * Version:	@(#)version.h	1.0.31	2021/03/10
+ * Version:	@(#)version.h	1.0.32	2021/03/16
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -58,8 +58,8 @@
 /* Version info. */
 #define EMU_VER_MAJOR	1
 #define EMU_VER_MINOR	7
-#define EMU_VER_REV	5
-#define EMU_VER_PATCH	2
+#define EMU_VER_REV	6
+#define EMU_VER_PATCH	0
 
 
 /* Standard C preprocessor macros. */

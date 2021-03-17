@@ -8,12 +8,12 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings.c	1.0.42	2019/05/17
+ * Version:	@(#)win_settings.c	1.0.45	2021/01/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -44,6 +44,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <wchar.h>
+#ifdef USE_MINIVHD
+# include <minivhd.h>
+#endif
 #include "../emu.h"
 #include "../config.h"
 #include "../timer.h"
@@ -78,10 +81,6 @@
 #include "../devices/video/video.h"
 #include "win.h"
 #include "resource.h"
-
-
-/* Defined in the Video module. */
-extern const device_t voodoo_device;
 
 
 /* Floppy drives category. */
@@ -121,16 +120,16 @@ settings_msgbox(int type, void *arg)
 
 
 /* Load the per-page dialogs. */
-#include "win_settings_machine.h"		/* Machine dialog */
-#include "win_settings_video.h"			/* Video dialog */
-#include "win_settings_input.h"			/* Input dialog */
-#include "win_settings_sound.h"			/* Sound dialog */
-#include "win_settings_ports.h"			/* Ports dialog */
-#include "win_settings_periph.h"		/* Other Peripherals dialog */
-#include "win_settings_network.h"		/* Network dialog */
-#include "win_settings_floppy.h"		/* Floppy dialog */
-#include "win_settings_disk.h"			/* (Hard) Disk dialog */
-#include "win_settings_remov.h"			/* Removable Devices dialog */
+#include "win_settings_machine.h"		// Machine dialog
+#include "win_settings_video.h"			// Video dialog
+#include "win_settings_input.h"			// Input dialog
+#include "win_settings_sound.h"			// Sound dialog
+#include "win_settings_ports.h"			// Ports dialog
+#include "win_settings_periph.h"		// Other Peripherals dialog
+#include "win_settings_network.h"		// Network dialog
+#include "win_settings_floppy.h"		// Floppy dialog
+#include "win_settings_disk.h"			// (Hard) Disk dialog
+#include "win_settings_remov.h"			// Removable Devices dialog
 
 
 /* This does the initial read of global variables into the temporary ones. */
@@ -225,6 +224,9 @@ settings_save(void)
 
     /* Hard disks category */
     memcpy(hdd, temp_hdd, HDD_NUM * sizeof(hard_disk_t));
+	for (i = 0; i < HDD_NUM; i++) {
+		hdd[i].priv = NULL;
+    }
 
     /* Floppy drives category */
     for (i = 0; i < FDD_NUM; i++) {
@@ -235,7 +237,23 @@ settings_save(void)
 
     /* Removable devices category */
     memcpy(cdrom, temp_cdrom_drives, CDROM_NUM * sizeof(cdrom_t));
+	for (i = 0; i < CDROM_NUM; i++) {
+		cdrom[i].img_fp = NULL;
+		cdrom[i].priv = NULL;
+		cdrom[i].ops = NULL;
+		cdrom[i].local = NULL;
+		cdrom[i].insert = NULL;
+		cdrom[i].close = NULL;
+		cdrom[i].reset = NULL;
+		cdrom[i].get_volume = NULL;
+		cdrom[i].get_channel = NULL;
+    }
+
     memcpy(zip_drives, temp_zip_drives, ZIP_NUM * sizeof(zip_drive_t));
+	for (i = 0; i < ZIP_NUM; i++) {
+		zip_drives[i].f = NULL;
+		zip_drives[i].priv = NULL;
+    }
 
     /* Mark configuration as changed. */
     config_changed = 1;

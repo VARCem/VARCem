@@ -8,11 +8,11 @@
  *
  *		AMD SYSCALL and SYSRET CPU Instructions.
  *
- * Version:	@(#)x86_ops_amd.h	1.0.2	2018/10/05
+ * Version:	@(#)x86_ops_amd.h	1.0.4	2020/12/04
  *
  * Author:	Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2016-2018 Miran Grca.
+ *		Copyright 2016-2020 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -70,36 +70,36 @@ static int opSYSCALL(uint32_t fetchdat)
 	if (!AMD_SYSCALL_SB)  return internal_illegal("SYSCALL: AMD SYSCALL SB MSR is zero");
 
 	/* Set VM, IF, RF to 0. */
-	/* eflags &= ~0x00030200;
-	flags &= ~0x0200; */
+	/* cpu_state.eflags &= ~0x00030200;
+	cpu_state.flags &= ~0x0200; */
 
 	/* Let's do this by the AMD spec. */
 	ECX = cpu_state.pc;
 
-	eflags &= ~0x0002;
-	flags &= ~0x0200;
+	cpu_state.eflags &= ~0x0002;
+	cpu_state.flags &= ~0x0200;
 
 	/* CS */
-	_cs.seg = AMD_SYSCALL_SB & ~7;
+	cpu_state.seg_cs.seg = AMD_SYSCALL_SB & ~7;
 	if (AMD_SYSCALL_SB & 4)
 	{
-		if (_cs.seg >= ldt.limit)
+		if (cpu_state.seg_cs.seg >= ldt.limit)
 		{
 			ERRLOG("CPU: bigger than LDT limit %04X %04X CS\n",AMD_SYSCALL_SB,ldt.limit);
 			x86gpf(NULL, AMD_SYSCALL_SB & ~3);
 			return 1;
 		}
-		_cs.seg +=ldt.base;
+		cpu_state.seg_cs.seg +=ldt.base;
 	}
 	else
 	{
-		if (_cs.seg >= gdt.limit)
+		if (cpu_state.seg_cs.seg >= gdt.limit)
 		{
 			ERRLOG("CPU: bigger than GDT limit %04X %04X CS\n",AMD_SYSCALL_SB,gdt.limit);
 			x86gpf(NULL, AMD_SYSCALL_SB & ~3);
 			return 1;
 		}
-		_cs.seg += gdt.base;
+		cpu_state.seg_cs.seg += gdt.base;
 	}
 	cpl_override = 1;
 
@@ -113,27 +113,27 @@ static int opSYSCALL(uint32_t fetchdat)
 	use32 = 0x300;
 	CS = (AMD_SYSCALL_SB & ~3) | 0;
 
-	do_seg_load(&_cs, syscall_cs_seg_data);
+	do_seg_load(&cpu_state.seg_cs, syscall_cs_seg_data);
 	use32 = 0x300;
 
 	CS = (CS & 0xFFFC) | 0;
 
-	_cs.limit = 0xFFFFFFFF;
-	_cs.limit_high = 0xFFFFFFFF;
+	cpu_state.seg_cs.limit = 0xFFFFFFFF;
+	cpu_state.seg_cs.limit_high = 0xFFFFFFFF;
 
 	/* SS */
 	syscall_ss_seg_data[0] = 0xFFFF;
 	syscall_ss_seg_data[1] = 0;
 	syscall_ss_seg_data[2] = 0x9300;
 	syscall_ss_seg_data[3] = 0xC0;
-	do_seg_load(&_ss, syscall_ss_seg_data);
-	_ss.seg = (AMD_SYSCALL_SB + 8) & 0xFFFC;
+	do_seg_load(&cpu_state.seg_ss, syscall_ss_seg_data);
+	cpu_state.seg_ss.seg = (AMD_SYSCALL_SB + 8) & 0xFFFC;
 	stack32 = 1;
 
-	_ss.limit = 0xFFFFFFFF;
-	_ss.limit_high = 0xFFFFFFFF;
+	cpu_state.seg_ss.limit = 0xFFFFFFFF;
+	cpu_state.seg_ss.limit_high = 0xFFFFFFFF;
 
-	_ss.checked = 0;
+	cpu_state.seg_ss.checked = 0;
 
 	cpu_state.pc = AMD_SYSCALL_EIP;
 
@@ -155,29 +155,29 @@ static int opSYSRET(uint32_t fetchdat)
 
 	cpu_state.pc = ECX;
 
-	eflags |= (1 << 1);
+	cpu_state.eflags |= (1 << 1);
 
 	/* CS */
-	_cs.seg = AMD_SYSRET_SB & ~7;
+	cpu_state.seg_cs.seg = AMD_SYSRET_SB & ~7;
 	if (AMD_SYSRET_SB & 4)
 	{
-		if (_cs.seg >= ldt.limit)
+		if (cpu_state.seg_cs.seg >= ldt.limit)
 		{
 			ERRLOG("CPU: bigger than LDT limit %04X %04X CS\n",AMD_SYSRET_SB,ldt.limit);
 			x86gpf(NULL, AMD_SYSRET_SB & ~3);
 			return 1;
 		}
-		_cs.seg +=ldt.base;
+		cpu_state.seg_cs.seg +=ldt.base;
 	}
 	else
 	{
-		if (_cs.seg >= gdt.limit)
+		if (cpu_state.seg_cs.seg >= gdt.limit)
 		{
 			ERRLOG("CPU: bigger than GDT limit %04X %04X CS\n",AMD_SYSRET_SB,gdt.limit);
 			x86gpf(NULL, AMD_SYSRET_SB & ~3);
 			return 1;
 		}
-		_cs.seg += gdt.base;
+		cpu_state.seg_cs.seg += gdt.base;
 	}
 	cpl_override = 1;
 
@@ -191,28 +191,28 @@ static int opSYSRET(uint32_t fetchdat)
 	use32 = 0x300;
 	CS = (AMD_SYSRET_SB & ~3) | 3;
 
-	do_seg_load(&_cs, sysret_cs_seg_data);
+	do_seg_load(&cpu_state.seg_cs, sysret_cs_seg_data);
 	flushmmucache_cr3();
 	use32 = 0x300;
 
 	CS = (CS & 0xFFFC) | 3;
 
-	_cs.limit = 0xFFFFFFFF;
-	_cs.limit_high = 0xFFFFFFFF;
+	cpu_state.seg_cs.limit = 0xFFFFFFFF;
+	cpu_state.seg_cs.limit_high = 0xFFFFFFFF;
 
 	/* SS */
 	sysret_ss_seg_data[0] = 0xFFFF;
 	sysret_ss_seg_data[1] = 0;
 	sysret_ss_seg_data[2] = 0xF300;
 	sysret_ss_seg_data[3] = 0xC0;
-	do_seg_load(&_ss, sysret_ss_seg_data);
-	_ss.seg = ((AMD_SYSRET_SB + 8) & 0xFFFC) | 3;
+	do_seg_load(&cpu_state.seg_ss, sysret_ss_seg_data);
+	cpu_state.seg_ss.seg = ((AMD_SYSRET_SB + 8) & 0xFFFC) | 3;
 	stack32 = 1;
 
-	_ss.limit = 0xFFFFFFFF;
-	_ss.limit_high = 0xFFFFFFFF;
+	cpu_state.seg_ss.limit = 0xFFFFFFFF;
+	cpu_state.seg_ss.limit_high = 0xFFFFFFFF;
 
-	_ss.checked = 0;
+	cpu_state.seg_ss.checked = 0;
 
 	CLOCK_CYCLES(20);
 

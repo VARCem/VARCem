@@ -32,11 +32,11 @@
  *		The lower half of the driver can interface to the host system
  *		serial ports, or other channels, for real-world access.
  *
- * Version:	@(#)serial.c	1.0.18	2019/05/13
+ * Version:	@(#)serial.c	1.0.20	2021/03/16
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -93,15 +93,16 @@
 #define SER_INT_RX	0x02
 #define SER_INT_TX	0x04
 #define SER_INT_MSR	0x08
+#define SER_INT_TMO	0x10
 
 /* IER register bits. */
 #define IER_RDAIE	0x01
 #define IER_THREIE	0x02
 #define IER_RXLSIE	0x04
 #define IER_MSIE	0x08
-#define IER_SLEEP	0x10		/* NS16750 */
-#define IER_LOWPOWER	0x20		/* NS16750 */
-#define IER_MASK	0x0f		/* not including SLEEP|LOWP */
+#define IER_SLEEP	0x10		// NS16750
+#define IER_LOWPOWER	0x20		// NS16750
+#define IER_MASK	0x0f		// not including SLEEP|LOWP
 
 /* IIR register bits. */
 #define IIR_IP		0x01
@@ -110,8 +111,8 @@
 # define IID_IDTX	0x02
 # define IID_IDRX	0x04
 # define IID_IDERR	0x06
-# define IID_IDTMO	0x0c		/* 16550+ */
-#define IIR_IIRFE	0xc0		/* 16550+ */
+# define IID_IDTMO	0x0c		// 16550+
+#define IIR_IIRFE	0xc0		// 16550+
 # define IIR_FIFO64	0x20
 # define IIR_FIFOBAD	0x80
 # define IIR_FIFOENB	0xc0
@@ -121,7 +122,7 @@
 #define FCR_RFR		0x02
 #define FCR_TFR		0x04
 #define FCR_SELDMA1	0x08
-#define FCR_FENB64	0x20		/* 16750 */
+#define FCR_FENB64	0x20		// 16750
 #define FCR_RTLS	0xc0
 # define FCR_RTLS1	0x00
 # define FCR_RTLS4	0x40
@@ -149,10 +150,10 @@
 /* MCR register bits. */
 #define MCR_DTR		0x01
 #define MCR_RTS		0x02
-#define MCR_OUT1	0x04		/* 8250 */
-#define MCR_OUT2	0x08		/* 8250, INTEN on IBM-PC */
+#define MCR_OUT1	0x04		// 8250
+#define MCR_OUT2	0x08		// 8250, INTEN on IBM-PC
 #define MCR_LMS		0x10
-#define MCR_AUTOFLOW	0x20		/* 16750 */
+#define MCR_AUTOFLOW	0x20		// 16750
 
 /* LSR register bits. */
 #define	LSR_DR		0x01
@@ -178,17 +179,17 @@
 
 
 typedef struct serial {
-    int8_t	port;			/* port number (0,1,..) */
-    int8_t	irq;			/* IRQ channel used */
-    uint16_t	base;			/* I/O address used */
+    int8_t	port;			// port number (0,1,..)
+    int8_t	irq;			// IRQ channel used
+    uint16_t	base;			// I/O address used
 
-    int8_t	is_pcjr;		/* PCjr UART (fixed OUT2) */
-    int8_t	type;			/* UART type */
+    int8_t	is_pcjr;		// PCjr UART (fixed OUT2)
+    int8_t	type;			// UART type
     uint8_t	int_status;
 
-    uint8_t	lsr, thr, mcr, rcr,	/* UART registers */
+    uint8_t	lsr, thr, mcr, rcr,	// UART registers
 		iir, ier, lcr, msr;
-    uint8_t	dlab1, dlab2;
+    uint16_t	dlab;
     uint8_t	dat,
 		hold;
     uint8_t	scratch;
@@ -200,7 +201,7 @@ typedef struct serial {
 
     int64_t	delay;
 
-    priv_t	bh;				/* BottomHalf handler */
+    priv_t	bh;			// BottomHalf handler
 
     int		fifo_read,
 		fifo_write;
@@ -213,7 +214,7 @@ int		serial_do_log = ENABLE_SERIAL_LOG;
 #endif
 
 
-static serial_t	ports[SERIAL_MAX];	/* the ports */
+static serial_t	ports[SERIAL_MAX];
 
 
 #ifdef _LOGGING
@@ -245,6 +246,10 @@ update_ints(serial_t *dev)
 	/* Line Status interrupt. */
 	stat = 1;
 	dev->iir = IID_IDERR;
+    } else if ((dev->ier & IER_RDAIE) && (dev->int_status & SER_INT_TMO)) {
+	/* Received data available */
+	stat = 1;
+	dev->iir = IID_IDTMO;
     } else if ((dev->ier & IER_RDAIE) && (dev->int_status & SER_INT_RX)) {
 	/* Received Data available. */
 	stat = 1;
@@ -259,7 +264,7 @@ update_ints(serial_t *dev)
 	dev->iir = IID_IDMDM;
     }
 
-    DEBUG("Serial%d: intr, IIR=%02X, type=%i, mcr=%02X\n",
+    DEBUG("Serial%i: intr, IIR=%02X, type=%i, mcr=%02X\n",
 		dev->port, dev->iir, dev->type, dev->mcr);
 
     /* Are hardware interrupts enabled? */
@@ -415,14 +420,13 @@ ser_write(uint16_t addr, uint8_t val, priv_t priv)
     uint32_t baud;
     uint8_t msr;
 
-
     DEBUG("Serial%i: write(%i, %02x)\n", dev->port, (addr & 0x0007), val);
 
     switch (addr & 0x0007) {
 	case 0:		/* DATA,DLAB1 */
                 if (dev->lcr & LCR_DLAB) {
 			/* DLAB set, set DLAB low byte. */
-                        dev->dlab1 = val;
+                        dev->dlab = (dev->dlab & 0xff00) | val;
                         return;
                 }
 
@@ -456,7 +460,7 @@ ser_write(uint16_t addr, uint8_t val, priv_t priv)
 	case 1:		/* IER,DLAB2 */
                 if (dev->lcr & LCR_DLAB) {
 			/* DLAB set, set DLAB high byte. */
-                        dev->dlab2 = val;
+                        dev->dlab = (dev->dlab & 0x00ff) | (val << 8);
                         return;
                 }
 
@@ -479,7 +483,7 @@ INFO("Serial%i: enable FIFO (%02x), type %i!\n", dev->port, val, dev->type);
 	case 3:		/* LCR */
 		if ((dev->lcr & LCR_DLAB) && !(val & LCR_DLAB)) {
 			/* We dropped DLAB, so handle baudrate. */
-			baud = ((dev->dlab2 << 8) | dev->dlab1);
+			baud = dev->dlab;
 			if (baud > 0) {
 #if defined(_LOGGING) || defined(USE_HOST_SERIAL)
 				speed = 115200UL / baud;
@@ -553,7 +557,7 @@ INFO("Serial%i: enable FIFO (%02x), type %i!\n", dev->port, val, dev->type);
 #endif
 		}
 
-                dev->mcr = val;
+		dev->mcr = val;
 
 		if (val & MCR_LMS) {	/* loopback mode */
 			msr = (val & 0x0c) << 4;
@@ -566,7 +570,7 @@ INFO("Serial%i: enable FIFO (%02x), type %i!\n", dev->port, val, dev->type);
 				msr |= MSR_DDSR;
 			if ((dev->msr ^ msr) & MSR_DCD)
 				msr |= MSR_DDCD;
-			if ((dev->msr & MSR_TERI) && !(msr & MSR_RI))
+			if ((dev->msr & MSR_RI) && !(msr & MSR_RI))
 				msr |= MSR_TERI;
 
 			dev->msr = msr;
@@ -606,11 +610,13 @@ ser_read(uint16_t addr, priv_t priv)
     serial_t *dev = (serial_t *)priv;
     uint8_t ret = 0x00;
 
+    DEBUG ("Serial read addr %x \n", addr);
+
     switch (addr & 0x0007) {
 	case 0:		/* DATA / DLAB1 */
                 if (dev->lcr & LCR_DLAB) {
 			/* DLAB set, read DLAB low byte. */
-                        ret = dev->dlab1;
+                        ret = dev->dlab & 0xff;
                         break;
                 }
 
@@ -633,7 +639,7 @@ ser_read(uint16_t addr, priv_t priv)
 	case 1:		/* LCR / DLAB2 */
 		if (dev->lcr & LCR_DLAB) {
 			/* DLAB set, read DLAB high byte. */
-			ret = dev->dlab2;
+			ret = (dev->dlab >> 8) & 0xff;
 		} else {
 			/* DLAB clear, read IER register bits. */
 			ret = dev->ier;
@@ -729,7 +735,7 @@ ser_init(const device_t *info, UNUSED(void *parent))
 
     /* Set up local/weird stuff. */
     if (info->local & 128)
-	dev->is_pcjr = 1;
+		dev->is_pcjr = 1;
 
     /* Clear port. */
     reset_port(dev);
@@ -788,7 +794,7 @@ serial_reset(void)
 	dev = &ports[i];
 	memset(dev, 0x00, sizeof(serial_t));
 	dev->port = i;
-#if 1
+#if 0
 	dev->type = UART_TYPE_16550;
 #else
 	dev->type = UART_TYPE_8250;
@@ -916,6 +922,7 @@ serial_clear(priv_t arg)
 
     clear_fifo(dev);
 }
+
 
 
 /* API: write data to a serial port. */

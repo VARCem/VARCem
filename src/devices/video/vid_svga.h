@@ -8,14 +8,14 @@
  *
  *		Definitions for the generic SVGA driver.
  *
- * Version:	@(#)vid_svga.h	1.0.10	2020/01/20
+ * Version:	@(#)vid_svga.h	1.0.12	2021/02/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2020 Fred N. van Kempen.
- *		Copyright 2016-2018 Miran Grca.
+ *		Copyright 2017-2021 Fred N. van Kempen.
+ *		Copyright 2016-2021 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -41,7 +41,8 @@
 
 #define FLAG_EXTRA_BANKS	1
 #define FLAG_ADDR_BY8		2
-#define FLAG_LATCH8		4
+#define FLAG_EXT_WRITE		4
+#define FLAG_LATCH8			8
 
 typedef struct {
     int ena,
@@ -98,7 +99,8 @@ typedef struct svga_t
 	     write_bank, read_bank,
 	     extra_banks[2],
 	     banked_mask,
-	     ca, overscan_color,
+	     ca, ca_adj, 
+		 overscan_color,
 	     *map8, pallook[256];
 
     latch_t latch;
@@ -139,7 +141,7 @@ typedef struct svga_t
 	    plane_mask, writemask,
 	    colourcompare, colournocare,
 	    dac_mask, dac_status,
-	    ksc5601_sbyte_mask;
+	    ksc5601_sbyte_mask, fc;
 
     priv_t	ramdac,
 		clock_gen;

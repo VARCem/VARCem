@@ -8,7 +8,7 @@
  *
  *		Definitions for the CD-ROM image file handlers.
  *
- * Version:	@(#)cdrom_image.h	1.0.8	2019/05/17
+ * Version:	@(#)cdrom_image.h	1.0.9	2020/11/28
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -44,7 +44,8 @@
 enum {
     IMAGE_TYPE_NONE = 0,
     IMAGE_TYPE_ISO,
-    IMAGE_TYPE_CUE
+    IMAGE_TYPE_CUE,
+    IMAGE_TYPE_CHD    
 };
 
 

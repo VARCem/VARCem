@@ -8,7 +8,7 @@
  *
  *		Implementation of 80286+ CPU interpreter.
  *
- * Version:	@(#)386.c	1.0.11	2020/09/10
+ * Version:	@(#)386.c	1.0.13	2020/12/12
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -70,10 +70,8 @@ extern int	oddeven;
 extern int	xout;
 
 
-uint16_t	flags,eflags;
 uint32_t	oldds,oldss,olddslimit,oldsslimit,olddslimitw,oldsslimitw;
 x86seg		gdt,ldt,idt,tr;
-x86seg		_cs,_ds,_es,_ss,_fs,_gs;
 x86seg		_oldds;
 uint32_t	cr2, cr3, cr4;
 uint32_t	dr[8];
@@ -169,23 +167,21 @@ exec386(int cycs)
 		
 		oldcs = CS;
 		cpu_state.oldpc = cpu_state.pc;
-		oldcpl = CPL;
 		cpu_state.op32 = use32;
-
 		x86_was_reset = 0;
 
-		cpu_state.ea_seg = &_ds;
+		cpu_state.ea_seg = &cpu_state.seg_ds;
 		cpu_state.ssegs = 0;
 
 		fetchdat = fastreadl(cs + cpu_state.pc);
 
 		if (! cpu_state.abrt) {               
-			trap = flags & T_FLAG;
+			trap = cpu_state.flags & T_FLAG;
 			opcode = fetchdat & 0xff;
 			fetchdat >>= 8;
 
 #if 0
-			DEBUG("%04X(%06X):%04X:\n  %08X %08X %08X %08X\n  %04X %04X %04X(%08X) %04X %04X %04X(%08X) %08X %08X %08X SP=%04X:%08X\n  OPCODE=%02X FLAGS=%04X ins=%i (%08X)  ldt=%08X CPL=%i %i %02X %02X %02X   %02X %02X %f  %02X%02X %02X%02X %02X%02X  %02X\n",CS,cs,cpu_state.pc,EAX,EBX,ECX,EDX,CS,DS,ES,es,FS,GS,SS,ss,EDI,ESI,EBP,SS,ESP,opcode,flags,ins,0, ldt.base, CPL, stack32, pic.pend, pic.mask, pic.mask2, pic2.pend, pic2.mask, pit.c[0], ram[0xB270+0x3F5], ram[0xB270+0x3F4], ram[0xB270+0x3F7], ram[0xB270+0x3F6], ram[0xB270+0x3F9], ram[0xB270+0x3F8], ram[0x4430+0x0D49]);
+			DEBUG("%04X(%06X):%04X:\n  %08X %08X %08X %08X\n  %04X %04X %04X(%08X) %04X %04X %04X(%08X) %08X %08X %08X SP=%04X:%08X\n  OPCODE=%02X FLAGS=%04X ins=%i (%08X)  ldt=%08X CPL=%i %i %02X %02X %02X   %02X %02X %f  %02X%02X %02X%02X %02X%02X  %02X\n",CS,cs,cpu_state.pc,EAX,EBX,ECX,EDX,CS,DS,ES,es,FS,GS,SS,ss,EDI,ESI,EBP,SS,ESP,opcode,cpu_state.flags,ins,0, ldt.base, CPL, stack32, pic.pend, pic.mask, pic.mask2, pic2.pend, pic2.mask, pit.c[0], ram[0xB270+0x3F5], ram[0xB270+0x3F4], ram[0xB270+0x3F7], ram[0xB270+0x3F6], ram[0xB270+0x3F9], ram[0xB270+0x3F8], ram[0x4430+0x0D49]);
 #endif
 
 			cpu_state.pc++;
@@ -235,13 +231,13 @@ exec386(int cycs)
 			if (msw & 1) {
 				pmodeint(1, 0);
 			} else {
-				writememw(ss, (SP-2) & 0xFFFF, flags);
+				writememw(ss, (SP-2) & 0xFFFF, cpu_state.flags);
 				writememw(ss, (SP-4) & 0xFFFF, CS);
 				writememw(ss, (SP-6) & 0xFFFF, cpu_state.pc);
 				SP -= 6;
 				addr = (1 << 2) + idt.base;
-				flags &= ~I_FLAG;
-				flags &= ~T_FLAG;
+				cpu_state.flags &= ~I_FLAG;
+				cpu_state.flags &= ~T_FLAG;
 				cpu_state.pc = readmemw(0, addr);
 				loadcs(readmemw(0, addr+2));
 			}
@@ -254,7 +250,7 @@ exec386(int cycs)
 				nmi_auto_clear = 0;
 				nmi = 0;
 			}
-		} else if (flags & I_FLAG) {
+		} else if (cpu_state.flags & I_FLAG) {
 			temp = pic_interrupt();
 			if (temp != 0xFF) {
 				flags_rebuild();
@@ -262,13 +258,13 @@ exec386(int cycs)
 				if (msw & 1) {
 					pmodeint(temp, 0);
 				} else {
-					writememw(ss, (SP-2) & 0xFFFF, flags);
+					writememw(ss, (SP-2) & 0xFFFF, cpu_state.flags);
 					writememw(ss, (SP-4) & 0xFFFF, CS);
 					writememw(ss, (SP-6) & 0xFFFF, cpu_state.pc);
 					SP -= 6;
 					addr = (temp << 2) + idt.base;
-					flags &= ~I_FLAG;
-					flags &= ~T_FLAG;
+					cpu_state.flags &= ~I_FLAG;
+					cpu_state.flags &= ~T_FLAG;
 					oxpc = cpu_state.pc;
 					cpu_state.pc = readmemw(0, addr);
 					loadcs(readmemw(0, addr+2));

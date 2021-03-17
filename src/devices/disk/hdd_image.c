@@ -14,12 +14,12 @@
  *		merged with hdd.c, since that is the scope of hdd.c. The
  *		actual format handlers can then be in hdd_format.c etc.
  *
- * Version:	@(#)hdd_image.c	1.0.11	2019/05/23
+ * Version:	@(#)hdd_image.c	1.0.15	2021/03/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *		Copyright 2016-2019 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -57,26 +57,15 @@
 #include "../../plat.h"
 #include "../../random.h"
 #include "hdd.h"
+#ifdef USE_MINIVHD
+# include <minivhd.h>
+#endif
 
 
-#define VHD_OFFSET_COOKIE 0
-#define VHD_OFFSET_FEATURES 8 
-#define VHD_OFFSET_VERSION 12
-#define VHD_OFFSET_DATA_OFFSET 16
-#define VHD_OFFSET_TIMESTAMP 24
-#define VHD_OFFSET_CREATOR 28
-#define VHD_OFFSET_CREATOR_VERS 32
-#define VHD_OFFSET_CREATOR_HOST 36
-#define VHD_OFFSET_ORIG_SIZE 40
-#define VHD_OFFSET_CURR_SIZE 48
-#define VHD_OFFSET_GEOM_CYL 56
-#define VHD_OFFSET_GEOM_HEAD 58
-#define VHD_OFFSET_GEOM_SPT 59
-#define VHD_OFFSET_TYPE 60
-#define VHD_OFFSET_CHECKSUM 64
-#define VHD_OFFSET_UUID 68
-#define VHD_OFFSET_SAVED_STATE 84
-#define VHD_OFFSET_RESERVED 85
+#define HDD_IMAGE_RAW 0
+#define HDD_IMAGE_HDI 1
+#define HDD_IMAGE_HDX 2
+#define HDD_IMAGE_VHD 3
 
 
 typedef struct {
@@ -86,6 +75,9 @@ typedef struct {
 		pos;
     uint8_t	type;
     uint8_t	loaded;
+#ifdef USE_MINIVHD
+    MVHDMeta	*vhd;
+#endif
 } hdd_image_t;
 
 
@@ -113,366 +105,84 @@ hdd_image_log(int level, const char *fmt, ...)
 int
 image_is_hdi(const wchar_t *s)
 {
+    const wchar_t *sp;
     int len;
-    wchar_t ext[5] = { 0, 0, 0, 0, 0 };
-    char *ws = (char *) s;
+
     len = (int)wcslen(s);
     if ((len < 4) || (s[0] == L'.'))
-	return 0;
-    memcpy(ext, ws + ((len - 4) << 1), 8);
-    if (! wcscasecmp(ext, L".HDI"))
-	return 1;
-    else
-	return 0;
+	return(0);
+    if ((sp = wcschr(s, L'.')) == NULL)
+	return(0);
+
+    return(! wcscasecmp(sp+1, L".HDI"));
 }
 
 
 int
 image_is_hdx(const wchar_t *s, int check_signature)
 {
-    int len;
-    FILE *f;
-    uint64_t filelen;
+    const wchar_t *sp;
     uint64_t signature;
-    char *ws = (char *) s;
-    wchar_t ext[5] = { 0, 0, 0, 0, 0 };
+    uint64_t filelen;
+    FILE *f;
+    int len;
+
     len = (int)wcslen(s);
     if ((len < 4) || (s[0] == L'.'))
-	return 0;
-    memcpy(ext, ws + ((len - 4) << 1), 8);
-    if (wcscasecmp(ext, L".HDX") == 0) {
-	if (check_signature) {
-		f = plat_fopen((wchar_t *)s, L"rb");
-		if (!f)
-			return 0;
-		fseeko64(f, 0, SEEK_END);
-		filelen = ftello64(f);
-		fseeko64(f, 0, SEEK_SET);
-		if (filelen < 44)
-			return 0;
-		fread(&signature, 1, 8, f);
-		fclose(f);
-		if (signature == 0xD778A82044445459ll)
-			return 1;
-		else
-			return 0;
-	} else
-		return 1;
-    } else
-    	return 0;
+	return(0);
+    if ((sp = wcschr(s, L'.')) == NULL)
+	return(0);
+    if (wcscasecmp(sp, L".HDX") != 0)
+	return(0);
+
+    if (check_signature) {
+	f = plat_fopen((wchar_t *)s, L"rb");
+	if (f == NULL)
+		return(0);
+	fseeko64(f, 0, SEEK_END);
+	filelen = ftello64(f);
+	fseeko64(f, 0, SEEK_SET);
+	if (filelen < 44)
+		return(0);
+	fread(&signature, 1, 8, f);
+	fclose(f);
+	if (signature != 0xD778A82044445459ll)
+		return(0);
+    }
+
+    return(1);
 }
 
 
+#ifdef USE_MINIVHD
 int
 image_is_vhd(const wchar_t *s, int check_signature)
 {
-    int len;
+    const wchar_t *sp;
+    int len, x = 1;
     FILE *f;
-    uint64_t filelen;
-    uint64_t signature;
-    char *ws = (char *) s;
-    wchar_t ext[5] = { 0, 0, 0, 0, 0 };
-
+    
     len = (int)wcslen(s);
     if ((len < 4) || (s[0] == L'.'))
-	return 0;
+	return(0);
+    if ((sp = wcschr(s, L'.')) == NULL)
+	return(0);
+    if (wcscasecmp(sp, L".VHD") != 0)
+	return(0);
 
-    memcpy(ext, ws + ((len - 4) << 1), 8);
-    if (wcscasecmp(ext, L".VHD") == 0) {
-	if (check_signature) {
-		f = plat_fopen((wchar_t *)s, L"rb");
-		if (!f)
-			return 0;
-		fseeko64(f, 0, SEEK_END);
-		filelen = ftello64(f);
-		fseeko64(f, -512, SEEK_END);
-		if (filelen < 512)
-			return 0;
-		fread(&signature, 1, 8, f);
-		fclose(f);
-		if (signature == 0x78697463656E6F63ll)
-			return 1;
-		else
-			return 0;
-	} else
-		return 1;
-    } else
-    	return 0;
-}
+    if (check_signature) {
+	f = plat_fopen((wchar_t *)s, L"rb");
+	if (f == NULL)
+		return(0);
 
-
-static uint64_t
-be_to_u64(uint8_t *bytes, int start)
-{
-    uint64_t n = ((uint64_t)bytes[start+7] << 0) | 
-		 ((uint64_t)bytes[start+6] << 8) |
-		 ((uint64_t)bytes[start+5] << 16) | 
-		 ((uint64_t)bytes[start+4] << 24) | 
-		 ((uint64_t)bytes[start+3] << 32) | 
-		 ((uint64_t)bytes[start+2] << 40) | 
-		 ((uint64_t)bytes[start+1] << 48) | 
-		 ((uint64_t)bytes[start] << 56);
-    return n;
-}
-
-
-static uint32_t
-be_to_u32(uint8_t *bytes, int start)
-{
-    uint32_t n = ((uint32_t)bytes[start+3] << 0) | 
-		 ((uint32_t)bytes[start+2] << 8) | 
-		 ((uint32_t)bytes[start+1] << 16) | 
-		 ((uint32_t)bytes[start] << 24);
-    return n;
-}
-
-
-static uint16_t
-be_to_u16(uint8_t *bytes, int start)
-{
-    uint16_t n = ((uint16_t)bytes[start+1] << 0) | 
-		 ((uint16_t)bytes[start] <<8);
-    return n;
-}
-
-
-static uint64_t
-u64_to_be(uint64_t value, int is_be)
-{
-    uint64_t res = 0;
-
-    if (is_be) 
-	res = value;
-    else {
-	uint64_t mask = 0xff00000000000000;
-
-	res = ((value & (mask >> 0)) >> 56) |
-	      ((value & (mask >> 8)) >> 40) |
-	      ((value & (mask >> 16)) >> 24) |
-	      ((value & (mask >> 24)) >> 8) |
-	      ((value & (mask >> 32)) << 8) |
-	      ((value & (mask >> 40)) << 24) |
-	      ((value & (mask >> 48)) << 40) |
-	      ((value & (mask >> 56)) << 56);
+	/* Note : find a better way to do this */
+	x = mvhd_file_is_vhd(f);
+	fclose(f);
     }
 
-    return res;
+    return(x);
 }
-
-
-static uint32_t
-u32_to_be(uint32_t value, int is_be)
-{
-    uint32_t res = 0;
-
-    if (is_be) 
-	res = value;
-    else {
-	uint32_t mask = 0xff000000;
-
-	res = ((value & (mask >> 0)) >> 24) |
-	      ((value & (mask >> 8)) >> 8) |
-	      ((value & (mask >> 16)) << 8) |
-	      ((value & (mask >> 24)) << 24);
-    }
-
-    return res;
-}
-
-
-static uint16_t
-u16_to_be(uint16_t value, int is_be)
-{
-    uint16_t res = 0;
-
-    if (is_be) 
-	res = value;
-    else 
-	res = (value >> 8) | (value << 8);
-
-    return res;
-}
-
-
-static void
-mk_guid(uint8_t *guid)
-{
-    int n;
-
-    for (n = 0; n < 16; n++)
-	guid[n] = random_generate();
-
-    guid[6] &= 0x0F;
-    guid[6] |= 0x40;	/* Type 4 */
-    guid[8] &= 0x3F;
-    guid[8] |= 0x80;	/* Variant 1 */
-}
-
-
-static uint32_t
-calc_vhd_timestamp(void)
-{
-    time_t start_time;
-    time_t curr_time;
-    double vhd_time;
-
-    start_time = 946684800; /* 1 Jan 2000 00:00 */
-    curr_time = time(NULL);
-    vhd_time = difftime(curr_time, start_time);
-
-    return (uint32_t)vhd_time;
-}
-
-
-void
-vhd_footer_from_bytes(vhd_footer_t *vhd, uint8_t *bytes)
-{
-    memcpy(vhd->cookie, bytes + VHD_OFFSET_COOKIE, sizeof(vhd->cookie));
-    vhd->features = be_to_u32(bytes, VHD_OFFSET_FEATURES);
-    vhd->version = be_to_u32(bytes, VHD_OFFSET_VERSION);
-    vhd->offset = be_to_u64(bytes, VHD_OFFSET_DATA_OFFSET);
-    vhd->timestamp = be_to_u32(bytes, VHD_OFFSET_TIMESTAMP);
-    memcpy(vhd->creator, bytes + VHD_OFFSET_CREATOR, sizeof(vhd->creator));
-    vhd->creator_vers = be_to_u32(bytes, VHD_OFFSET_CREATOR_VERS);
-    memcpy(vhd->creator_host_os, bytes + VHD_OFFSET_CREATOR_HOST, sizeof(vhd->creator_host_os));
-    vhd->orig_size = be_to_u64(bytes, VHD_OFFSET_ORIG_SIZE);
-    vhd->curr_size = be_to_u64(bytes, VHD_OFFSET_CURR_SIZE);
-    vhd->geom.cyl = be_to_u16(bytes, VHD_OFFSET_GEOM_CYL);
-    vhd->geom.heads = bytes[VHD_OFFSET_GEOM_HEAD];
-    vhd->geom.spt = bytes[VHD_OFFSET_GEOM_SPT];
-    vhd->type = be_to_u32(bytes, VHD_OFFSET_TYPE);
-    vhd->checksum = be_to_u32(bytes, VHD_OFFSET_CHECKSUM);
-    memcpy(vhd->uuid, bytes + VHD_OFFSET_UUID, sizeof(vhd->uuid)); /* TODO: handle UUID's properly */
-    vhd->saved_state = bytes[VHD_OFFSET_SAVED_STATE];
-    memcpy(vhd->reserved, bytes + VHD_OFFSET_RESERVED, sizeof(vhd->reserved));
-}
-
-
-void
-vhd_footer_to_bytes(uint8_t *bytes, vhd_footer_t *vhd)
-{
-    /* Quick endian check */
-    int is_be = 0;
-    uint8_t e = 1;
-    uint8_t *ep = &e;
-    uint16_t u16;
-    uint32_t u32;
-    uint64_t u64;
-
-    if (ep[0] == 0) 
-	is_be = 1;
-
-    memcpy(bytes + VHD_OFFSET_COOKIE, vhd->cookie, sizeof(vhd->cookie));
-    u32 = u32_to_be(vhd->features, is_be);
-    memcpy(bytes + VHD_OFFSET_FEATURES, &u32, sizeof(vhd->features));
-    u32 = u32_to_be(vhd->version, is_be);
-    memcpy(bytes + VHD_OFFSET_VERSION, &u32, sizeof(vhd->version));
-    u64 = u64_to_be(vhd->offset, is_be);
-    memcpy(bytes + VHD_OFFSET_DATA_OFFSET, &u64, sizeof(vhd->offset));
-    u32 = u32_to_be(vhd->timestamp, is_be);
-    memcpy(bytes + VHD_OFFSET_TIMESTAMP, &u32, sizeof(vhd->timestamp));
-    memcpy(bytes + VHD_OFFSET_CREATOR, vhd->creator, sizeof(vhd->creator));
-    u32 = u32_to_be(vhd->creator_vers, is_be);
-    memcpy(bytes + VHD_OFFSET_CREATOR_VERS, &u32, sizeof(vhd->creator_vers));
-    memcpy(bytes + VHD_OFFSET_CREATOR_HOST, vhd->creator_host_os, sizeof(vhd->creator_host_os));
-    u64 = u64_to_be(vhd->orig_size, is_be);
-    memcpy(bytes + VHD_OFFSET_ORIG_SIZE, &u64, sizeof(vhd->orig_size));
-    u64 = u64_to_be(vhd->curr_size, is_be);
-    memcpy(bytes + VHD_OFFSET_CURR_SIZE, &u64, sizeof(vhd->curr_size));
-    u16 = u16_to_be(vhd->geom.cyl, is_be);
-    memcpy(bytes + VHD_OFFSET_GEOM_CYL, &u16, sizeof(vhd->geom.cyl));
-    memcpy(bytes + VHD_OFFSET_GEOM_HEAD, &(vhd->geom.heads), sizeof(vhd->geom.heads));
-    memcpy(bytes + VHD_OFFSET_GEOM_SPT, &(vhd->geom.spt), sizeof(vhd->geom.spt));
-    u32 = u32_to_be(vhd->type, is_be);
-    memcpy(bytes + VHD_OFFSET_TYPE, &u32, sizeof(vhd->type));
-    u32 = u32_to_be(vhd->checksum, is_be);
-    memcpy(bytes + VHD_OFFSET_CHECKSUM, &u32, sizeof(vhd->checksum));
-    memcpy(bytes + VHD_OFFSET_UUID, vhd->uuid, sizeof(vhd->uuid));
-    memcpy(bytes + VHD_OFFSET_SAVED_STATE, &(vhd->saved_state), sizeof(vhd->saved_state));
-    memcpy(bytes + VHD_OFFSET_RESERVED, vhd->reserved, sizeof(vhd->reserved));
-}
-
-
-void
-new_vhd_footer(vhd_footer_t **vhd)
-{
-    uint8_t cookie[8] = {'c', 'o', 'n', 'e', 'c', 't', 'i', 'x'};
-    uint8_t creator[4] = {'V', 'A', 'R', 'C'};
-    uint8_t cr_host_os[4] = {'W', 'i', '2', 'k'};
-
-    if (*vhd == NULL)
-	*vhd = (vhd_footer_t *)mem_alloc(sizeof(vhd_footer_t));
-
-    memcpy((*vhd)->cookie, cookie, 8);
-    (*vhd)->features = 0x00000002;
-    (*vhd)->version = 0x00010000;
-    (*vhd)->offset = 0xffffffffffffffff; /* fixed disk */
-    (*vhd)->timestamp = calc_vhd_timestamp();
-    memcpy((*vhd)->creator, creator, 4);
-    (*vhd)->creator_vers = 0x00010000;
-    memcpy((*vhd)->creator_host_os, cr_host_os, 4);
-    (*vhd)->type = 2; /* fixed disk */
-    mk_guid((*vhd)->uuid);
-    (*vhd)->saved_state = 0;
-    memset((*vhd)->reserved, 0, 427);
-}
-
-
-void
-generate_vhd_checksum(vhd_footer_t *vhd)
-{
-    uint32_t chk = 0;
-    int i;
-
-    for (i = 0; i < sizeof(vhd_footer_t); i++) {
-	/* We don't include the checksum field in the checksum */
-	if ((i < VHD_OFFSET_CHECKSUM) || (i >= VHD_OFFSET_UUID))
-		chk += ((uint8_t*)vhd)[i];
-    }
-
-    vhd->checksum = ~chk;
-}
-
-
-/*
- * Calculate the geometry from size (in MB), using the algorithm
- * provided in "Virtual Hard Disk Image Format Specification,
- * Appendix: CHS Calculation"i
- */
-void
-hdd_image_calc_chs(uint32_t *c, uint32_t *h, uint32_t *s, uint32_t size)
-{
-    uint64_t ts = ((uint64_t) size) << 11LL;
-    uint32_t spt, heads, cyl, cth;
-
-    if (ts > 65535 * 16 * 255)
-	ts = 65535 * 16 * 255;
-    if (ts >= 65535 * 16 * 63) {
-	spt = 255;
-	heads = 16;
-	cth = (uint32_t) (ts / spt);
-    } else {
-	spt = 17;
-	cth = (uint32_t) (ts / spt);
-	heads = (cth +1023) / 1024;
-	if (heads < 4)
-		heads = 4;
-	if ((cth >= (heads * 1024)) || (heads > 16)) {
-		spt = 31;
-		heads = 16;
-		cth = (uint32_t) (ts / spt);
-	}
-	if (cth >= (heads * 1024)) {
-		spt = 63;
-		heads = 16;
-		cth = (uint32_t) (ts / spt);
-	}
-    }
-    cyl = cth / heads;
-    *c = cyl;
-    *h = heads;
-    *s = spt;
-}
+#endif
 
 
 static int
@@ -489,9 +199,9 @@ prepare_new_hard_disk(hdd_image_t *img, uint64_t full_size)
     fseeko64(img->file, 0ULL, SEEK_SET);
 #endif
 
-    k = (1 << 20);				/* 1048576 bytes, 1MB */
-    t = (uint32_t) (target_size / k);		/* number of full 1MB blocks */
-    r = (uint32_t) (target_size & (k - 1));	/* remainder, if any */
+    k = (1 << 20);				// 1048576 bytes, 1MB
+    t = (uint32_t) (target_size / k);		// number of full 1MB blocks
+    r = (uint32_t) (target_size & (k - 1));	// remainder, if any
 
     bufp = (uint8_t *)mem_alloc(k);
     memset(bufp, 0x00, k);
@@ -517,6 +227,10 @@ hdd_image_init(void)
 {
     int i;
 
+#ifdef USE_MINIVHD
+    /* Load and initialize the DLL here. */
+#endif
+
     for (i = 0; i < HDD_NUM; i++)
 	memset(&hdd_images[i], 0, sizeof(hdd_image_t));
 }
@@ -535,20 +249,31 @@ hdd_image_load(int id)
     uint64_t s = 0;
     wchar_t *fn = hdd[id].fn;
     int is_hdx[2] = { 0, 0 };
+#ifdef USE_MINIVHD
     int is_vhd[2] = { 0, 0 };
-    vhd_footer_t *vft = NULL;
-    uint8_t *empty;
-
+    int vhd_error = 0;
+    char opath[1024];
+    char fullpath[1024];
+    MVHDGeom vhd_geom;
+#endif
     img->base = 0;
 
+#ifdef USE_MINIVHD
     is_vhd[0] = image_is_vhd(fn, 0);
-    is_vhd[1] = image_is_vhd(fn, 1);
+    is_vhd[1] = image_is_vhd(fn, 1); 
+#endif
 
     if (img->loaded) {
 	if (img->file) {
 		(void)fclose(img->file);
 		img->file = NULL;
+	} 
+#ifdef USE_MINIVHD
+	else if (img->vhd) {
+		mvhd_close(img->vhd);
+		img->vhd = NULL;
 	}
+#endif
 	img->loaded = 0;
     }
 
@@ -606,42 +331,31 @@ hdd_image_load(int id)
 				fwrite(&zero, 1, 4, img->file);
 				fwrite(&zero, 1, 4, img->file);
 				img->type = 2;
-			} else if (is_vhd[1]) {
-				empty = (uint8_t *)mem_alloc(512);
-				memset(empty, 0x00, 512);
-				fseeko64(img->file, -512, SEEK_END);
-				fread(empty, 1, 512, img->file);
-				new_vhd_footer(&vft);
-				vhd_footer_from_bytes(vft, empty);
-				if (vft->type != 2) {
-					/* VHD is not fixed size */
-					DEBUG("VHD: Image is not fixed size\n");
-					free(vft);
-					vft = NULL;
-					free(empty);
-					fclose(img->file);
-					img->file = NULL;
-					memset(hdd[id].fn, 0, sizeof(hdd[id].fn));
-					return 0;
-				}
-				full_size = vft->orig_size;
-				hdd[id].tracks = vft->geom.cyl;
-				hdd[id].hpc = vft->geom.heads;
-				hdd[id].spt = vft->geom.spt;
-				free(vft);
-				vft = NULL;
-				free(empty);
-				img->type = 3;
+#ifdef USE_MINIVHD
+			} else if (is_vhd[0]) {
+				fclose(img->file);
+				img->file = NULL;
 
-				/* If we're here, this means there is a valid VHD footer in the
-		   		image, which means that by definition, all valid sectors
-		   		are there. */
+				vhd_geom.cyl = hdd[id].tracks;
+				vhd_geom.heads = hdd[id].hpc;
+				vhd_geom.spt = hdd[id].spt;
+				full_size = ((uint64_t) hdd[id].spt) *
+					    ((uint64_t) hdd[id].hpc) *
+					    ((uint64_t) hdd[id].tracks) << 9LL;
+				
+			
+				wcstombs(opath, fn, sizeof(opath));
+				img->vhd = mvhd_create_fixed(opath, vhd_geom, &vhd_error, NULL);
+				if (img->vhd == NULL)
+					DEBUG("hdd_image_load: could not create VHD file '%s': %s\n", opath, mvhd_strerr(vhd_error));
+				img->type = HDD_IMAGE_VHD;
+
 				img->last_sector = (uint32_t) (full_size >> 9) - 1;
 				img->loaded = 1;
 				return 1;
-			}
-			else
-				img->type = 0;
+#endif
+			} else 
+				img->type = HDD_IMAGE_RAW;
 			img->last_sector = 0;
 		}
 
@@ -650,24 +364,7 @@ hdd_image_load(int id)
 				((uint64_t) hdd[id].tracks) << 9LL;
 
 		ret = prepare_new_hard_disk(img, full_size);
-		if (is_vhd[0]) {
-			/* VHD image. */
-			/* Generate new footer. */
-			empty = (uint8_t *)mem_alloc(512);
-			memset(empty, 0x00, 512);
-			new_vhd_footer(&vft);
-			vft->orig_size = vft->curr_size = full_size;
-			vft->geom.cyl = hdd[id].tracks;
-			vft->geom.heads = hdd[id].hpc;
-			vft->geom.spt = hdd[id].spt;
-			generate_vhd_checksum(vft);
-			vhd_footer_to_bytes(empty, vft);
-			fseeko64(img->file, 0, SEEK_END);
-			fwrite(empty, 1, 512, img->file);
-			free(vft);
-			free(empty);
-			img->type = 3;
-		}
+
 		return ret;
 	} else {
 		/* Failed for another reason */
@@ -698,7 +395,7 @@ hdd_image_load(int id)
 		hdd[id].spt = spt;
 		hdd[id].hpc = hpc;
 		hdd[id].tracks = tracks;
-		img->type = 1;
+		img->type = HDD_IMAGE_HDI;
 	} else if (is_hdx[1]) {
 		img->base = 0x28;
 		fseeko64(img->file, 8, SEEK_SET);
@@ -721,12 +418,43 @@ hdd_image_load(int id)
 		hdd[id].tracks = tracks;
 		fread(&(hdd[id].at_spt), 1, 4, img->file);
 		fread(&(hdd[id].at_hpc), 1, 4, img->file);
-		img->type = 2;
-	} else {
+		img->type = HDD_IMAGE_HDX;
+#ifdef USE_MINIVHD
+	} else if (is_vhd[1]) {
+		fclose(img->file);
+		img->file = NULL;
+
+		wcstombs(opath, fn, sizeof(opath));
+		_fullpath(fullpath, opath, sizeof(fullpath)); /* May break linux */
+
+		img->vhd = mvhd_open(fullpath, 0, &vhd_error);
+
+		if (img->vhd == NULL) {
+			if (vhd_error == MVHD_ERR_FILE)
+				ERRLOG("hdd_image_load(): VHD: Error opening VHD file '%s': %s\n", fullpath, mvhd_strerr(vhd_error));
+			else
+				ERRLOG("hdd_image_load(): VHD: Error opening VHD file '%s': %s\n", fullpath, mvhd_strerr(vhd_error));
+		} else if (vhd_error == MVHD_ERR_TIMESTAMP) {
+			ERRLOG("hdd_image_load(): VHD: Parent/child timestamp mismatch for VHD file '%s'\n", fullpath);
+		}
+
+		vhd_geom = mvhd_get_geometry(img->vhd);
+		hdd[id].spt = vhd_geom.spt;
+		hdd[id].hpc = vhd_geom.heads;
+		hdd[id].tracks = vhd_geom.cyl;
+		full_size = mvhd_get_current_size(img->vhd);
+
+		img->type = HDD_IMAGE_VHD;
+
+		img->last_sector = (uint32_t) (full_size >> 9) - 1;
+		img->loaded = 1;
+		return 1;
+#endif
+    	} else { /* RAW image */
 		full_size = ((uint64_t) hdd[id].spt) *
 			    ((uint64_t) hdd[id].hpc) *
 			    ((uint64_t) hdd[id].tracks) << 9LL;
-		img->type = 0;
+		img->type = HDD_IMAGE_RAW;
 	}
     }
 
@@ -738,27 +466,6 @@ hdd_image_load(int id)
 	img->last_sector = (uint32_t) (full_size >> 9) - 1;
 	img->loaded = 1;
 	ret = 1;
-    }
-
-    if (is_vhd[0]) {
-	fseeko64(img->file, 0, SEEK_END);
-	s = ftello64(img->file);
-	if (s == (full_size + img->base)) {
-		/* VHD image: generate new footer. */
-		empty = (uint8_t *)mem_alloc(512);
-		memset(empty, 0x00, 512);
-		new_vhd_footer(&vft);
-		vft->orig_size = vft->curr_size = full_size;
-		vft->geom.cyl = hdd[id].tracks;
-		vft->geom.heads = hdd[id].hpc;
-		vft->geom.spt = hdd[id].spt;
-		generate_vhd_checksum(vft);
-		vhd_footer_to_bytes(empty, vft);
-		fwrite((uint8_t *)empty, 1, 512, img->file);
-		free(vft);
-		free(empty);
-		img->type = 3;
-	}
     }
 
     return ret;
@@ -773,7 +480,8 @@ hdd_image_seek(uint8_t id, uint32_t sector)
 
     img->pos = sector;
 
-    fseeko64(img->file, addr + img->base, SEEK_SET);
+    if (img->type != HDD_IMAGE_VHD)
+	fseeko64(img->file, addr + img->base, SEEK_SET);
 }
 
 
@@ -782,26 +490,37 @@ hdd_image_read(uint8_t id, uint32_t sector, uint32_t count, uint8_t *buffer)
 {
     hdd_image_t *img = &hdd_images[id];
     uint32_t i;
-
-    /* Move to the desired position in the image. */
-    fseeko64(img->file, ((uint64_t)sector << 9LL) + img->base, SEEK_SET);
-
-    /* Now read all (consecutive) blocks from the image. */
-    for (i = 0; i < count; i++) {
-	/* If past end of image, give up. */
-	if (ferror(img->file) || feof(img->file))
-		break;
-
-	/* Read a block. */
-	fread(buffer + (i << 9), 1, 512, img->file);
-
-	/* If error during read, give up. */
-	if (ferror(img->file))
-		break;
-
-	/* Update position. */
-	img->pos = sector + i;
+ 
+#ifdef USE_MINIVHD
+    if (img->type == HDD_IMAGE_VHD) {
+	int non_transferred_sectors = mvhd_read_sectors(img->vhd, sector, count, buffer);
+	img->pos = sector + count - non_transferred_sectors - 1;
     }
+
+    if (img->type != HDD_IMAGE_VHD) {
+#endif
+	/* Move to the desired position in the image. */
+	fseeko64(img->file, ((uint64_t)sector << 9LL) + img->base, SEEK_SET);
+
+	/* Now read all (consecutive) blocks from the image. */
+	for (i = 0; i < count; i++) {
+		/* If past end of image, give up. */
+		if (ferror(img->file) || feof(img->file))
+			break;
+
+		/* Read a block. */
+		fread(buffer + (i << 9), 1, 512, img->file);
+
+		/* If error during read, give up. */
+		if (ferror(img->file))
+			break;
+
+		/* Update position. */
+		img->pos = sector + i;
+	}
+#ifdef USE_MINIVHD
+    }
+#endif
 }
 
 
@@ -810,9 +529,17 @@ hdd_sectors(uint8_t id)
 {
     hdd_image_t *img = &hdd_images[id];
 
-    fseeko64(img->file, 0, SEEK_END);
+#ifdef USE_MINIVHD
+    if (img->type == HDD_IMAGE_VHD) {
+	return (uint32_t) (img->last_sector - 1);
+    } else {
+#endif
+	fseeko64(img->file, 0, SEEK_END);
 
-    return (uint32_t) ((ftello64(img->file) - img->base) >> 9);
+	return (uint32_t) ((ftello64(img->file) - img->base) >> 9);
+#ifdef USE_MINIVHD
+    }
+#endif
 }
 
 
@@ -822,7 +549,7 @@ hdd_image_read_ex(uint8_t id, uint32_t sector, uint32_t count, uint8_t *buffer)
     hdd_image_t *img = &hdd_images[id];
     uint32_t transfer_sectors = count;
     uint32_t sectors = hdd_sectors(id);
-
+    
     if ((sectors - sector) < transfer_sectors)
 	transfer_sectors = sectors - sector;
 
@@ -842,26 +569,40 @@ void
 hdd_image_write(uint8_t id, uint32_t sector, uint32_t count, uint8_t *buffer)
 {
     hdd_image_t *img = &hdd_images[id];
+#ifdef USE_MINIVHD
+    int remaining;
+#endif
     uint32_t i;
 
-    /* Move to the desired position in the image. */
-    fseeko64(img->file, ((uint64_t)sector << 9LL) + img->base, SEEK_SET);
+#ifdef USE_MINIVHD
+    if (img->type == HDD_IMAGE_VHD) {
+	remaining = mvhd_write_sectors(img->vhd, sector, count, buffer);
+	img->pos = sector + count - remaining - 1;
+    } else {
+#endif
+	/* Move to the desired position in the image. */
+	fseeko64(img->file, ((uint64_t)sector << 9LL) + img->base, SEEK_SET);
 
-    /* Now write all (consecutive) blocks to the image. */
-    for (i = 0; i < count; i++) {
-	/* Write a block. */
-	fwrite(buffer + (i << 9), 512, 1, img->file);
+	/* Now write all (consecutive) blocks to the image. */
+	for (i = 0; i < count; i++) {
+		/* Write a block. */
+		fwrite(buffer + (i << 9), 512, 1, img->file);
 
-	/* If error during write, give up. */
-	if (ferror(img->file))
-		break;
+		/* If error during write, give up. */
+		if (ferror(img->file))
+			break;
 
-	/* Update position. */
-	img->pos = sector + i;
+		/* Update position. */
+		img->pos = sector + i;
+	}
+#ifdef USE_MINIVHD		
     }
+#endif
 }
 
 
+#if 0
+// FIXME : not called by anything ?
 int
 hdd_image_write_ex(uint8_t id, uint32_t sector, uint32_t count, uint8_t *buffer)
 {
@@ -879,9 +620,10 @@ hdd_image_write_ex(uint8_t id, uint32_t sector, uint32_t count, uint8_t *buffer)
 
     if (ferror(img->file) || (count != transfer_sectors))
 	return 1;
-
+    	
     return 0;
 }
+#endif
 
 
 void
@@ -889,25 +631,37 @@ hdd_image_zero(uint8_t id, uint32_t sector, uint32_t count)
 {
     hdd_image_t *img = &hdd_images[id];
     uint8_t empty[512];
+#ifdef USE_MINIVHD
+    int remaining;
+#endif
     uint32_t i = 0;
 
-    memset(empty, 0x00, sizeof(empty));
+#ifdef USE_MINIVHD
+    if (img->type == HDD_IMAGE_VHD) {
+	remaining = mvhd_format_sectors (img->vhd, sector, count);
+	img->pos = sector + count - remaining - 1;
+    } else {
+#endif
+	memset(empty, 0x00, sizeof(empty));
 
-    /* Move to the desired position in the image. */
-    fseeko64(img->file, ((uint64_t)sector << 9LL) + img->base, SEEK_SET);
+	/* Move to the desired position in the image. */
+	fseeko64(img->file, ((uint64_t)sector << 9LL) + img->base, SEEK_SET);
 
-    /* Now write all (consecutive) blocks to the image. */
-    for (i = 0; i < count; i++) {
-	/* Write a block. */
-  	fwrite(empty, 512, 1, img->file);
+	/* Now write all (consecutive) blocks to the image. */
+	for (i = 0; i < count; i++) {
+		/* Write a block. */
+		fwrite(empty, 512, 1, img->file);
 
-	/* If error during write, give up. */
-	if (ferror(img->file))
-		break;
+		/* If error during write, give up. */
+		if (ferror(img->file))
+			break;
 
-	/* Update position. */
-	img->pos = sector + i;
+		/* Update position. */
+		img->pos = sector + i;
+	}
+#ifdef USE_MINIVHD
     }
+#endif
 }
 
 
@@ -935,7 +689,6 @@ hdd_image_zero_ex(uint8_t id, uint32_t sector, uint32_t count)
 	/* If error during write, give up. */
 	if (ferror(img->file))
 		break;
-
     }
 
     if (ferror(img->file) || (count != transfer_sectors))
@@ -971,7 +724,7 @@ hdd_image_specify(uint8_t id, int hpc, int spt)
 {
     hdd_image_t *img = &hdd_images[id];
 
-    if (img->type == 2) {
+    if (img->type == HDD_IMAGE_HDX) {
 	hdd[id].at_hpc = hpc;
 	hdd[id].at_spt = spt;
 
@@ -996,6 +749,12 @@ hdd_image_unload(uint8_t id, int fn_preserve)
 		(void)fclose(img->file);
 		img->file = NULL;
 	}
+#ifdef USE_MINIVHD
+	else if (img->vhd != NULL) {
+		mvhd_close(img->vhd);
+		img->vhd = NULL;
+	}
+#endif
 	img->loaded = 0;
     }
 
@@ -1020,7 +779,14 @@ hdd_image_close(uint8_t id)
     if (img->file != NULL) {
 	(void)fclose(img->file);
 	img->file = NULL;
+#ifdef USE_MINIVHD
+    } else if (img->vhd != NULL) {
+	mvhd_close(img->vhd);
+	img->vhd = NULL;
+#endif
     }
 
     memset(img, 0x00, sizeof(hdd_image_t));
+
+    img->loaded = 0;
 }

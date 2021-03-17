@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows systems using the MinGW32 environment.
 #
-# Version:	@(#)Makefile.mingw	1.0.100	2021/03/12
+# Version:	@(#)Makefile.mingw	1.0.102	2021/03/15
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -76,6 +76,7 @@ ifeq ($(DEV_BUILD), y)
  XL24		:= y
  WONDER		:= y
  HOSTCD		:= y
+ MINIVHD	:= y
 endif
 
 
@@ -129,6 +130,8 @@ VPATH		:= $(EXPATH) . cpu \
 		    devices/floppy devices/floppy/lzf \
 		    devices/disk devices/cdrom devices/scsi \
 		    devices/sound devices/video \
+		    $(EXTPATH)/libchdr $(EXTPATH)/libchdr/FLAC \
+		     $(EXTPATH)/libchdr/LZMA \
 		   machines ui win
 
 #
@@ -156,6 +159,12 @@ endif
 # Select the required build environment. We have, uhm, many..
 #
 ifeq ($(CROSS), y)
+ # Where are the cross-compiler tools located?
+ ifndef CROSS_PATH
+  # NO NOT CHANGE THIS DEFAULT VALUE - needed for TravisCI.
+  CROSS_PATH	:= /usr/bin/
+ endif
+
  # Cross-compiling (under Linux), select proper version.
  ifeq ($(X64), y)
   MINGW		:= x86_64-w64-mingw32
@@ -164,15 +173,15 @@ ifeq ($(CROSS), y)
  endif
 
  ifeq ($(X64), y)
-  CPP		:= /usr/bin/$(MINGW)-g++ -m64
-  CC		:= /usr/bin/$(MINGW)-gcc -m64
+  CPP		:= $(CROSS_PATH)$(MINGW)-g++ -m64
+  CC		:= $(CROSS_PATH)$(MINGW)-gcc -m64
  else
-  CPP		:= /usr/bin/$(MINGW)-g++ -m32
-  CC		:= /usr/bin/$(MINGW)-gcc -m32
+  CPP		:= $(CROSS_PATH)$(MINGW)-g++ -m32
+  CC		:= $(CROSS_PATH)$(MINGW)-gcc -m32
  endif
- PREPROC	:= /usr/bin/$(MINGW)-cpp -P
- WINDRES	:= /usr/bin/$(MINGW)-windres
- STRIP		:= /usr/bin/$(MINGW)-strip
+ PREPROC	:= $(CROSS_PATH)$(MINGW)-cpp -P
+ WINDRES	:= $(CROSS_PATH)$(MINGW)-windres
+ STRIP		:= $(CROSS_PATH)$(MINGW)-strip
  ifndef CAT
   CAT		:= cat
  endif
@@ -212,7 +221,7 @@ else
   STRIP		:= aarch64-w64-mingw32-strip
  endif
 
- SYSINC		:= -Iwin/mingw/include
+ SYSINC		:=
  SYSLIB		:=
 endif
 
@@ -261,9 +270,6 @@ ifdef BUILD
 endif
 ifdef COMMIT
  OPTS		+= -DCOMMIT=0x$(COMMIT)
-endif
-ifdef UPSTREAM
- OPTS		+= -DUPSTREAM=0x$(UPSTREAM)
 endif
 ifdef EXFLAGS
  OPTS		+= $(EXFLAGS)
@@ -339,7 +345,7 @@ ifeq ($(DYNAREC), y)
 		    codegen_ops.o \
 		    codegen_timing_common.o codegen_timing_486.o \
 		    codegen_timing_686.o codegen_timing_pentium.o \
-		    codegen_timing_winchip.o $(PLATCG)
+		    codegen_timing_winchip.o codegen_timing_winchip2.o $(PLATCG)
 endif
 
 # SLiRP: N=no, Y=yes,linked, D=yes,dynamic, S=yes,static (always dynamic)
@@ -497,6 +503,7 @@ endif
 ifneq ($(RESID), n)
  ifeq ($(RESID_PATH), )
   RESID_PATH	:= $(EXT_PATH)/resid
+  MISCOBJ	+= snd_ssi2001.o
  endif
  ifeq ($(RESID), d)
   OPTS		+= -DUSE_RESID=2
@@ -642,6 +649,53 @@ ifneq ($(PNG), n)
  ZLIB		:= $(PNG)
 endif
 
+# MiniVHD: N=no, Y=yes,linked, D=yes,dynamic, S=yes,static
+ifndef MINIVHD
+ MINIVHD	:= y
+endif
+ifneq ($(MINIVHD), n)
+ ifeq ($(MINIVHD_PATH), )
+  MINIVHD_PATH	:= $(EXT_PATH)/minivhd
+ endif
+ ifeq ($(MINIVHD), d)
+  OPTS		+= -DUSE_MINIVHD=2
+ else
+  OPTS		+= -DUSE_MINIVHD=1
+ endif
+ OPTS		+= -I$(MINIVHD_PATH)/include
+ ifeq ($(X64), y)
+  LIBS		+= -L$(MINIVHD_PATH)/lib/x64
+ else
+  LIBS		+= -L$(MINIVHD_PATH)/lib/x86
+ endif
+ ifeq ($(MINIVHD), y)
+  # FIXME: should be -lpng.dll
+  LIBS		+= -lminivhd.dll
+ endif
+ ifeq ($(PNG), s)
+  LIBS		+= -lminivhd
+ endif
+endif
+
+# libCHD: N=no, Y=yes
+ifndef LIBCHD
+ LIBCHD		:= n
+endif
+ifneq ($(LIBCHD), n)
+ ifeq ($(LIBCHD_PATH), )
+  LIBCHD_PATH	:= $(EXT_PATH)/libchdr
+ endif
+ OPTS		+= -DUSE_CHD -DHAVE_CONFIG_H -I$(LIBCHD_PATH) \
+		   -I$(LIBCHD_PATH)/lzma -I$(LIBCHD_PATH)/FLAC
+ MISCOBJ	+= libchdr_chd.o libchdr_cdrom.o libchdr_flac.o \
+		   libchdr_huffman.o libchdr_bitstream.o
+ MISCOBJ	+= stream_decoder.o bitreader.o format.o cpu_flac.o \
+		   crc.o fixed.o lpc.o md5.o memory.o \
+		   windows_unicode_filenames.o
+ MISCOBJ	+= LzmaDec.o LzmaEnc.o LzFind.o
+ ZLIB		:= $(LIBCHD)
+endif
+
 # ZLIB: N=no, Y=yes,linked, D=yes,dynamic, S=yes,static
 ifndef ZLIB
  ZLIB		:= n
@@ -681,11 +735,10 @@ else
 		   win_devconf.o win_snd_gain.o win_new_image.o
 endif
 
-
 # Options for the DEV branch.
 ifeq ($(DEV_BRANCH), y)
  OPTS		+= -DDEV_BRANCH
- DEVBROBJ	:=
+ DEVBROBJ	:= m_hp.o
 
  ifeq ($(AMD_K), y)
   OPTS		+= -DUSE_AMD_K
@@ -717,6 +770,11 @@ ifeq ($(DEV_BRANCH), y)
  ifeq ($(SUPERSPORT), y)
   OPTS		+= -DUSE_SUPERSPORT
   DEVBROBJ	+= m_zenith.o m_zenith_vid.o
+ endif
+
+ ifeq ($(SYMPHONY), y)
+  OPTS		+= -DUSE_SL
+  DEVBROBJ	+= m_sl82c460.o
  endif
 
  ifeq ($(PAS16), y)
@@ -782,12 +840,12 @@ LIBS		+= -static -lstdc++ -lgcc
 CFLAGS		:= $(WX_FLAGS) $(OPTS) $(DFLAGS) $(COPTIM) $(AOPTIM) \
 		   $(AFLAGS) -fomit-frame-pointer -mstackrealign \
 		   -fno-strict-aliasing \
-		   -Wall -Wundef #-Wshadow #-Wunused-parameter -Wmissing-declarations
+		   -Wall -Wundef #-Wmissing-declarations #-Wshadow #-Wunused-parameter
 
 CXXFLAGS	:= $(WX_FLAGS) $(OPTS) $(DFLAGS) $(COPTIM) $(AOPTIM) \
 		   $(AFLAGS) -fomit-frame-pointer -mstackrealign \
 		   -fno-strict-aliasing \
-		   -Wall -Wundef -Wunused-parameter -Wmissing-declarations \
+		   -Wall -Wundef -Wmissing-declarations -Wunused-parameter \
 		   -Wno-ctor-dtor-privacy -Woverloaded-virtual
 #		   -fvisibility=hidden -fvisibility-inlines-hidden
 
@@ -808,12 +866,19 @@ CPUOBJ		:= cpu.o cpu_table.o \
 		    808x.o 386.o x86seg.o x87.o \
 		    386_dynarec.o $(DYNARECOBJ)
 
-SYSOBJ		:= clk.o dma.o nmi.o pic.o pit.o ppi.o pci.o mca.o \
-		   mcr.o memregs.o nvr_at.o nvr_ps2.o port92.o
+SYSOBJ		:= apm.o clk.o dma.o nmi.o pic.o pit.o ppi.o pci.o \
+		   mca.o mcr.o memregs.o nvr_at.o nvr_ps2.o port92.o
 
-CHIPOBJ		:= neat.o scat.o headland.o \
-		    acc2168.o ali1429.o opti495.o sis471.o sis496.o \
-		    wd76c10.o intel4x0.o
+CHIPOBJ		:= neat.o scat.o scamp.o \
+		   headland.o \
+		   acc2036.o acc2168.o \
+		   cs82c100.o \
+		   sl82c460.o vl82c480.o \
+		   ali1429.o \
+		   opti495.o opti895.o \
+		   sis471.o sis496.o \
+		   wd76c10.o \
+		   intel4x0.o
 
 MCHOBJ		:= machine.o machine_table.o \
 		    m_xt.o \
@@ -828,11 +893,11 @@ MCHOBJ		:= machine.o machine_table.o \
 		    m_ps2_isa.o m_ps2_mca.o \
 		    m_at.o \
 		    m_neat.o m_headland.o m_scat.o \
-		    m_commodore.o \
+		    m_commodore.o m_pbell.o \
 		    m_tosh3100e.o m_tosh3100e_vid.o \
-		    m_ali.o m_opti495.o m_sis471.o m_sis496.o \
+		    m_ali.o m_opti495.o m_opti895.o m_sis471.o m_sis496.o \
 		    m_wd76c10.o m_intel4x0.o \
-		    m_acer.o m_aopen.o m_asus.o m_pbell.o m_tyan.o \
+		    m_acer.o m_aopen.o m_asus.o m_tyan.o \
 		    m_misc.o
 
 DEVOBJ		:= bugger.o \
@@ -842,9 +907,11 @@ DEVOBJ		:= bugger.o \
 		   parallel.o parallel_dev.o \
 		    prt_text.o prt_cpmap.o prt_escp.o \
 		   serial.o \
-		   sio_acc3221.o sio_fdc37c66x.o sio_fdc37c669.o \
-		   sio_fdc37c93x.o sio_pc87306.o sio_w83877f.o \
-		   sio_um8669f.o \
+		   i2c.o i2c_eeprom.o i2c_gpio.o \
+		   sio_acc3221.o sio_f82c710.o sio_fdc37c66x.o \
+		   sio_fdc37c669.o sio_fdc37c93x.o \
+		   sio_pc87306.o sio_pc87332.o \
+		   sio_w83877f.o sio_um8669f.o sio_detect.o \
 		   intel_flash.o intel_sio.o intel_piix.o \
 		   keyboard.o \
 		    keyboard_xt.o keyboard_at.o \
@@ -890,25 +957,24 @@ NETOBJ		:= network.o \
 		    net_ne2000.o net_wd80x3.o net_3c503.o
 
 SNDOBJ		:= sound.o \
-		    sound_dev.o \
 		    openal.o \
-		    snd_opl.o snd_opl_nuked.o \
 		    midi.o \
 		     midi_system.o midi_mt32.o midi_fluidsynth.o \
-		    snd_speaker.o \
-		    snd_lpt_dac.o snd_lpt_dss.o \
-		    snd_adlib.o snd_adlibgold.o \
-		    snd_ad1848.o \
-		    snd_audiopci.o \
-		    snd_cms.o \
-		    snd_gus.o \
-		    snd_sb.o snd_sb_dsp.o \
-		    snd_emu8k.o \
-		    snd_mpu401.o \
-		    snd_sn76489.o \
-		    snd_ssi2001.o \
-		    snd_wss.o \
-		    snd_ym7128.o
+		    sound_dev.o \
+		     snd_opl.o snd_opl_nuked.o \
+		     snd_speaker.o \
+		     snd_lpt_dac.o snd_lpt_dss.o \
+		     snd_adlib.o snd_adlibgold.o \
+		     snd_ad1848.o \
+		     snd_audiopci.o \
+		     snd_cms.o \
+		     snd_gus.o \
+		     snd_sb.o snd_sb_dsp.o \
+		     snd_emu8k.o \
+		     snd_mpu401.o \
+		     snd_sn76489.o \
+		     snd_wss.o \
+		     snd_ym7128.o
 
 VIDOBJ		:= video.o \
 		    video_dev.o \
@@ -923,11 +989,13 @@ VIDOBJ		:= video.o \
 		    vid_ega.o vid_ega_render.o \
 		    vid_svga.o vid_svga_render.o \
 		    vid_vga.o \
+		    vid_ddc.o \
 		    vid_ati_eeprom.o \
 		    vid_ati18800.o vid_ati28800.o \
 		    vid_ati_mach64.o vid_ati68860_ramdac.o \
-                    vid_att20c49x_ramdac.o vid_bt48x_ramdac.o \
-                    vid_av9194.o vid_icd2061.o vid_ics2595.o \
+		    vid_att20c49x_ramdac.o vid_bt48x_ramdac.o \
+		    vid_sc1148x_ramdac.o \
+		    vid_av9194.o vid_icd2061.o vid_ics2595.o \
 		    vid_cl54xx.o \
 		    vid_et4000.o vid_sc1502x_ramdac.o \
 		    vid_et4000w32.o vid_stg_ramdac.o \

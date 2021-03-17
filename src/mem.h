@@ -8,12 +8,12 @@
  *
  *		Definitions for the memory interface.
  *
- * Version:	@(#)mem.h	1.0.19	2021/02/19
+ * Version:	@(#)mem.h	1.0.21	2021/03/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *		Copyright 2008-2018 Sarah Walker.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -171,12 +171,10 @@ extern int		mem_a20_state,
 		: *(uint8_t *)(readlookup2[(a) >> 12] + (a)))
 
 #define readmemw(s,a) ((readlookup2[(uint32_t)((s)+(a))>>12]== (uintptr_t)-1 || \
-		       (s)==0xFFFFFFFF || (((s)+(a)) & 1)) \
-		? readmemwl(s,a) \
+		       (((s)+(a)) & 1)) ? readmemwl((s)+(a)) \
 		: *(uint16_t *)(readlookup2[(uint32_t)((s)+(a))>>12]+(uint32_t)((s)+(a))))
 #define readmeml(s,a) ((readlookup2[(uint32_t)((s)+(a))>>12]== (uintptr_t)-1 || \
-		       (s)==0xFFFFFFFF || (((s)+(a)) & 3)) \
-		? readmemll(s,a) \
+		       (((s)+(a)) & 3)) ? readmemll((s)+(a)) \
 		: *(uint32_t *)(readlookup2[(uint32_t)((s)+(a))>>12]+(uint32_t)((s)+(a))))
 
 
@@ -188,14 +186,12 @@ extern void	write_mem_w(uint32_t addr, uint16_t val);
 
 extern uint8_t	readmembl(uint32_t addr);
 extern void	writemembl(uint32_t addr, uint8_t val);
-extern uint8_t	readmemb386l(uint32_t seg, uint32_t addr);
-extern void	writememb386l(uint32_t seg, uint32_t addr, uint8_t val);
-extern uint16_t	readmemwl(uint32_t seg, uint32_t addr);
-extern void	writememwl(uint32_t seg, uint32_t addr, uint16_t val);
-extern uint32_t	readmemll(uint32_t seg, uint32_t addr);
-extern void	writememll(uint32_t seg, uint32_t addr, uint32_t val);
-extern uint64_t	readmemql(uint32_t seg, uint32_t addr);
-extern void	writememql(uint32_t seg, uint32_t addr, uint64_t val);
+extern uint16_t	readmemwl(uint32_t addr);
+extern void	writememwl(uint32_t addr, uint16_t val);
+extern uint32_t	readmemll(uint32_t addr);
+extern void	writememll(uint32_t addr, uint32_t val);
+extern uint64_t	readmemql(uint32_t addr);
+extern void	writememql(uint32_t addr, uint64_t val);
 
 extern uint8_t	*getpccache(uint32_t a);
 extern uint32_t	mmutranslatereal(uint32_t addr, int rw);
@@ -279,7 +275,34 @@ extern void	mem_remap_top(int kb);
 
 
 #ifdef EMU_CPU_H
-static __inline uint32_t get_phys_noabrt(uint32_t addr)
+static __inline uint32_t
+get_phys(uint32_t addr)
+{
+    if (! ((addr ^ get_phys_virt) & ~0xfff))
+	return get_phys_phys | (addr & 0xfff);
+
+    get_phys_virt = addr;
+
+    if (! (cr0 >> 31)) {
+	get_phys_phys = (addr & rammask) & ~0xfff;
+
+	return addr & rammask;
+    }
+
+    if (readlookup2[addr >> 12] != -1)
+	get_phys_phys = ((uintptr_t)readlookup2[addr >> 12] + (addr & ~0xfff)) - (uintptr_t)ram;
+    else {
+	get_phys_phys = (mmutranslatereal(addr, 0) & rammask) & ~0xfff;
+
+	if (!cpu_state.abrt && mem_addr_is_ram(get_phys_phys))
+		addreadlookup(get_phys_virt, get_phys_phys);
+    }
+
+    return get_phys_phys | (addr & 0xfff);
+}
+
+static __inline uint32_t 
+get_phys_noabrt(uint32_t addr)
 {
     uint32_t phys_addr;
 

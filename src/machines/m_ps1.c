@@ -22,14 +22,14 @@
  *		The reserved 384K is remapped to the top of extended memory.
  *		If this is not done then you get an error on startup.
  *
- * Version:	@(#)m_ps1.c	1.0.30	2019/05/17
+ * Version:	@(#)m_ps1.c	1.0.32	2021/03/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
- *		Copyright 2016-2018 Miran Grca.
+ *		Copyright 2017-2021 Fred N. van Kempen.
+ *		Copyright 2016-2021 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -64,6 +64,7 @@
 #include "../rom.h"
 #include "../device.h"
 #include "../nvr.h"
+#include "../devices/chipsets/vl82c480.h"
 #include "../devices/system/dma.h"
 #include "../devices/system/pic.h"
 #include "../devices/system/pit.h"
@@ -78,6 +79,7 @@
 #include "../devices/floppy/fdc.h"
 #include "../devices/disk/hdc.h"
 #include "../devices/disk/hdc_ide.h"
+#include "../devices/sio/sio.h"
 #include "../devices/sound/sound.h"
 #include "../devices/sound/snd_sn76489.h"
 #include "../devices/video/video.h"
@@ -126,13 +128,13 @@ snd_update_irq(ps1snd_t *snd)
 {
     if (((snd->status & snd->ctrl) & 0x12) && (snd->ctrl & 0x01))
 	picint(1 << 7);
-      else
+    else
 	picintc(1 << 7);
 }
 
 
 static uint8_t
-snd_read(uint16_t port, priv_t priv)
+snd_in(uint16_t port, priv_t priv)
 {
     ps1snd_t *snd = (ps1snd_t *)priv;
     uint8_t ret = 0xff;
@@ -174,7 +176,7 @@ snd_read(uint16_t port, priv_t priv)
 
 
 static void
-snd_write(uint16_t port, uint8_t val, priv_t priv)
+snd_out(uint16_t port, uint8_t val, priv_t priv)
 {
     ps1snd_t *snd = (ps1snd_t *)priv;
 
@@ -271,9 +273,9 @@ snd_init(const device_t *info, UNUSED(void *parent))
     sn76489_init(&snd->sn76489, 0x0205, 0x0001, SN76496, 4000000);
 
     io_sethandler(0x0200, 1,
-		  snd_read,NULL,NULL, snd_write,NULL,NULL, snd);
+		  snd_in,NULL,NULL, snd_out,NULL,NULL, snd);
     io_sethandler(0x0202, 6,
-		  snd_read,NULL,NULL, snd_write,NULL,NULL, snd);
+		  snd_in,NULL,NULL, snd_out,NULL,NULL, snd);
 
     timer_add(snd_callback, snd, &snd->timer_count, &snd->timer_enable);
 
@@ -338,8 +340,67 @@ recalc_memory(ps1_t *dev)
 }
 
 
+static uint8_t
+ps1_in(uint16_t port, priv_t priv)
+{
+    ps1_t *dev = (ps1_t *)priv;
+    uint8_t ret = 0xff;
+
+    switch (port) {
+	case 0x0091:		/* Card Select Feedback register */
+		ret = dev->reg_91;
+		dev->reg_91 = 0;
+		break;
+
+	case 0x0092:
+		ret = dev->reg_92;
+		break;
+
+	case 0x0094:
+		ret = dev->reg_94;
+		break;
+
+	case 0x00e1:
+		if (dev->model != 2011)
+			ret = dev->e0_regs[dev->e0_addr];
+		break;
+
+	case 0x0102:
+		if (dev->model == 2011)
+			ret = dev->reg_102 | 0x08;
+		  else
+			ret = dev->reg_102;
+		break;
+
+	case 0x0103:
+		ret = dev->reg_103;
+		break;
+
+	case 0x0104:
+		ret = dev->reg_104;
+		break;
+
+	case 0x0105:
+		if (dev->model == 2011)
+			ret = dev->reg_105;
+		else
+			ret = dev->reg_105 | 0x80;
+		break;
+
+	case 0x0190:
+		ret = dev->reg_190;
+		break;
+
+	default:
+		break;
+    }
+
+    return(ret);
+}
+
+
 static void
-ps1_write(uint16_t port, uint8_t val, priv_t priv)
+ps1_out(uint16_t port, uint8_t val, priv_t priv)
 {
     ps1_t *dev = (ps1_t *)priv;
 
@@ -351,9 +412,8 @@ ps1_write(uint16_t port, uint8_t val, priv_t priv)
 				cpu_set_edx();
 			}
 			dev->reg_92 = val & ~1;
-		} else {
+		} else
 			dev->reg_92 = val;    
-		}
 		mem_a20_alt = val & 2;
 		mem_a20_recalc();
 		break;
@@ -418,65 +478,6 @@ ps1_write(uint16_t port, uint8_t val, priv_t priv)
 }
 
 
-static uint8_t
-ps1_read(uint16_t port, priv_t priv)
-{
-    ps1_t *dev = (ps1_t *)priv;
-    uint8_t ret = 0xff;
-
-    switch (port) {
-	case 0x0091:		/* Card Select Feedback register */
-		ret = dev->reg_91;
-		dev->reg_91 = 0;
-		break;
-
-	case 0x0092:
-		ret = dev->reg_92;
-		break;
-
-	case 0x0094:
-		ret = dev->reg_94;
-		break;
-
-	case 0x00e1:
-		if (dev->model != 2011)
-			ret = dev->e0_regs[dev->e0_addr];
-		break;
-
-	case 0x0102:
-		if (dev->model == 2011)
-			ret = dev->reg_102 | 0x08;
-		  else
-			ret = dev->reg_102;
-		break;
-
-	case 0x0103:
-		ret = dev->reg_103;
-		break;
-
-	case 0x0104:
-		ret = dev->reg_104;
-		break;
-
-	case 0x0105:
-		if (dev->model == 2011)
-			ret = dev->reg_105;
-		  else
-			ret = dev->reg_105 | 0x80;
-		break;
-
-	case 0x0190:
-		ret = dev->reg_190;
-		break;
-
-	default:
-		break;
-    }
-
-    return(ret);
-}
-
-
 static void
 ps1_close(priv_t priv)
 {
@@ -517,6 +518,9 @@ ps1_init(const device_t *info, void *arg)
 		}
 	}
 
+	/* Set up the parallel port. */
+	parallel_setup(0, 0x03bc);
+
 	/* Enable the PS/1 VGA controller. */
 	device_add(&vga_ps1_device);
 
@@ -536,7 +540,10 @@ ps1_init(const device_t *info, void *arg)
 	config.video_card = VID_INTERNAL;
 	config.mouse_type = MOUSE_PS2;
 
-	io_sethandler(0x00e0, 2, ps1_read,NULL,NULL, ps1_write,NULL,NULL, dev);
+	/* Set up the parallel port. */
+	parallel_setup(0, 0x03bc);
+
+	io_sethandler(0x00e0, 2, ps1_in,NULL,NULL, ps1_out,NULL,NULL, dev);
 
 	if (machine_get_config_int("rom_shell")) {
 		DEBUG("PS1: loading ROM Shell..\n");
@@ -565,25 +572,26 @@ ps1_init(const device_t *info, void *arg)
 	config.hdc_type = HDC_INTERNAL;
 	config.mouse_type = MOUSE_PS2;
 
-	/* Enable the builtin FDC. */
-	device_add(&fdc_at_device);
-
 	/* Enable the builtin IDE port. */
 	device_add(&ide_isa_device);
+
+	/* Enable the chipset & SIO */
+	device_add(&vl82c480_device);
+	device_add(&pc87332_ps1_device);
+
+	if (config.video_card == VID_INTERNAL)
+		device_add(&gd5426_onboard_vlb_device);
 
 	device_add(&memregs_ed_device);
 
 	nmi_mask = 0x80;
     }
 
-    io_sethandler(0x0091, 1, ps1_read,NULL,NULL, ps1_write,NULL,NULL, dev);
-    io_sethandler(0x0092, 1, ps1_read,NULL,NULL, ps1_write,NULL,NULL, dev);
-    io_sethandler(0x0094, 1, ps1_read,NULL,NULL, ps1_write,NULL,NULL, dev);
-    io_sethandler(0x0102, 4, ps1_read,NULL,NULL, ps1_write,NULL,NULL, dev);
-    io_sethandler(0x0190, 1, ps1_read,NULL,NULL, ps1_write,NULL,NULL, dev);
-
-    /* Set up the parallel port. */
-    parallel_setup(0, 0x03bc);
+    io_sethandler(0x0091, 1, ps1_in,NULL,NULL, ps1_out,NULL,NULL, dev);
+    io_sethandler(0x0092, 1, ps1_in,NULL,NULL, ps1_out,NULL,NULL, dev);
+    io_sethandler(0x0094, 1, ps1_in,NULL,NULL, ps1_out,NULL,NULL, dev);
+    io_sethandler(0x0102, 4, ps1_in,NULL,NULL, ps1_out,NULL,NULL, dev);
+    io_sethandler(0x0190, 1, ps1_in,NULL,NULL, ps1_out,NULL,NULL, dev);
 
     /* Hack to prevent Game from being initialized there. */
     i = config.game_enabled;
@@ -602,14 +610,14 @@ ps1_init(const device_t *info, void *arg)
     device_add(&ps_nvr_device);
 
     device_add(&keyboard_ps2_ps1_device);
-
+	
     device_add(&mouse_ps2_device);
 
     /* Audio uses ports 200h,202-207h, so only initialize gameport on 201h. */
     if (config.game_enabled)
 	device_add(&game_201_device);
 
-    return((priv_t)dev);
+    return(dev);
 }
 
 
@@ -659,7 +667,7 @@ const device_t m_ps1_2011 = {
 
 
 static const machine_t m2121_info = {
-    MACHINE_ISA | MACHINE_AT | MACHINE_PS2 | MACHINE_HDC | MACHINE_VIDEO,
+    MACHINE_ISA | MACHINE_AT | MACHINE_PS2 | MACHINE_HDC | MACHINE_FDC_PS2 | MACHINE_VIDEO,
     MACHINE_VIDEO,
     1, 6, 1, 64, -1,
     {{"Intel",cpus_i386SX},{"AMD",cpus_Am386SX},{"Cyrix",cpus_486SLC}}
@@ -678,7 +686,7 @@ const device_t m_ps1_2121 = {
 
 
 static const machine_t m2133_info = {
-    MACHINE_ISA | MACHINE_VLB | MACHINE_AT | MACHINE_PS2 | MACHINE_HDC | MACHINE_NONMI,
+    MACHINE_ISA | MACHINE_VLB | MACHINE_AT | MACHINE_PS2 | MACHINE_HDC | MACHINE_VIDEO | MACHINE_NONMI,
     0,
     1, 64, 1, 128, -1,
     {{"Intel",cpus_i486},{"AMD",cpus_Am486},{"Cyrix",cpus_Cx486}}

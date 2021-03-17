@@ -8,13 +8,13 @@
  *
  *		Implementation of ISA-based PS/2 machines.
  *
- * Version:	@(#)m_ps2_isa.c	1.0.21	2019/05/17
+ * Version:	@(#)m_ps2_isa.c	1.0.23	2021/03/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -80,7 +80,7 @@ typedef struct {
 
 
 static uint8_t
-ps2_read(uint16_t port, priv_t priv)
+ps2_in(uint16_t port, priv_t priv)
 {
     ps2_t *dev = (ps2_t *)priv;
     uint8_t ret = 0xff;
@@ -132,7 +132,7 @@ ps2_read(uint16_t port, priv_t priv)
 
 
 static void
-ps2_write(uint16_t port, uint8_t val, priv_t priv)
+ps2_out(uint16_t port, uint8_t val, priv_t priv)
 {
     ps2_t *dev = (ps2_t *)priv;
 
@@ -198,14 +198,14 @@ ps2_write(uint16_t port, uint8_t val, priv_t priv)
 static void
 common_init(ps2_t *dev)
 {
-    io_sethandler(0x0091, 1, ps2_read,NULL,NULL, ps2_write,NULL,NULL, dev);
-    io_sethandler(0x0094, 1, ps2_read,NULL,NULL, ps2_write,NULL,NULL, dev);
-    io_sethandler(0x0102, 4, ps2_read,NULL,NULL, ps2_write,NULL,NULL, dev);
-    io_sethandler(0x0190, 1, ps2_read,NULL,NULL, ps2_write,NULL,NULL, dev);
+    io_sethandler(0x0091, 1, ps2_in,NULL,NULL, ps2_out,NULL,NULL, dev);
+    io_sethandler(0x0094, 1, ps2_in,NULL,NULL, ps2_out,NULL,NULL, dev);
+    io_sethandler(0x0102, 4, ps2_in,NULL,NULL, ps2_out,NULL,NULL, dev);
+    io_sethandler(0x0190, 1, ps2_in,NULL,NULL, ps2_out,NULL,NULL, dev);
 
-    io_sethandler(0x0320, 1, ps2_read,NULL,NULL, ps2_write,NULL,NULL, dev);
-    io_sethandler(0x0322, 1, ps2_read,NULL,NULL, ps2_write,NULL,NULL, dev);
-    io_sethandler(0x0324, 1, ps2_read,NULL,NULL, ps2_write,NULL,NULL, dev);
+    io_sethandler(0x0320, 1, ps2_in,NULL,NULL, ps2_out,NULL,NULL, dev);
+    io_sethandler(0x0322, 1, ps2_in,NULL,NULL, ps2_out,NULL,NULL, dev);
+    io_sethandler(0x0324, 1, ps2_in,NULL,NULL, ps2_out,NULL,NULL, dev);
 
     device_add_parent(&port92_device, (priv_t)dev);
 
@@ -250,7 +250,7 @@ ps2_init(const device_t *info, void *arg)
 
     device_add(&fdc_at_ps1_device);
 
-    switch(dev->type) {
+    switch (dev->type) {
 	case 0:		/* Model 30/286 */
 		device_add(&vga_ps1_device);
 		break;
@@ -258,7 +258,7 @@ ps2_init(const device_t *info, void *arg)
 
     common_init(dev);
 
-    return((priv_t)dev);
+    return(dev);
 }
 
 
@@ -271,7 +271,7 @@ static const CPU cpus_ps2_m30_286[] = {
 };
 
 static const machine_t m30_info = {
-    MACHINE_ISA | MACHINE_AT | MACHINE_PS2 | MACHINE_HDC_PS2,
+    MACHINE_ISA | MACHINE_AT | MACHINE_PS2 | MACHINE_FDC_PS2 | MACHINE_HDC_PS2,
     MACHINE_VIDEO,
     1, 16, 1, 64, -1,
     {{"",cpus_ps2_m30_286}}

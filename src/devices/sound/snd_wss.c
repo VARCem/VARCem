@@ -8,14 +8,14 @@
  *
  *		Implementation of the Windows Sound System sound device.
  *
- * Version:	@(#)snd_wss.c	1.0.12	2020/07/14
+ * Version:	@(#)snd_wss.c	1.0.14	2021/03/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		TheCollector1995, <mariogplayer@gmail.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2020 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *		Copyright 2016-2019 Miran Grca.
  *		Copyright 2018 TheCollector1995.
  *		Copyright 2016-2018 Miran Grca.
@@ -167,6 +167,15 @@ ncr_audio_mca_write(int port, uint8_t val, priv_t priv)
 }
 
 
+static uint8_t 
+ncr_audio_mca_feedb(priv_t priv)
+{
+	wss_t *dev = (wss_t *)priv;
+
+	return (dev ->pos_regs[2] & 1);
+}
+
+
 static void
 wss_close(priv_t priv)
 {
@@ -205,7 +214,7 @@ wss_init(const device_t *info, UNUSED(void *parent))
 	case 1:		/* NCR Business Audio MCA */
 		dev->pos_regs[0] = 0x16;
 		dev->pos_regs[1] = 0x51;		
-		mca_add(ncr_audio_mca_read, ncr_audio_mca_write, (priv_t)dev);
+		mca_add(ncr_audio_mca_read, ncr_audio_mca_write, ncr_audio_mca_feedb, NULL, (priv_t)dev);
 		break;
     }
 

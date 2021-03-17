@@ -8,13 +8,13 @@
  *
  *		Miscellaneous x86 CPU Instructions.
  *
- * Version:	@(#)x86_ops_int.h	1.0.1	2018/02/14
+ * Version:	@(#)x86_ops_int.h	1.0.2	2020/12/05
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2008-2018 Sarah Walker.
- *		Copyright 2016-2018 Miran Grca.
+ *		Copyright 2008-2020 Sarah Walker.
+ *		Copyright 2016-2020 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -38,7 +38,7 @@
 static int opINT3(uint32_t fetchdat)
 {
         int cycles_old = cycles; UN_USED(cycles_old);
-        if ((cr0 & 1) && (eflags & VM_FLAG) && (IOPL != 3))
+        if ((cr0 & 1) && (cpu_state.eflags & VM_FLAG) && (IOPL != 3))
         {
                 x86gpf(NULL,0);
                 return 1;
@@ -52,7 +52,7 @@ static int opINT3(uint32_t fetchdat)
 static int opINT1(uint32_t fetchdat)
 {
         int cycles_old = cycles; UN_USED(cycles_old);
-        if ((cr0 & 1) && (eflags & VM_FLAG) && (IOPL != 3))
+        if ((cr0 & 1) && (cpu_state.eflags & VM_FLAG) && (IOPL != 3))
         {
                 x86gpf(NULL,0);
                 return 1;
@@ -68,7 +68,7 @@ static int opINT(uint32_t fetchdat)
         int cycles_old = cycles; UN_USED(cycles_old);
         uint8_t temp = getbytef();
 
-        if ((cr0 & 1) && (eflags & VM_FLAG) && (IOPL != 3))
+        if ((cr0 & 1) && (cpu_state.eflags & VM_FLAG) && (IOPL != 3))
         {
                 if (cr4 & CR4_VME)
                 {
@@ -109,7 +109,7 @@ static int opINTO(uint32_t fetchdat)
 {
         int cycles_old = cycles; UN_USED(cycles_old);
         
-        if ((cr0 & 1) && (eflags & VM_FLAG) && (IOPL != 3))
+        if ((cr0 & 1) && (cpu_state.eflags & VM_FLAG) && (IOPL != 3))
         {
                 x86gpf(NULL,0);
                 return 1;

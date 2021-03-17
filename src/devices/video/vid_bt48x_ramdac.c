@@ -8,13 +8,13 @@
  *
  *		Brooktree Bt48x series true color RAMDAC emulation.
  *
- * Version:	@(#)vid_bt48x_ramdac.c	1.0.16	2019/05/17
+ * Version:	@(#)vid_bt48x_ramdac.c	1.0.18	2021/01/23
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2018,2019 Fred N. van Kempen.
- *		Copyright 2016-2019 Miran Grca.
+ *		Copyright 2018,2021 Fred N. van Kempen.
+ *		Copyright 2016-2021 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -186,7 +186,6 @@ bt48x_ramdac_out(uint16_t addr, int rs2, int rs3, uint8_t val, bt48x_ramdac_t *d
 					if (dev->type >= BT485A)
 						set_bpp(dev, svga);
 					svga->hwcursor.xsize = svga->hwcursor.ysize = (val & 4) ? 64 : 32;
-					svga->hwcursor.yoff = (svga->hwcursor.ysize == 32) ? 32 : 0;
 					svga->hwcursor.x = dev->hwc_x - svga->hwcursor.xsize;
 					svga->hwcursor.y = dev->hwc_y - svga->hwcursor.ysize;
 					svga->dac_addr = (svga->dac_addr & 0x00ff) | ((val & 0x03) << 8);
@@ -377,6 +376,14 @@ bt48x_ramdac_in(uint16_t addr, int rs2, int rs3, bt48x_ramdac_t *dev, svga_t *sv
     return temp;
 }
 
+void
+bt48x_recalctimings(bt48x_ramdac_t *dev, svga_t *svga)
+{
+    svga->interlace = dev->cr2 & 0x08;
+ 
+    if (dev->cr3 & 0x08)
+		svga->hdisp *= 2;	/* x2 clock multiplier */
+}
 
 void
 bt48x_hwcursor_draw(svga_t *svga, int displine)

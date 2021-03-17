@@ -9,12 +9,12 @@
  *		Implementation of the Iomega ZIP drive with SCSI(-like)
  *		commands, for both ATAPI and SCSI usage.
  *
- * Version:	@(#)zip.c	1.0.27	2019/05/17
+ * Version:	@(#)zip.c	1.0.29	2021/03/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2018 Miran Grca.
+ *		Copyright 2021 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -58,15 +58,15 @@
 
 /* Bits of 'status' */
 #define ERR_STAT		0x01
-#define DRQ_STAT		0x08 /* Data request */
+#define DRQ_STAT		0x08		// data request
 #define DSC_STAT                0x10
 #define SERVICE_STAT            0x10
 #define READY_STAT		0x40
 #define BUSY_STAT		0x80
 
 /* Bits of 'error' */
-#define ABRT_ERR		0x04 /* Command aborted */
-#define MCR_ERR			0x08 /* Media change request */
+#define ABRT_ERR		0x04		// command aborted
+#define MCR_ERR			0x08		// media change request
 
 
 #ifdef ENABLE_ZIP_LOG
@@ -469,7 +469,7 @@ static const mode_sense_pages_t mode_sense_pages_changeable250 = {
 }   };
 
 
-static void	do_callback(void *p);
+static void	call_back(priv_t);
 
 
 #ifdef _LOGGING
@@ -498,9 +498,9 @@ set_callback(zip_t *dev)
 
 
 static void
-set_signature(void *p)
+set_signature(priv_t priv)
 {
-    zip_t *dev = (zip_t *)p;
+    zip_t *dev = (zip_t *)priv;
 
     if (dev->id >= ZIP_NUM)
 	return;
@@ -513,14 +513,14 @@ set_signature(void *p)
 static int
 supports_pio(zip_t *dev)
 {
-    return (dev->drv->bus_mode & 1);
+    return(dev->drv->bus_mode & 1);
 }
 
 
 static int
 supports_dma(zip_t *dev)
 {
-    return (dev->drv->bus_mode & 2);
+    return(dev->drv->bus_mode & 2);
 }
 
 
@@ -551,9 +551,9 @@ current_mode(zip_t *dev)
 
 /* Translates ATAPI status (ERR_STAT flag) to SCSI status. */
 static int
-err_stat_to_scsi(void *p)
+err_stat_to_scsi(priv_t priv)
 {
-    zip_t *dev = (zip_t *)p;
+    zip_t *dev = (zip_t *)priv;
 
     if (dev->status & ERR_STAT)
 	return SCSI_STATUS_CHECK_CONDITION;
@@ -580,8 +580,7 @@ atapi_phase_to_scsi(zip_t *dev)
     } else {
 	if ((dev->phase & 3) == 3)
 		return 3;
-	else
-		return 4;
+	return 4;
     }
 
     return 0;
@@ -649,9 +648,9 @@ mode_sense_save(zip_t *dev)
 
 
 static int
-read_capacity(void *p, uint8_t *cdb, uint8_t *buffer, uint32_t *len)
+read_capacity(priv_t priv, uint8_t *cdb, uint8_t *buffer, uint32_t *len)
 {
-    zip_t *dev = (zip_t *)p;
+    zip_t *dev = (zip_t *)priv;
     int size;
 
     /* IMPORTANT: we return is the last LBA block. */
@@ -824,7 +823,7 @@ command_common(zip_t *dev)
     dev->phase = 1;
     dev->pos = 0;
     if (dev->packet_status == PHASE_COMPLETE) {
-	do_callback((void *) dev);
+	call_back((void *) dev);
 	dev->callback = 0LL;
     } else {
 	if (dev->drv->bus_type == ZIP_BUS_SCSI) {
@@ -1232,9 +1231,9 @@ do_rezero(zip_t *dev)
 
 
 static void
-do_reset(void *p)
+do_reset(priv_t priv)
 {
-    zip_t *dev = (zip_t *)p;
+    zip_t *dev = (zip_t *)priv;
 
     do_rezero(dev);
 
@@ -1288,9 +1287,9 @@ request_sense(zip_t *dev, uint8_t *buffer, uint8_t alloc_length, int desc)
 
 
 static void
-request_sense_scsi(void *p, uint8_t *buffer, uint8_t alloc_length)
+request_sense_scsi(priv_t priv, uint8_t *buffer, uint8_t alloc_length)
 {
-    zip_t *dev = (zip_t *) p;
+    zip_t *dev = (zip_t *)priv;
     int ready = 0;
 
     ready = (dev->drv->f != NULL);
@@ -1345,9 +1344,9 @@ buf_free(zip_t *dev)
 
 
 static void
-do_command(void *p, uint8_t *cdb)
+do_command(priv_t priv, uint8_t *cdb)
 {
-    zip_t *dev = (zip_t *)p;
+    zip_t *dev = (zip_t *)priv;
     int pos = 0, block_desc = 0;
     int ret;
     int32_t len, max_len;
@@ -2215,7 +2214,7 @@ pio_request(zip_t *dev, uint8_t out)
 
 	dev->status = BUSY_STAT;
 	dev->phase = 1;
-	do_callback(dev);
+	call_back(dev);
 
 	dev->callback = 0LL;
 	set_callback(dev);
@@ -2376,9 +2375,9 @@ write_to_dma(zip_t *dev)
 
 
 static void
-do_callback(void *p)
+call_back(priv_t priv)
 {
-    zip_t *dev = (zip_t *)p;
+    zip_t *dev = (zip_t *)priv;
     int ret;
 
     switch(dev->packet_status) {
@@ -2465,9 +2464,9 @@ do_callback(void *p)
 
 
 static uint32_t
-packet_read(void *p, int length)
+packet_read(priv_t priv, int length)
 {
-    zip_t *dev = (zip_t *) p;
+    zip_t *dev = (zip_t *)priv;
     uint16_t *zipbufferw;
     uint32_t *zipbufferl;
     uint32_t temp = 0;
@@ -2517,9 +2516,9 @@ packet_read(void *p, int length)
 
 
 static void
-packet_write(void *p, uint32_t val, int length)
+packet_write(priv_t priv, uint32_t val, int length)
 {
-    zip_t *dev = (zip_t *) p;
+    zip_t *dev = (zip_t *)priv;
     uint16_t *zipbufferw;
     uint32_t *zipbufferl;
 
@@ -2574,7 +2573,7 @@ packet_write(void *p, uint32_t val, int length)
 		dev->status = BUSY_STAT;
 		dev->packet_status = PHASE_COMMAND;
 		timer_process();
-		do_callback((void *) dev);
+		call_back((void *) dev);
 		timer_update_outstanding();
 	}
     }
@@ -2656,10 +2655,10 @@ get_timings(int ide_has_dma, int type)
 
 
 static void
-do_identify(void *p, int ide_has_dma)
+do_identify(priv_t priv, int ide_has_dma)
 {
-    ide_t *ide = (ide_t *)p;
-    zip_t *zip = (zip_t *)ide->p;
+    ide_t *ide = (ide_t *)priv;
+    zip_t *zip = (zip_t *)ide->sc;
 
     /* Using (2<<5) below makes the ASUS P/I-P54TP4XE misdentify the ZIP drive
        as a LS-120. */
@@ -2722,7 +2721,7 @@ pclog(0,"ZIP: attaching to SCSI device %d:%d\n", dev->drv->bus_id.scsi.id, dev->
 
 		sd->p = dev;
 		sd->command = do_command;
-		sd->callback = do_callback;
+		sd->callback = call_back;
 		sd->err_stat_to_scsi = err_stat_to_scsi;
 		sd->request_sense = request_sense_scsi;
 		sd->reset = do_reset;
@@ -2744,7 +2743,7 @@ pclog(0,"ZIP: attaching to IDE device %d\n", dev->drv->bus_id.ide_channel);
 		 */
 		if (id == NULL) break;
 
-		id->p = dev;
+		id->sc = dev;
 		id->get_max = get_max;
 		id->get_timings = get_timings;
 		id->identify = do_identify;
@@ -2752,7 +2751,7 @@ pclog(0,"ZIP: attaching to IDE device %d\n", dev->drv->bus_id.ide_channel);
 		id->packet_write = packet_write;
 		id->packet_read = packet_read;
 		id->stop = NULL;
-		id->packet_callback = do_callback;
+		id->packet_callback = call_back;
 		id->device_reset = do_reset;
 		id->interrupt_drq = 1;
 

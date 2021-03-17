@@ -8,7 +8,7 @@
  *
  *		Plantronics ColorPlus emulation.
  *
- * Version:	@(#)vid_colorplus.c	1.0.17	2019/05/13
+ * Version:	@(#)vid_colorplus.c	1.0.18	2020/09/27
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -486,3 +486,15 @@ const device_t colorplus_device = {
     &colorplus_timings,
     colorplus_config
 };
+
+const device_t colorplus_onboard_device = {
+    "Onboard Plantronics ColorPlus",
+    DEVICE_VIDEO(VID_TYPE_CGA) | DEVICE_ISA,
+    0,
+    NULL,
+    colorplus_init, colorplus_close, NULL,
+    NULL,
+    speed_changed,
+    NULL,
+    &colorplus_timings,
+    colorplus_config};

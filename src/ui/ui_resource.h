@@ -12,11 +12,11 @@
  *		those are not used by the platform code. This is easier to
  *		maintain.
  *
- * Version:	@(#)ui_resource.h	1.0.21	2019/05/17
+ * Version:	@(#)ui_resource.h	1.0.23	2020/12/02
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
- *		Copyright 2018,2019 Fred N. van Kempen.
+ *		Copyright 2018,2020 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -449,6 +449,15 @@
 #define  IDS_3518	3518		/* "SCSI" */
 #define  IDS_3519	3519		/* "USB" */
 
+/* VHD Type*/
+#define  IDS_3520	3520		/* "Fixed" */
+#define  IDS_3521	3521		/* "Sparse" */
+#define  IDS_3522	3522		/* "Differential" */
+#define  IDS_3523	3523		// "Parent and child disk timestamps..."
+#define  IDS_3524   3524        // "Could not fix VHD timestamp."
+#define  IDS_3540   3540        // "Small blocks (512 KB)"
+#define  IDS_3541   3541        // "Large Blocks (2 MB)"
+
 /* UI dialog: Settings (Add Hard Disk, 3525.) */
 #define  IDS_3525	3525		/* "Add Hard Disk" */
 #define  IDS_3526	3526		/* "Add New Hard Disk" */
@@ -463,6 +472,7 @@
 #define  IDS_3535	3535		/* "HDI or HDX image with a sect.." */
 #define  IDS_3536	3536		/* "Hard disk images (*.HDI;*.HD.." */
 #define  IDS_3537	3537		/* "Remember to partition and fo.." */
+#define  IDS_3538	3538		/* "Hard disk images (*.VHD)" */
 
 /* UI dialog: Settings (Floppy Drives, 3550.) */
 #define  IDS_3550	3550		/* "Floppy drives:" */
@@ -502,6 +512,7 @@
 #define  IDS_3921	3921		/* "Host CD/DVD Drive (%c:)" */
 #define  IDS_3922	3922		/* "CD-ROM images (*.iso;*.cu.." */
 #define  IDS_3923	3923		/* "&Mute" */
+#define  IDS_3924	3924		/* "CD-ROM images (*.iso;*.cu.." */
 #define IDS_3930	3930		/* "Disk %i (%ls): %ls" */
 #define IDS_3950	3950		/* "ZIP%03i %i (%ls): %ls" */
 #define  IDS_3951	3951		/* "ZIP images (*.im?)\0*.im..." */

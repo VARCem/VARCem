@@ -12,7 +12,7 @@
  *
  * FIXME:	Note the madness on line 1163, fix that somehow?  --FvK
  *
- * Version:	@(#)vid_et4000w32.c	1.0.23	2019/05/17
+ * Version:	@(#)vid_et4000w32.c	1.0.25	2020/12/02
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -198,7 +198,7 @@ et4000w32p_recalcmapping(et4000w32p_t *et4000)
                         case 0x0: case 0x4: case 0x8: case 0xC: /*128k at A0000*/
                         mem_map_set_addr(&svga->mapping, 0xa0000, 0x20000);
                         mem_map_disable(&et4000->mmu_mapping);
-                        svga->banked_mask = 0xffff;
+                        svga->banked_mask = 0x1ffff;
                         break;
                         case 0x1: /*64k at A0000*/
                         mem_map_set_addr(&svga->mapping, 0xa0000, 0x10000);
@@ -1253,6 +1253,8 @@ et4000w32p_init(const device_t *info, UNUSED(void *parent))
               et4000w32p_in, et4000w32p_out,
               et4000w32p_hwcursor_draw,
               NULL);
+
+    et4000->svga.hwcursor.ysize = 64;
 
     et4000->svga.ramdac = device_add(&stg_ramdac_device);
 

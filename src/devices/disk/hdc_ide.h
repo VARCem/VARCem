@@ -8,14 +8,14 @@
  *
  *		Definitions for the IDE module.
  *
- * Version:	@(#)hdc_ide.h	1.0.15	2019/05/17
+ * Version:	@(#)hdc_ide.h	1.0.17	2021/03/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
- *		Copyright 2016-2018 Miran Grca.
+ *		Copyright 2017-2021 Fred N. van Kempen.
+ *		Copyright 2016-2021 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -56,7 +56,7 @@ enum {
  *  Anything else = maximum mode
  *
  * This will eventually be hookable.
-*/
+ */
 enum {
     TYPE_PIO = 0,
     TYPE_SDMA,
@@ -77,7 +77,8 @@ enum {
 };
 
 
-typedef struct {
+#ifdef EMU_SCSI_DEVICE_H
+typedef struct ide_s {
     uint8_t atastat, error,
 	    command, fdisk;
 
@@ -102,7 +103,7 @@ typedef struct {
     uint8_t *sector_buffer;
 
     /* Stuff mostly used by ATAPI */
-    void	*p;
+    void	*sc;
     int		interrupt_drq;
 
     int		(*get_max)(int ide_has_dma, int type);
@@ -115,15 +116,24 @@ typedef struct {
     void	(*packet_callback)(void *p);
     void	(*device_reset)(void *p);
 } ide_t;
+#endif
 
 
 extern int	ideboard;
+
+#ifdef EMU_SCSI_DEVICE_H
 extern ide_t	*ide_drives[IDE_NUM+XTIDE_NUM];
+#endif
+
 extern tmrval_t	idecallback[5];
 
 
+#ifdef EMU_SCSI_DEVICE_H
 extern void	ide_irq_raise(ide_t *);
 extern void	ide_irq_lower(ide_t *);
+extern void	ide_allocate_buffer(ide_t *dev);
+extern void	ide_atapi_attach(ide_t *dev);
+#endif
 
 extern void	*ide_xtide_init(void);
 extern void	ide_xtide_close(void);
@@ -162,8 +172,6 @@ extern void	(*ide_bus_master_set_irq)(int channel, priv_t priv);
 extern priv_t	ide_bus_master_priv[2];
 
 extern void	ide_enable_pio_override(void);
-extern void	ide_allocate_buffer(ide_t *dev);
-extern void	ide_atapi_attach(ide_t *dev);
 
 
 #endif	/*EMU_IDE_H*/

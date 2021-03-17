@@ -8,13 +8,13 @@
  *
  *		SVGA renderers.
  *
- * Version:	@(#)vid_svga_render.c	1.0.18	2019/10/21
+ * Version:	@(#)vid_svga_render.c	1.0.19	2020/11/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2020 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -47,6 +47,13 @@
 #include "vid_svga.h"
 #include "vid_svga_render.h"
 
+void 
+svga_render_null(svga_t *svga)
+{
+        if (svga->firstline_draw == 2000)
+                svga->firstline_draw = svga->displine;
+        svga->lastline_draw = svga->displine;
+}
 
 void
 svga_render_blank(svga_t *svga)

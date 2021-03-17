@@ -189,7 +189,7 @@
  *		including the later update (DS12887A) which implemented a
  *		"century" register to be compatible with Y2K.
  *
- * Version:	@(#)nvr_at.c	1.0.24	2021/02/17
+ * Version:	@(#)nvr_at.c	1.0.25	2021/03/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -848,11 +848,9 @@ nvr_at_close(priv_t priv)
     dev->ptimer = 0;
     dev->utimer = 0;
 
-    nvr_close(nvr);
-
     free(dev->lock);
 
-    free(dev);
+    nvr_close(nvr);
 }
 
 

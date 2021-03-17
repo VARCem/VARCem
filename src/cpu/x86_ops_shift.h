@@ -8,13 +8,13 @@
  *
  *		Miscellaneous x86 CPU Instructions.
  *
- * Version:	@(#)x86_ops_shift.h	1.0.2	2019/05/17
+ * Version:	@(#)x86_ops_shift.h	1.0.3	2020/12/11
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2008-2018 Sarah Walker.
- *		Copyright 2016-2018 Miran Grca.
+ *		Copyright 2008-2020 Sarah Walker.
+ *		Copyright 2016-2020 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -50,9 +50,9 @@
                                 c--;                                                    \
                         }                                                               \
                         seteab(temp);           if (cpu_state.abrt) return 1;                     \
-                        flags &= ~(C_FLAG | V_FLAG);                                    \
-                        if (temp2) flags |= C_FLAG;                                     \
-                        if ((flags & C_FLAG) ^ (temp >> 7)) flags |= V_FLAG;            \
+                        cpu_state.flags &= ~(C_FLAG | V_FLAG);                                    \
+                        if (temp2) cpu_state.flags |= C_FLAG;                                     \
+                        if ((cpu_state.flags & C_FLAG) ^ (temp >> 7)) cpu_state.flags |= V_FLAG;            \
                         CLOCK_CYCLES((cpu_mod == 3) ? 3 : 7);                                 \
                         PREFETCH_RUN((cpu_mod == 3) ? 3 : 7, 2, rmdat, (cpu_mod == 3) ? 0:1,0,(cpu_mod == 3) ? 0:1,0, ea32); \
                         break;                                                          \
@@ -65,14 +65,14 @@
                                 c--;                                                    \
                         }                                                               \
                         seteab(temp);           if (cpu_state.abrt) return 1;                     \
-                        flags &= ~(C_FLAG | V_FLAG);                                    \
-                        if (temp2) flags |= C_FLAG;                                     \
-                        if ((temp ^ (temp >> 1)) & 0x40) flags |= V_FLAG;               \
+                        cpu_state.flags &= ~(C_FLAG | V_FLAG);                                    \
+                        if (temp2) cpu_state.flags |= C_FLAG;                                     \
+                        if ((temp ^ (temp >> 1)) & 0x40) cpu_state.flags |= V_FLAG;               \
                         CLOCK_CYCLES((cpu_mod == 3) ? 3 : 7);                                 \
                         PREFETCH_RUN((cpu_mod == 3) ? 3 : 7, 2, rmdat, (cpu_mod == 3) ? 0:1,0,(cpu_mod == 3) ? 0:1,0, ea32); \
                         break;                                                          \
                         case 0x10: /*RCL b,CL*/                                         \
-                        temp2 = flags & C_FLAG;                                         \
+                        temp2 = cpu_state.flags & C_FLAG;                                         \
                         if (is486) CLOCK_CYCLES_ALWAYS(c);                              \
                         while (c > 0)                                                   \
                         {                                                               \
@@ -82,14 +82,14 @@
                                 c--;                                                    \
                         }                                                               \
                         seteab(temp);           if (cpu_state.abrt) return 1;                     \
-                        flags &= ~(C_FLAG | V_FLAG);                                    \
-                        if (temp2) flags |= C_FLAG;                                     \
-                        if ((flags & C_FLAG) ^ (temp >> 7)) flags |= V_FLAG;            \
+                        cpu_state.flags &= ~(C_FLAG | V_FLAG);                                    \
+                        if (temp2) cpu_state.flags |= C_FLAG;                                     \
+                        if ((cpu_state.flags & C_FLAG) ^ (temp >> 7)) cpu_state.flags |= V_FLAG;            \
                         CLOCK_CYCLES((cpu_mod == 3) ? 9 : 10);                                \
                         PREFETCH_RUN((cpu_mod == 3) ? 9 : 10, 2, rmdat, (cpu_mod == 3) ? 0:1,0,(cpu_mod == 3) ? 0:1,0, ea32); \
                         break;                                                          \
                         case 0x18: /*RCR b,CL*/                                         \
-                        temp2 = flags & C_FLAG;                                         \
+                        temp2 = cpu_state.flags & C_FLAG;                                         \
                         if (is486) CLOCK_CYCLES_ALWAYS(c);                              \
                         while (c > 0)                                                   \
                         {                                                               \
@@ -99,9 +99,9 @@
                                 c--;                                                    \
                         }                                                               \
                         seteab(temp);           if (cpu_state.abrt) return 1;                     \
-                        flags &= ~(C_FLAG | V_FLAG);                                    \
-                        if (temp2) flags |= C_FLAG;                                     \
-                        if ((temp ^ (temp >> 1)) & 0x40) flags |= V_FLAG;               \
+                        cpu_state.flags &= ~(C_FLAG | V_FLAG);                                    \
+                        if (temp2) cpu_state.flags |= C_FLAG;                                     \
+                        if ((temp ^ (temp >> 1)) & 0x40) cpu_state.flags |= V_FLAG;               \
                         CLOCK_CYCLES((cpu_mod == 3) ? 9 : 10);                                \
                         PREFETCH_RUN((cpu_mod == 3) ? 9 : 10, 2, rmdat, (cpu_mod == 3) ? 0:1,0,(cpu_mod == 3) ? 0:1,0, ea32); \
                         break;                                                          \
@@ -142,9 +142,9 @@
                                 c--;                                                    \
                         }                                                               \
                         seteaw(temp);           if (cpu_state.abrt) return 1;                     \
-                        flags &= ~(C_FLAG | V_FLAG);                                    \
-                        if (temp2) flags |= C_FLAG;                                     \
-                        if ((flags & C_FLAG) ^ (temp >> 15)) flags |= V_FLAG;           \
+                        cpu_state.flags &= ~(C_FLAG | V_FLAG);                                    \
+                        if (temp2) cpu_state.flags |= C_FLAG;                                     \
+                        if ((cpu_state.flags & C_FLAG) ^ (temp >> 15)) cpu_state.flags |= V_FLAG;           \
                         CLOCK_CYCLES((cpu_mod == 3) ? 3 : 7);                                 \
                         PREFETCH_RUN((cpu_mod == 3) ? 3 : 7, 2, rmdat, (cpu_mod == 3) ? 0:1,0,(cpu_mod == 3) ? 0:1,0, ea32); \
                         break;                                                          \
@@ -157,14 +157,14 @@
                                 c--;                                                    \
                         }                                                               \
                         seteaw(temp);           if (cpu_state.abrt) return 1;                     \
-                        flags &= ~(C_FLAG | V_FLAG);                                    \
-                        if (temp2) flags |= C_FLAG;                                     \
-                        if ((temp ^ (temp >> 1)) & 0x4000) flags |= V_FLAG;             \
+                        cpu_state.flags &= ~(C_FLAG | V_FLAG);                                    \
+                        if (temp2) cpu_state.flags |= C_FLAG;                                     \
+                        if ((temp ^ (temp >> 1)) & 0x4000) cpu_state.flags |= V_FLAG;             \
                         CLOCK_CYCLES((cpu_mod == 3) ? 3 : 7);                                 \
                         PREFETCH_RUN((cpu_mod == 3) ? 3 : 7, 2, rmdat, (cpu_mod == 3) ? 0:1,0,(cpu_mod == 3) ? 0:1,0, ea32); \
                         break;                                                          \
                         case 0x10: /*RCL w, c*/                                         \
-                        temp2 = flags & C_FLAG;                                         \
+                        temp2 = cpu_state.flags & C_FLAG;                                         \
                         if (is486) CLOCK_CYCLES_ALWAYS(c);                              \
                         while (c > 0)                                                   \
                         {                                                               \
@@ -174,14 +174,14 @@
                                 c--;                                                    \
                         }                                                               \
                         seteaw(temp);           if (cpu_state.abrt) return 1;                     \
-                        flags &= ~(C_FLAG | V_FLAG);                                    \
-                        if (temp2) flags |= C_FLAG;                                     \
-                        if ((flags & C_FLAG) ^ (temp >> 15)) flags |= V_FLAG;           \
+                        cpu_state.flags &= ~(C_FLAG | V_FLAG);                                    \
+                        if (temp2) cpu_state.flags |= C_FLAG;                                     \
+                        if ((cpu_state.flags & C_FLAG) ^ (temp >> 15)) cpu_state.flags |= V_FLAG;           \
                         CLOCK_CYCLES((cpu_mod == 3) ? 9 : 10);                                \
                         PREFETCH_RUN((cpu_mod == 3) ? 9 : 10, 2, rmdat, (cpu_mod == 3) ? 0:1,0,(cpu_mod == 3) ? 0:1,0, ea32); \
                         break;                                                          \
                         case 0x18: /*RCR w, c*/                                         \
-                        temp2 = flags & C_FLAG;                                         \
+                        temp2 = cpu_state.flags & C_FLAG;                                         \
                         if (is486) CLOCK_CYCLES_ALWAYS(c);                              \
                         while (c > 0)                                                   \
                         {                                                               \
@@ -191,9 +191,9 @@
                                 c--;                                                    \
                         }                                                               \
                         seteaw(temp);           if (cpu_state.abrt) return 1;                     \
-                        flags &= ~(C_FLAG | V_FLAG);                                    \
-                        if (temp2) flags |= C_FLAG;                                     \
-                        if ((temp ^ (temp >> 1)) & 0x4000) flags |= V_FLAG;             \
+                        cpu_state.flags &= ~(C_FLAG | V_FLAG);                                    \
+                        if (temp2) cpu_state.flags |= C_FLAG;                                     \
+                        if ((temp ^ (temp >> 1)) & 0x4000) cpu_state.flags |= V_FLAG;             \
                         CLOCK_CYCLES((cpu_mod == 3) ? 9 : 10);                                \
                         PREFETCH_RUN((cpu_mod == 3) ? 9 : 10, 2, rmdat, (cpu_mod == 3) ? 0:1,0,(cpu_mod == 3) ? 0:1,0, ea32); \
                         break;                                                          \
@@ -234,9 +234,9 @@
                                 c--;                                                    \
                         }                                                               \
                         seteal(temp);           if (cpu_state.abrt) return 1;                     \
-                        flags &= ~(C_FLAG | V_FLAG);                                    \
-                        if (temp2) flags |= C_FLAG;                                     \
-                        if ((flags & C_FLAG) ^ (temp >> 31)) flags |= V_FLAG;           \
+                        cpu_state.flags &= ~(C_FLAG | V_FLAG);                                    \
+                        if (temp2) cpu_state.flags |= C_FLAG;                                     \
+                        if ((cpu_state.flags & C_FLAG) ^ (temp >> 31)) cpu_state.flags |= V_FLAG;           \
                         CLOCK_CYCLES((cpu_mod == 3) ? 3 : 7);                                 \
                         PREFETCH_RUN((cpu_mod == 3) ? 3 : 7, 2, rmdat, 0,(cpu_mod == 3) ? 0:1,0,(cpu_mod == 3) ? 0:1, ea32); \
                         break;                                                          \
@@ -249,9 +249,9 @@
                                 c--;                                                    \
                         }                                                               \
                         seteal(temp);           if (cpu_state.abrt) return 1;                     \
-                        flags &= ~(C_FLAG | V_FLAG);                                    \
-                        if (temp2) flags |= C_FLAG;                                     \
-                        if ((temp ^ (temp >> 1)) & 0x40000000) flags |= V_FLAG;         \
+                        cpu_state.flags &= ~(C_FLAG | V_FLAG);                                    \
+                        if (temp2) cpu_state.flags |= C_FLAG;                                     \
+                        if ((temp ^ (temp >> 1)) & 0x40000000) cpu_state.flags |= V_FLAG;         \
                         CLOCK_CYCLES((cpu_mod == 3) ? 3 : 7);                                 \
                         PREFETCH_RUN((cpu_mod == 3) ? 3 : 7, 2, rmdat, 0,(cpu_mod == 3) ? 0:1,0,(cpu_mod == 3) ? 0:1, ea32); \
                         break;                                                          \
@@ -266,14 +266,14 @@
                                 c--;                                                    \
                         }                                                               \
                         seteal(temp);           if (cpu_state.abrt) return 1;                     \
-                        flags &= ~(C_FLAG | V_FLAG);                                    \
-                        if (temp2) flags |= C_FLAG;                                     \
-                        if ((flags & C_FLAG) ^ (temp >> 31)) flags |= V_FLAG;           \
+                        cpu_state.flags &= ~(C_FLAG | V_FLAG);                                    \
+                        if (temp2) cpu_state.flags |= C_FLAG;                                     \
+                        if ((cpu_state.flags & C_FLAG) ^ (temp >> 31)) cpu_state.flags |= V_FLAG;           \
                         CLOCK_CYCLES((cpu_mod == 3) ? 9 : 10);                                \
                         PREFETCH_RUN((cpu_mod == 3) ? 9 : 10, 2, rmdat, 0,(cpu_mod == 3) ? 0:1,0,(cpu_mod == 3) ? 0:1, ea32); \
                         break;                                                          \
                         case 0x18: /*RCR l, c*/                                         \
-                        temp2 = flags & C_FLAG;                                         \
+                        temp2 = cpu_state.flags & C_FLAG;                                         \
                         if (is486) CLOCK_CYCLES_ALWAYS(c);                              \
                         while (c > 0)                                                   \
                         {                                                               \
@@ -283,9 +283,9 @@
                                 c--;                                                    \
                         }                                                               \
                         seteal(temp);           if (cpu_state.abrt) return 1;                     \
-                        flags &= ~(C_FLAG | V_FLAG);                                    \
-                        if (temp2) flags |= C_FLAG;                                     \
-                        if ((temp ^ (temp >> 1)) & 0x40000000) flags |= V_FLAG;         \
+                        cpu_state.flags &= ~(C_FLAG | V_FLAG);                                    \
+                        if (temp2) cpu_state.flags |= C_FLAG;                                     \
+                        if ((temp ^ (temp >> 1)) & 0x40000000) cpu_state.flags |= V_FLAG;         \
                         CLOCK_CYCLES((cpu_mod == 3) ? 9 : 10);                                \
                         PREFETCH_RUN((cpu_mod == 3) ? 9 : 10, 2, rmdat, 0,(cpu_mod == 3) ? 0:1,0,(cpu_mod == 3) ? 0:1, ea32); \
                         break;                                                          \
@@ -318,6 +318,8 @@ static int opC0_a16(uint32_t fetchdat)
         uint8_t temp, temp2 = 0;
         
         fetch_ea_16(fetchdat);
+        if (cpu_mod != 3)
+                SEG_CHECK_WRITE(cpu_state.ea_seg);
         c = readmemb(cs, cpu_state.pc) & 31; cpu_state.pc++;
         PREFETCH_PREFIX();
         temp = geteab();                if (cpu_state.abrt) return 1;
@@ -331,6 +333,8 @@ static int opC0_a32(uint32_t fetchdat)
         uint8_t temp, temp2 = 0;
         
         fetch_ea_32(fetchdat);
+        if (cpu_mod != 3)
+                SEG_CHECK_WRITE(cpu_state.ea_seg);
         c = readmemb(cs, cpu_state.pc) & 31; cpu_state.pc++;
         PREFETCH_PREFIX();
         temp = geteab();                if (cpu_state.abrt) return 1;
@@ -344,6 +348,8 @@ static int opC1_w_a16(uint32_t fetchdat)
         uint16_t temp, temp2 = 0;
         
         fetch_ea_16(fetchdat);
+        if (cpu_mod != 3)
+                SEG_CHECK_WRITE(cpu_state.ea_seg);
         c = readmemb(cs, cpu_state.pc) & 31; cpu_state.pc++;
         PREFETCH_PREFIX();
         temp = geteaw();                if (cpu_state.abrt) return 1;
@@ -357,6 +363,8 @@ static int opC1_w_a32(uint32_t fetchdat)
         uint16_t temp, temp2 = 0;
         
         fetch_ea_32(fetchdat);
+        if (cpu_mod != 3)
+                SEG_CHECK_WRITE(cpu_state.ea_seg);
         c = readmemb(cs, cpu_state.pc) & 31; cpu_state.pc++;
         PREFETCH_PREFIX();
         temp = geteaw();                if (cpu_state.abrt) return 1;
@@ -370,6 +378,8 @@ static int opC1_l_a16(uint32_t fetchdat)
         uint32_t temp, temp2 = 0;
         
         fetch_ea_16(fetchdat);
+        if (cpu_mod != 3)
+                SEG_CHECK_WRITE(cpu_state.ea_seg);
         c = readmemb(cs, cpu_state.pc) & 31; cpu_state.pc++;
         PREFETCH_PREFIX();
         temp = geteal();                if (cpu_state.abrt) return 1;
@@ -383,6 +393,8 @@ static int opC1_l_a32(uint32_t fetchdat)
         uint32_t temp, temp2 = 0;
         
         fetch_ea_32(fetchdat);
+        if (cpu_mod != 3)
+                SEG_CHECK_WRITE(cpu_state.ea_seg);
         c = readmemb(cs, cpu_state.pc) & 31; cpu_state.pc++;
         PREFETCH_PREFIX();
         temp = geteal();                if (cpu_state.abrt) return 1;
@@ -397,6 +409,8 @@ static int opD0_a16(uint32_t fetchdat)
         uint8_t temp, temp2 = 0;
         
         fetch_ea_16(fetchdat);
+        if (cpu_mod != 3)
+                SEG_CHECK_WRITE(cpu_state.ea_seg);
         temp = geteab();                if (cpu_state.abrt) return 1;
         OP_SHIFT_b(c, 0);
         return 0;
@@ -408,6 +422,8 @@ static int opD0_a32(uint32_t fetchdat)
         uint8_t temp, temp2 = 0;
         
         fetch_ea_32(fetchdat);
+        if (cpu_mod != 3)
+                SEG_CHECK_WRITE(cpu_state.ea_seg);
         temp = geteab();                if (cpu_state.abrt) return 1;
         OP_SHIFT_b(c, 1);
         return 0;
@@ -419,6 +435,8 @@ static int opD1_w_a16(uint32_t fetchdat)
         uint16_t temp, temp2 = 0;
         
         fetch_ea_16(fetchdat);
+        if (cpu_mod != 3)
+                SEG_CHECK_WRITE(cpu_state.ea_seg);
         temp = geteaw();                if (cpu_state.abrt) return 1;
         OP_SHIFT_w(c, 0);
         return 0;
@@ -430,6 +448,8 @@ static int opD1_w_a32(uint32_t fetchdat)
         uint16_t temp, temp2 = 0;
         
         fetch_ea_32(fetchdat);
+        if (cpu_mod != 3)
+                SEG_CHECK_WRITE(cpu_state.ea_seg);
         temp = geteaw();                if (cpu_state.abrt) return 1;
         OP_SHIFT_w(c, 1);
         return 0;
@@ -441,6 +461,8 @@ static int opD1_l_a16(uint32_t fetchdat)
         uint32_t temp, temp2 = 0;
         
         fetch_ea_16(fetchdat);
+        if (cpu_mod != 3)
+                SEG_CHECK_WRITE(cpu_state.ea_seg);
         temp = geteal();                if (cpu_state.abrt) return 1;
         OP_SHIFT_l(c, 0);
         return 0;
@@ -452,6 +474,8 @@ static int opD1_l_a32(uint32_t fetchdat)
         uint32_t temp, temp2 = 0;
         
         fetch_ea_32(fetchdat);
+        if (cpu_mod != 3)
+                SEG_CHECK_WRITE(cpu_state.ea_seg);
         temp = geteal();                if (cpu_state.abrt) return 1;
         OP_SHIFT_l(c, 1);
         return 0;
@@ -464,6 +488,8 @@ static int opD2_a16(uint32_t fetchdat)
         uint8_t temp, temp2 = 0;
         
         fetch_ea_16(fetchdat);
+        if (cpu_mod != 3)
+                SEG_CHECK_WRITE(cpu_state.ea_seg);
         c = CL & 31;
         temp = geteab();                if (cpu_state.abrt) return 1;
         OP_SHIFT_b(c, 0);
@@ -476,6 +502,8 @@ static int opD2_a32(uint32_t fetchdat)
         uint8_t temp, temp2 = 0;
         
         fetch_ea_32(fetchdat);
+        if (cpu_mod != 3)
+                SEG_CHECK_WRITE(cpu_state.ea_seg);
         c = CL & 31;
         temp = geteab();                if (cpu_state.abrt) return 1;
         OP_SHIFT_b(c, 1);
@@ -488,6 +516,8 @@ static int opD3_w_a16(uint32_t fetchdat)
         uint16_t temp, temp2 = 0;
         
         fetch_ea_16(fetchdat);
+        if (cpu_mod != 3)
+                SEG_CHECK_WRITE(cpu_state.ea_seg);
         c = CL & 31;
         temp = geteaw();                if (cpu_state.abrt) return 1;
         OP_SHIFT_w(c, 0);
@@ -500,6 +530,8 @@ static int opD3_w_a32(uint32_t fetchdat)
         uint16_t temp, temp2 = 0;
         
         fetch_ea_32(fetchdat);
+        if (cpu_mod != 3)
+                SEG_CHECK_WRITE(cpu_state.ea_seg);
         c = CL & 31;
         temp = geteaw();                if (cpu_state.abrt) return 1;
         OP_SHIFT_w(c, 1);
@@ -512,6 +544,8 @@ static int opD3_l_a16(uint32_t fetchdat)
         uint32_t temp, temp2 = 0;
         
         fetch_ea_16(fetchdat);
+        if (cpu_mod != 3)
+                SEG_CHECK_WRITE(cpu_state.ea_seg);
         c = CL & 31;
         temp = geteal();                if (cpu_state.abrt) return 1;
         OP_SHIFT_l(c, 0);
@@ -524,6 +558,8 @@ static int opD3_l_a32(uint32_t fetchdat)
         uint32_t temp, temp2 = 0;
         
         fetch_ea_32(fetchdat);
+        if (cpu_mod != 3)
+                SEG_CHECK_WRITE(cpu_state.ea_seg);
         c = CL & 31;
         temp = geteal();                if (cpu_state.abrt) return 1;
         OP_SHIFT_l(c, 1);
@@ -544,7 +580,7 @@ static int opD3_l_a32(uint32_t fetchdat)
                 seteaw(tempw);                  if (cpu_state.abrt) return 1;             \
                 setznp16(tempw);                                                \
                 flags_rebuild();                                                \
-                if (tempc) flags |= C_FLAG;                                     \
+                if (tempc) cpu_state.flags |= C_FLAG;                                     \
         }
 
 #define SHLD_l()                                                                \
@@ -557,7 +593,7 @@ static int opD3_l_a32(uint32_t fetchdat)
                 seteal(templ);                  if (cpu_state.abrt) return 1;             \
                 setznp32(templ);                                                \
                 flags_rebuild();                                                \
-                if (tempc) flags |= C_FLAG;                                     \
+                if (tempc) cpu_state.flags |= C_FLAG;                                     \
         }
 
 
@@ -573,7 +609,7 @@ static int opD3_l_a32(uint32_t fetchdat)
                 seteaw(tempw);                  if (cpu_state.abrt) return 1;             \
                 setznp16(tempw);                                                \
                 flags_rebuild();                                                \
-                if (tempc) flags |= C_FLAG;                                     \
+                if (tempc) cpu_state.flags |= C_FLAG;                                     \
         }
 
 #define SHRD_l()                                                                \
@@ -586,7 +622,7 @@ static int opD3_l_a32(uint32_t fetchdat)
                 seteal(templ);                  if (cpu_state.abrt) return 1;             \
                 setznp32(templ);                                                \
                 flags_rebuild();                                                \
-                if (tempc) flags |= C_FLAG;                                     \
+                if (tempc) cpu_state.flags |= C_FLAG;                                     \
         }
 
 #define opSHxD(operation)                                                       \
@@ -595,6 +631,8 @@ static int opD3_l_a32(uint32_t fetchdat)
                 int count;                                                      \
                                                                                 \
                 fetch_ea_16(fetchdat);                                          \
+                if (cpu_mod != 3)                                               \
+                        SEG_CHECK_WRITE(cpu_state.ea_seg);                      \
                 count = getbyte() & 31;                                         \
                 operation()                                                     \
                                                                                 \
@@ -607,6 +645,8 @@ static int opD3_l_a32(uint32_t fetchdat)
                 int count;                                                      \
                                                                                 \
                 fetch_ea_16(fetchdat);                                          \
+                if (cpu_mod != 3)                                               \
+                        SEG_CHECK_WRITE(cpu_state.ea_seg);                      \
                 count = CL & 31;                                                \
                 operation()                                                     \
                                                                                 \
@@ -619,6 +659,8 @@ static int opD3_l_a32(uint32_t fetchdat)
                 int count;                                                      \
                                                                                 \
                 fetch_ea_32(fetchdat);                                          \
+                if (cpu_mod != 3)                                               \
+                        SEG_CHECK_WRITE(cpu_state.ea_seg);                      \
                 count = getbyte() & 31;                                         \
                 operation()                                                     \
                                                                                 \
@@ -631,6 +673,8 @@ static int opD3_l_a32(uint32_t fetchdat)
                 int count;                                                      \
                                                                                 \
                 fetch_ea_32(fetchdat);                                          \
+                if (cpu_mod != 3)                                               \
+                        SEG_CHECK_WRITE(cpu_state.ea_seg);                      \
                 count = CL & 31;                                                \
                 operation()                                                     \
                                                                                 \

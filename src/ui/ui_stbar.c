@@ -8,12 +8,20 @@
  *
  *		Common UI support functions for the Status Bar module.
  *
+<<<<<<< HEAD
  * Version:	@(#)ui_stbar.c	1.0.22	2021/03/09
+=======
+ * Version:	@(#)ui_stbar.c	1.0.22	2020/12/02
+>>>>>>> be1408f0 (Some compile fix for optional modules)
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *
+<<<<<<< HEAD
  *		Copyright 2017-2021 Fred N. van Kempen.
+=======
+ *		Copyright 2017-2020 Fred N. van Kempen.
+>>>>>>> be1408f0 (Some compile fix for optional modules)
  *		Copyright 2016-2018 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -870,9 +878,13 @@ ui_sb_menu_command(int idm, uint8_t tag)
 
 		/* Browse for a new image to use. */
 		str = cdev->image_path;
+#ifndef USE_CHD
 		if (! dlg_file(get_string(IDS_3922), str, temp,
 			       DLG_FILE_LOAD|DLG_FILE_RO)) break;
-
+#else
+		if (! dlg_file(get_string(IDS_3924), str, temp,
+			       DLG_FILE_LOAD|DLG_FILE_RO)) break;
+#endif
 		/* Save current drive/pathname for later re-use. */
 		cdev->prev_host_drive = cdev->host_drive;
 		if (! cdev->prev_image_path)

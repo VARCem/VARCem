@@ -8,13 +8,13 @@
  *
  *		Definitions for the device handler.
  *
- * Version:	@(#)device.h	1.0.14	2019/05/15
+ * Version:	@(#)device.h	1.0.16	2021/03/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *		Copyright 2016-2019 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -53,26 +53,26 @@
 
 
 enum {
-    DEVICE_ALL = 0x00000000,		/* any/all device */
-    DEVICE_PCJR = 0x00000001,		/* requires an IBM PCjr */
-    DEVICE_AT = 0x00000002,		/* requires an AT-compatible system */
-    DEVICE_PS2 = 0x00000004,		/* requires a PS/1 or PS/2 system */
-    DEVICE_S100 = 0x0000100,		/* requires an S-100 bus slot */
-    DEVICE_ISA = 0x00000200,		/* requires an ISA bus slot */
-    DEVICE_EISA = 0x00000400,		/* requires an EISA bus slot */
-    DEVICE_MCA = 0x00000800,		/* requires an MCA bus slot */
-    DEVICE_VLB = 0x00001000,		/* requires a VLB bus slot */
-    DEVICE_PCI = 0x00002000,		/* requires a PCI bus slot */
-    DEVICE_AGP = 0x00004000,		/* requires an AGP bus slot */
-    DEVICE_CBUS = 0x00008000,		/* requires a C-BUS bus slot (PC98) */
-    DEVICE_UNSTABLE = 0x20000000,	/* unstable device, be cautious */
-    DEVICE_VIDTYPE = 0xc0000000,	/* video type bits in device flags */
-    DEVICE_ROOT = 0xffffffff		/* machine root device */
+    DEVICE_ALL = 0x00000000,		// any/all device
+    DEVICE_PCJR = 0x00000001,		// requires an IBM PCjr
+    DEVICE_AT = 0x00000002,		// requires an AT-compatible system
+    DEVICE_PS2 = 0x00000004,		// requires PS/2 ports
+    DEVICE_S100 = 0x0000100,		// requires an S-100 bus slot
+    DEVICE_ISA = 0x00000200,		// requires an ISA bus slot
+    DEVICE_EISA = 0x00000400,		// requires an EISA bus slot
+    DEVICE_MCA = 0x00000800,		// requires an MCA bus slot
+    DEVICE_VLB = 0x00001000,		// requires a VLB bus slot
+    DEVICE_PCI = 0x00002000,		// requires a PCI bus slot
+    DEVICE_AGP = 0x00004000,		// requires an AGP bus slot
+    DEVICE_CBUS = 0x00008000,		// requires a C-BUS bus slot (PC98)
+    DEVICE_UNSTABLE = 0x20000000,	// unstable device, be cautious
+    DEVICE_VIDTYPE = 0xc0000000,	// video type bits in device flags
+    DEVICE_ROOT = 0xffffffff		// machine root device
 };
-#define DEVICE_SYS_MASK	0x0006
-#define DEVICE_BUS_MASK	0xff00
+#define DEVICE_SYS_MASK		0x0006
+#define DEVICE_BUS_MASK		0xff00
 
-#define DEVICE_VIDEO(x)	(((x) & 0x03) << 30)
+#define DEVICE_VIDEO(x)		(((x) & 0x03) << 30)
 #define DEVICE_VIDEO_GET(x)	(((x) >> 30) & 0x03)
 
 
@@ -105,10 +105,10 @@ typedef struct {
 
 typedef struct _device_ {
     const char	*name;
-    uint32_t	flags;			/* system flags */
-    uint32_t	local;			/* flags local to device */
+    uint32_t	flags;			// system flags
+    uint32_t	local;			// flags local to device
 
-    const wchar_t *path;		/* path to BIOS/ROM file(s) */
+    const wchar_t *path;		// path to BIOS/ROM file(s)
 
     priv_t	(*init)(const struct _device_ *, void *arg);
     void	(*close)(priv_t);

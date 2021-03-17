@@ -8,14 +8,14 @@
  *
  *		ATI 28800 emulation (VGA Charger and Korean VGA)
  *
- * Version:	@(#)vid_ati28800.c	1.0.23	2019/05/17
+ * Version:	@(#)vid_ati28800.c	1.0.25	2020/11/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		greatpsycho, <greatpsycho@yahoo.com>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2020 Fred N. van Kempen.
  *		Copyright 2016-2019 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -389,7 +389,7 @@ ati28800_recalctimings(svga_t *svga)
 	case 0x09: svga->clock = cpu_clock / 32000000.0; break;
 	case 0x0A: svga->clock = cpu_clock / 37500000.0; break;
 	case 0x0B: svga->clock = cpu_clock / 39000000.0; break;
-	case 0x0C: svga->clock = cpu_clock / 40000000.0; break;
+	case 0x0C: svga->clock = cpu_clock / 50350000.0; break;
 	case 0x0D: svga->clock = cpu_clock / 56644000.0; break;
 	case 0x0E: svga->clock = cpu_clock / 75000000.0; break;
 	case 0x0F: svga->clock = cpu_clock / 65000000.0; break;
@@ -403,14 +403,6 @@ ati28800_recalctimings(svga_t *svga)
 	svga->hdisp <<= 1;
 	svga->htotal <<= 1;
 	svga->rowoffset <<= 1;
-    }
-
-    if (svga->crtc[0x17] & 4) {
-	svga->vtotal <<= 1;
-	svga->dispend <<= 1;
-	svga->vsyncstart <<= 1;
-	svga->split <<= 1;
-	svga->vblankstart <<= 1;
     }
 
     if (!svga->scrblank && (dev->regs[0xb0] & 0x20)) {

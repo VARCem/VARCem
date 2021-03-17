@@ -8,11 +8,11 @@
  *
  *		Definitions for the Super I/O chips.
  *
- * Version:	@(#)sio.h	1.0.3	2019/05/02
+ * Version:	@(#)sio.h	1.0.6	2021/03/16
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -52,6 +52,8 @@ extern const device_t	sio_detect_device;
 
 extern const device_t	acc3221_device;
 
+extern const device_t	f82c710_device;
+
 extern const device_t	fdc37c663_device;
 
 extern const device_t	fdc37c665_device;
@@ -63,6 +65,8 @@ extern const device_t	fdc37c932fr_device;
 extern const device_t	fdc37c935_device;
 
 extern const device_t	pc87306_device;
+extern const device_t	pc87332_device;
+extern const device_t	pc87332_ps1_device;
 
 extern const device_t	um8669f_device;
 

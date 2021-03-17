@@ -8,11 +8,11 @@
  *
  *		String table for the application, shared by all platforms.
  *
- * Version:	@(#)VARCem.def	1.0.6	2020/07/14
+ * Version:	@(#)VARCem.def	1.0.9	2021/01/03
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
- *		Copyright 2018-2020 Fred N. van Kempen.
+ *		Copyright 2018-2021 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -247,6 +247,15 @@ STRTBL( IDS_3517, STR_3517 )
 STRTBL( IDS_3518, STR_3518 )
 STRTBL( IDS_3519, STR_3519 )
 
+/* VHD */
+STRTBL( IDS_3520, STR_3520 )
+STRTBL( IDS_3521, STR_3521 )
+STRTBL( IDS_3522, STR_3522 )
+STRTBL( IDS_3523, STR_3523 )
+STRTBL( IDS_3524, STR_3524 )
+STRTBL( IDS_3540, STR_3540 )
+STRTBL( IDS_3541, STR_3541 )
+
 /* UI dialog: Settings (Add Hard Disk, 3525.) */
 STRTBL( IDS_3525, STR_3525 )
 STRTBL( IDS_3526, STR_3526 )
@@ -261,6 +270,7 @@ STRTBL( IDS_3534, STR_3534 )
 STRTBL( IDS_3535, STR_3535 )
 STRTBL( IDS_3536, STR_3536 )
 STRTBL( IDS_3537, STR_3537 )
+STRTBL( IDS_3538, STR_3538 )
 
 /* UI dialog: Settings (Floppy Drives, 3550.) */
 STRTBL( IDS_3550, STR_3550 )
@@ -300,6 +310,7 @@ STRTBL( IDS_3920, STR_3920 )
 STRTBL( IDS_3921, STR_3921 )
 STRTBL( IDS_3922, STR_3922 )
 STRTBL( IDS_3923, STR_3923 )
+STRTBL( IDS_3924, STR_3924 )
 STRTBL( IDS_3930, STR_3930 )
 STRTBL( IDS_3950, STR_3950 )
 STRTBL( IDS_3951, STR_3951 )
@@ -365,7 +376,7 @@ STRTBL( IDS_4073, STR_4073 )
 /* UI menu: Tools (4080.) */
 STRTBL( IDS_TOOLS, STR_TOOLS )
 STRTBL( IDS_4081, STR_4081 )
-STRTBL( IDS_4082, STR_4082 )
+STRTBL( IDS_4082, STR_4082 )
 STRTBL( IDS_4083, STR_4083 )
 STRTBL( IDS_4084, STR_4084 )
 STRTBL( IDS_4085, STR_4085 )

@@ -8,13 +8,13 @@
  *
  *		Miscellaneous x87 FPU Instructions.
  *
- * Version:	@(#)x87_ops_arith.h	1.0.2	2018/10/05
+ * Version:	@(#)x87_ops_arith.h	1.0.3	2020/12/11
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2008-2018 Sarah Walker.
- *		Copyright 2016-2018 Miran Grca.
+ *		Copyright 2008-2020 Sarah Walker.
+ *		Copyright 2016-2020 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -41,6 +41,7 @@ static int opFADD ## name ## _a ## a_size(uint32_t fetchdat)    \
         optype t;                                               \
         FP_ENTER();                                             \
         fetch_ea_ ## a_size(fetchdat);                          \
+        SEG_CHECK_READ(cpu_state.ea_seg);                       \
         load_var = get(); if (cpu_state.abrt) return 1;                   \
         if ((cpu_state.npxc >> 10) & 3)                                   \
                 fesetround(rounding_modes[(cpu_state.npxc >> 10) & 3]);   \
@@ -56,6 +57,7 @@ static int opFCOM ## name ## _a ## a_size(uint32_t fetchdat)    \
         optype t;                                               \
         FP_ENTER();                                             \
         fetch_ea_ ## a_size(fetchdat);                          \
+        SEG_CHECK_READ(cpu_state.ea_seg);                       \
         load_var = get(); if (cpu_state.abrt) return 1;                   \
         cpu_state.npxs &= ~(C0|C2|C3);                                    \
         cpu_state.npxs |= x87_compare(ST(0), (double)use_var);            \
@@ -67,6 +69,7 @@ static int opFCOMP ## name ## _a ## a_size(uint32_t fetchdat)   \
         optype t;                                               \
         FP_ENTER();                                             \
         fetch_ea_ ## a_size(fetchdat);                          \
+        SEG_CHECK_READ(cpu_state.ea_seg);                       \
         load_var = get(); if (cpu_state.abrt) return 1;                   \
         cpu_state.npxs &= ~(C0|C2|C3);                                    \
         cpu_state.npxs |= x87_compare(ST(0), (double)use_var);            \
@@ -79,6 +82,7 @@ static int opFDIV ## name ## _a ## a_size(uint32_t fetchdat)    \
         optype t;                                               \
         FP_ENTER();                                             \
         fetch_ea_ ## a_size(fetchdat);                          \
+        SEG_CHECK_READ(cpu_state.ea_seg);                       \
         load_var = get(); if (cpu_state.abrt) return 1;                   \
         x87_div(ST(0), ST(0), use_var);                         \
         cpu_state.tag[cpu_state.TOP] &= ~TAG_UINT64;                                \
@@ -90,6 +94,7 @@ static int opFDIVR ## name ## _a ## a_size(uint32_t fetchdat)   \
         optype t;                                               \
         FP_ENTER();                                             \
         fetch_ea_ ## a_size(fetchdat);                          \
+        SEG_CHECK_READ(cpu_state.ea_seg);                       \
         load_var = get(); if (cpu_state.abrt) return 1;                   \
         x87_div(ST(0), use_var, ST(0));                         \
         cpu_state.tag[cpu_state.TOP] &= ~TAG_UINT64;                                \
@@ -101,6 +106,7 @@ static int opFMUL ## name ## _a ## a_size(uint32_t fetchdat)    \
         optype t;                                               \
         FP_ENTER();                                             \
         fetch_ea_ ## a_size(fetchdat);                          \
+        SEG_CHECK_READ(cpu_state.ea_seg);                       \
         load_var = get(); if (cpu_state.abrt) return 1;                   \
         ST(0) *= use_var;                                       \
         cpu_state.tag[cpu_state.TOP] &= ~TAG_UINT64;                                \
@@ -112,6 +118,7 @@ static int opFSUB ## name ## _a ## a_size(uint32_t fetchdat)    \
         optype t;                                               \
         FP_ENTER();                                             \
         fetch_ea_ ## a_size(fetchdat);                          \
+        SEG_CHECK_READ(cpu_state.ea_seg);                       \
         load_var = get(); if (cpu_state.abrt) return 1;                   \
         ST(0) -= use_var;                                       \
         cpu_state.tag[cpu_state.TOP] &= ~TAG_UINT64;                                \
@@ -123,6 +130,7 @@ static int opFSUBR ## name ## _a ## a_size(uint32_t fetchdat)   \
         optype t;                                               \
         FP_ENTER();                                             \
         fetch_ea_ ## a_size(fetchdat);                          \
+        SEG_CHECK_READ(cpu_state.ea_seg);                       \
         load_var = get(); if (cpu_state.abrt) return 1;                   \
         ST(0) = use_var - ST(0);                                \
         cpu_state.tag[cpu_state.TOP] &= ~TAG_UINT64;                                \
@@ -238,9 +246,9 @@ static int opFCOMI(uint32_t fetchdat)
         cpu_state.pc++;
         DEBUG("FICOM\n");
         flags_rebuild();
-        flags &= ~(Z_FLAG | P_FLAG | C_FLAG);
-        if (ST(0) == ST(fetchdat & 7))     flags |= Z_FLAG;
-        else if (ST(0) < ST(fetchdat & 7)) flags |= C_FLAG;
+        cpu_state.flags &= ~(Z_FLAG | P_FLAG | C_FLAG);
+        if (ST(0) == ST(fetchdat & 7))     cpu_state.flags |= Z_FLAG;
+        else if (ST(0) < ST(fetchdat & 7)) cpu_state.flags |= C_FLAG;
         CLOCK_CYCLES(4);
         return 0;
 }
@@ -250,9 +258,9 @@ static int opFCOMIP(uint32_t fetchdat)
         cpu_state.pc++;
         DEBUG("FICOMP\n");
         flags_rebuild();
-        flags &= ~(Z_FLAG | P_FLAG | C_FLAG);
-        if (ST(0) == ST(fetchdat & 7))     flags |= Z_FLAG;
-        else if (ST(0) < ST(fetchdat & 7)) flags |= C_FLAG;
+        cpu_state.flags &= ~(Z_FLAG | P_FLAG | C_FLAG);
+        if (ST(0) == ST(fetchdat & 7))     cpu_state.flags |= Z_FLAG;
+        else if (ST(0) < ST(fetchdat & 7)) cpu_state.flags |= C_FLAG;
         x87_pop();
         CLOCK_CYCLES(4);
         return 0;
@@ -447,9 +455,9 @@ static int opFUCOMI(uint32_t fetchdat)
         cpu_state.pc++;
         DEBUG("FUCOMI\n");
         flags_rebuild();
-        flags &= ~(Z_FLAG | P_FLAG | C_FLAG);
-        if (ST(0) == ST(fetchdat & 7))     flags |= Z_FLAG;
-        else if (ST(0) < ST(fetchdat & 7)) flags |= C_FLAG;
+        cpu_state.flags &= ~(Z_FLAG | P_FLAG | C_FLAG);
+        if (ST(0) == ST(fetchdat & 7))     cpu_state.flags |= Z_FLAG;
+        else if (ST(0) < ST(fetchdat & 7)) cpu_state.flags |= C_FLAG;
         CLOCK_CYCLES(4);
         return 0;
 }
@@ -459,9 +467,9 @@ static int opFUCOMIP(uint32_t fetchdat)
         cpu_state.pc++;
         DEBUG("FUCOMIP\n");
         flags_rebuild();
-        flags &= ~(Z_FLAG | P_FLAG | C_FLAG);
-        if (ST(0) == ST(fetchdat & 7))     flags |= Z_FLAG;
-        else if (ST(0) < ST(fetchdat & 7)) flags |= C_FLAG;
+        cpu_state.flags &= ~(Z_FLAG | P_FLAG | C_FLAG);
+        if (ST(0) == ST(fetchdat & 7))     cpu_state.flags |= Z_FLAG;
+        else if (ST(0) < ST(fetchdat & 7)) cpu_state.flags |= C_FLAG;
         x87_pop();
         CLOCK_CYCLES(4);
         return 0;

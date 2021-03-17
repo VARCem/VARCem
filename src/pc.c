@@ -8,7 +8,7 @@
  *
  *		Main emulator module where most things are controlled.
  *
- * Version:	@(#)pc.c	1.0.82	2021/03/14
+ * Version:	@(#)pc.c	1.0.83	2021/03/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -246,7 +246,7 @@ pclog_dump(int num)
     /* Disable the repeat-detection. */
     pclog_repeat(0);
 
-    addr = (uint32_t)(_cs.base | cpu_state.pc);
+    addr = (uint32_t)(cs | cpu_state.pc);
 
     while (i < num) {
 	if (sp == NULL) {
@@ -835,25 +835,25 @@ pc_close(thread_t *ptr)
 
     ui_mouse_capture(0);
 
-    zip_close();
-
-    scsi_disk_close();
-
 //    floppy_close();
 
     if (dump_on_exit)
 	pic_dump();
     cpu_dumpregs(0);
 
-    device_close_all();
-
     video_close();
+
+    device_close_all();
 
     network_close();
 
     sound_close();
 
     cdrom_close();
+
+	zip_close();
+
+    scsi_disk_close();
 }
 
 
@@ -864,6 +864,8 @@ pc_reset_hard_close(void)
 
     mouse_close();
 
+    device_close_all();
+
     cdrom_close();
 
     zip_close();
@@ -873,8 +875,6 @@ pc_reset_hard_close(void)
 #if 0
     sound_close();
 #endif
-
-    device_close_all();
 }
 
 
@@ -943,6 +943,8 @@ pc_reset_hard_init(void)
 		break;
     }
     fdd_reset();
+
+    mouse_reset();
 
     /* Reset the Hard Disk module. */
 //FIXME: move to disk_reset()
@@ -1019,7 +1021,7 @@ pc_reset(int hard)
 
     if (hard)
         pc_reset_hard();
-      else
+    else
         keyboard_cad();
 
     pc_pause(0);

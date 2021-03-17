@@ -52,12 +52,12 @@
  *		however, are auto-configured by the system software as
  *		shown above.
  *
- * Version:	@(#)hdc_esdi_mca.c	1.0.19	2019/05/17
+ * Version:	@(#)hdc_esdi_mca.c	1.0.21	2021/03/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *		Copyright 2008-2018 Sarah Walker.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -755,7 +755,7 @@ hdc_callback(priv_t priv)
 
 
 static uint8_t
-hdc_read(uint16_t port, priv_t priv)
+hdc_in(uint16_t port, priv_t priv)
 {
     hdc_t *dev = (hdc_t *)priv;
     uint8_t ret = 0xff;
@@ -781,7 +781,7 @@ hdc_read(uint16_t port, priv_t priv)
 
 
 static void
-hdc_write(uint16_t port, uint8_t val, priv_t priv)
+hdc_out(uint16_t port, uint8_t val, priv_t priv)
 {
     hdc_t *dev = (hdc_t *)priv;
 
@@ -888,7 +888,7 @@ hdc_write(uint16_t port, uint8_t val, priv_t priv)
 
 
 static uint16_t
-hdc_readw(uint16_t port, priv_t priv)
+hdc_inw(uint16_t port, priv_t priv)
 {
     hdc_t *dev = (hdc_t *)priv;
     uint16_t ret = 0xffff;
@@ -913,7 +913,7 @@ hdc_readw(uint16_t port, priv_t priv)
 
 
 static void
-hdc_writew(uint16_t port, uint16_t val, priv_t priv)
+hdc_outw(uint16_t port, uint16_t val, priv_t priv)
 {
     hdc_t *dev = (hdc_t *)priv;
 
@@ -971,7 +971,7 @@ hdc_mca_write(int port, uint8_t val, priv_t priv)
     dev->pos_regs[port & 7] = val;
 
     io_removehandler(dev->base, 8,
-		     hdc_read,hdc_readw,NULL, hdc_write,hdc_writew,NULL, dev);
+		     hdc_in,hdc_inw,NULL, hdc_out,hdc_outw,NULL, dev);
 
     mem_map_disable(&dev->bios_rom.mapping);
 
@@ -1057,8 +1057,7 @@ hdc_mca_write(int port, uint8_t val, priv_t priv)
     if (dev->pos_regs[2] & 0x01) {
 	/* Card enabled; register (new) I/O handler. */
 	io_sethandler(dev->base, 8,
-		      hdc_read, hdc_readw, NULL,
-		      hdc_write, hdc_writew, NULL, dev);
+		      hdc_in,hdc_inw, NULL, hdc_out, hdc_outw, NULL, dev);
 
 	/* Enable or disable the BIOS ROM. */
 	if (!(dev->pos_regs[3] & 0x08) && dev->bios != 0x000000) {
@@ -1070,6 +1069,15 @@ hdc_mca_write(int port, uint8_t val, priv_t priv)
 	INFO("ESDI: I/O=%04x, IRQ=%i, DMA=%i, BIOS @%05X\n",
 	     dev->base, dev->irq, dev->dma, dev->bios);
     }
+}
+
+
+static uint8_t
+hdc_mca_feedb(priv_t priv)
+{
+    hdc_t *dev = (hdc_t *)priv;
+
+    return(dev->pos_regs[2] & 1);
 }
 
 
@@ -1148,7 +1156,7 @@ esdi_init(const device_t *info, UNUSED(void *parent))
     /* Set the MCA ID for this controller and enable MCA. */
     dev->pos_regs[0] = 0xff;
     dev->pos_regs[1] = 0xdd;
-    mca_add(hdc_mca_read, hdc_mca_write, dev);
+    mca_add(hdc_mca_read, hdc_mca_write, hdc_mca_feedb, NULL, dev);
 
     /* Mark for a reset. */
     dev->in_reset = 1;
@@ -1158,7 +1166,7 @@ esdi_init(const device_t *info, UNUSED(void *parent))
     /* Set the reply timer. */
     timer_add(hdc_callback, dev, &dev->callback, &dev->callback);
 
-    return((priv_t)dev);
+    return(dev);
 }
 
 

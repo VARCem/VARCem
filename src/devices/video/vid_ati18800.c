@@ -8,13 +8,13 @@
  *
  *		ATI 18800 emulation (VGA Edge-16)
  *
- * Version:	@(#)vid_ati18800.c	1.0.15	2019/05/17
+ * Version:	@(#)vid_ati18800.c	1.0.16	2020/11/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2020 Fred N. van Kempen.
  *		Copyright 2016-2019 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -146,7 +146,7 @@ static uint8_t ati18800_in(uint16_t addr, priv_t priv)
 {
         ati18800_t *ati18800 = (ati18800_t *)priv;
         svga_t *svga = &ati18800->svga;
-        uint8_t temp;
+        uint8_t temp = 0xff;
 
         if (((addr&0xFFF0) == 0x3D0 || (addr&0xFFF0) == 0x3B0) && !(svga->miscout&1)) addr ^= 0x60;
              

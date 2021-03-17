@@ -10,7 +10,7 @@
  *
  * FIXME:	THIS FILE IS A HORRIBLE NIGHTMARE
  *
- * Version:	@(#)snd_sb.c	1.0.18	2020/07/19
+ * Version:	@(#)snd_sb.c	1.0.20	2021/03/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -18,7 +18,7 @@
  *		John Sirett, <notifications@github.com>	//FIXME:
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2020 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -989,6 +989,15 @@ void sb_mcv_write(int port, uint8_t val, priv_t priv)
         }
 }
 
+
+uint8_t sb_mcv_feedb(priv_t priv)
+{
+        sb_t *dev = (sb_t *)priv;
+
+	return (dev->pos_regs[2] & 1);
+}
+
+
 static int sb_pro_mcv_irqs[4] = {7, 5, 3, 3};
 
 uint8_t sb_pro_mcv_read(int port, priv_t priv)
@@ -1111,7 +1120,7 @@ sb_mcv_init(const device_t *info, UNUSED(void *parent))
         sb_dsp_setdma8(&sb->dsp, device_get_config_int("dma"));
         sound_add_handler(sb_get_buffer_sb2, (priv_t)sb);
         /* I/O handlers activated in sb_mcv_write */
-        mca_add(sb_mcv_read, sb_mcv_write, (priv_t)sb);
+        mca_add(sb_mcv_read, sb_mcv_write, sb_mcv_feedb, NULL, (priv_t)sb);
         sb->pos_regs[0] = 0x84;
         sb->pos_regs[1] = 0x50;
         return (priv_t)sb;
@@ -1299,7 +1308,7 @@ sb_pro_mcv_init(const device_t *info, UNUSED(void *parent))
         sound_add_handler(sb_get_buffer_sbpro, (priv_t)sb);
 
         /* I/O handlers activated in sb_pro_mcv_write */
-        mca_add(sb_pro_mcv_read, sb_pro_mcv_write, (priv_t)sb);
+        mca_add(sb_pro_mcv_read, sb_pro_mcv_write, sb_mcv_feedb, NULL, (priv_t)sb);
         sb->pos_regs[0] = 0x03;
         sb->pos_regs[1] = 0x51;
 

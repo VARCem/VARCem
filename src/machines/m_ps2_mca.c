@@ -48,13 +48,13 @@
  *
  *		This works around the timing loop mentioned above.
  *
- * Version:	@(#)m_ps2_mca.c	1.0.27	2019/05/17
+ * Version:	@(#)m_ps2_mca.c	1.0.30	2021/03/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -377,6 +377,15 @@ exp_write(int port, uint8_t val, priv_t priv)
 }
 
 
+static uint8_t 
+exp_feedb(priv_t priv)
+{
+    ps2_t *dev = (ps2_t *)priv;
+
+    return(dev->mem_pos_regs[2] & 1);
+}
+
+
 static void
 mem_fffc_init(ps2_t *dev, int start_mb)
 {
@@ -429,7 +438,7 @@ mem_fffc_init(ps2_t *dev, int start_mb)
 		break;
     }
 
-    mca_add(exp_read, exp_write, dev);
+    mca_add(exp_read, exp_write, exp_feedb, NULL, dev);
 
     mem_map_add(&dev->exp_mapping, exp_start, (mem_size - (start_mb << 10)) << 10,
 		mem_read_ram, mem_read_ramw, mem_read_raml,
@@ -440,7 +449,7 @@ mem_fffc_init(ps2_t *dev, int start_mb)
 
 
 static uint8_t
-model_50_read(ps2_t *dev, uint16_t port)
+model_50_in(ps2_t *dev, uint16_t port)
 {
     uint8_t ret = 0xff;
 
@@ -482,7 +491,7 @@ model_50_read(ps2_t *dev, uint16_t port)
 
 
 static void
-model_50_write(ps2_t *dev, uint16_t port, uint8_t val)
+model_50_out(ps2_t *dev, uint16_t port, uint8_t val)
 {
     switch (port) {
 	case 0x0100:
@@ -549,8 +558,8 @@ model_50_init(ps2_t *dev)
 
     mca_init(4);
 
-    dev->planar_read = model_50_read;
-    dev->planar_write = model_50_write;
+    dev->planar_read = model_50_in;
+    dev->planar_write = model_50_out;
 
     if (mem_size > 2048) {
 	/*
@@ -566,7 +575,7 @@ model_50_init(ps2_t *dev)
 
 
 static uint8_t
-model_55sx_read(ps2_t *dev, uint16_t port)
+model_55sx_in(ps2_t *dev, uint16_t port)
 {
     uint8_t ret = 0xff;
 
@@ -608,7 +617,7 @@ model_55sx_read(ps2_t *dev, uint16_t port)
 
 
 static void
-model_55sx_write(ps2_t *dev, uint16_t port, uint8_t val)
+model_55sx_out(ps2_t *dev, uint16_t port, uint8_t val)
 {
     switch (port) {
 	case 0x0100:
@@ -745,8 +754,8 @@ model_55sx_init(ps2_t *dev)
 
     mca_init(4);
 
-    dev->planar_read = model_55sx_read;
-    dev->planar_write = model_55sx_write;
+    dev->planar_read = model_55sx_in;
+    dev->planar_write = model_55sx_out;
 
     if (config.video_card == VID_INTERNAL)	
 	device_add(&vga_ps1_device);
@@ -918,7 +927,7 @@ mem_encoding_write_cached(uint16_t addr, uint8_t val, priv_t priv)
 
 
 static uint8_t
-model_70_read(ps2_t *dev, uint16_t port)
+model_70_in(ps2_t *dev, uint16_t port)
 {
     uint8_t ret = 0xff;
 
@@ -961,7 +970,7 @@ model_70_read(ps2_t *dev, uint16_t port)
 
 
 static void
-model_70_write(ps2_t *dev, uint16_t port, uint8_t val)
+model_70_out(ps2_t *dev, uint16_t port, uint8_t val)
 {
     switch (port) {
 	case 0x0100:
@@ -1020,8 +1029,8 @@ model_70_init(ps2_t *dev)
     dev->split_addr = mem_size * 1024;
     mca_init(4);
 
-    dev->planar_read = model_70_read;
-    dev->planar_write = model_70_write;
+    dev->planar_read = model_70_in;
+    dev->planar_write = model_70_out;
 
     device_add(&ps2_nvr_device);
 
@@ -1080,7 +1089,7 @@ model_70_init(ps2_t *dev)
 
 
 static uint8_t
-model_80_read(ps2_t *dev, uint16_t port)
+model_80_in(ps2_t *dev, uint16_t port)
 {
     uint8_t ret = 0xff;
 
@@ -1123,7 +1132,7 @@ model_80_read(ps2_t *dev, uint16_t port)
 
 
 static void
-model_80_write(ps2_t *dev, uint16_t port, uint8_t val)
+model_80_out(ps2_t *dev, uint16_t port, uint8_t val)
 {
     switch (port) {
 	case 0x0100:
@@ -1190,8 +1199,8 @@ model_80_init(ps2_t *dev)
     dev->split_addr = mem_size * 1024;
     mca_init(8);
 
-    dev->planar_read = model_80_read;
-    dev->planar_write = model_80_write;
+    dev->planar_read = model_80_in;
+    dev->planar_write = model_80_out;
 
     device_add(&ps2_nvr_device);
 
@@ -1254,9 +1263,17 @@ ps2_mca_read(uint16_t port, priv_t priv)
 
     switch (port) {
 	case 0x0091:
-		fatal("Read 91 setup=%02x adapter=%02x\n",
-				dev->setup, dev->adapter_setup);
 		/*NOTREACHED*/
+		if (! (dev->setup & PS2_SETUP_IO))
+			ret = 0x00;
+		else if (! (dev->setup & PS2_SETUP_VGA))
+			ret = 0x00;
+		else if (dev->adapter_setup & PS2_CARD_SETUP)
+			ret = 0x00;
+		else
+			ret = !mca_feedb();
+		ret |= 0xfe;
+		break;
 
 	case 0x0094:
 		ret = dev->setup;
@@ -1267,62 +1284,62 @@ ps2_mca_read(uint16_t port, priv_t priv)
 		break;
 
 	case 0x0100:
-		if (!(dev->setup & PS2_SETUP_IO))
+		if (! (dev->setup & PS2_SETUP_IO))
 			ret = dev->planar_read(dev, port);
-		else if (!(dev->setup & PS2_SETUP_VGA))
+		else if (! (dev->setup & PS2_SETUP_VGA))
 			ret = 0xfd;
 		else if (dev->adapter_setup & PS2_CARD_SETUP)
 			ret = mca_read(port);
 		break;
 
 	case 0x0101:
-		if (!(dev->setup & PS2_SETUP_IO))
+		if (! (dev->setup & PS2_SETUP_IO))
 			ret = dev->planar_read(dev, port);
-		else if (!(dev->setup & PS2_SETUP_VGA))
+		else if (! (dev->setup & PS2_SETUP_VGA))
 			ret = 0xef;
 		else if (dev->adapter_setup & PS2_CARD_SETUP)
 			ret = mca_read(port);
 		break;
 
 	case 0x0102:
-		if (!(dev->setup & PS2_SETUP_IO))
+		if (! (dev->setup & PS2_SETUP_IO))
 			ret = dev->planar_read(dev, port);
-		else if (!(dev->setup & PS2_SETUP_VGA))
+		else if (! (dev->setup & PS2_SETUP_VGA))
 			ret = dev->pos_vga;
 		else if (dev->adapter_setup & PS2_CARD_SETUP)
 			ret = mca_read(port);
 		break;
 
 	case 0x0103:
-		if (!(dev->setup & PS2_SETUP_IO))
+		if (! (dev->setup & PS2_SETUP_IO))
 			ret = dev->planar_read(dev, port);
 		else if ((dev->setup & PS2_SETUP_VGA) && (dev->adapter_setup & PS2_CARD_SETUP))
 			ret = mca_read(port);
 		break;
 
 	case 0x0104:
-		if (!(dev->setup & PS2_SETUP_IO))
+		if (! (dev->setup & PS2_SETUP_IO))
 			ret = dev->planar_read(dev, port);
 		else if ((dev->setup & PS2_SETUP_VGA) && (dev->adapter_setup & PS2_CARD_SETUP))
 			ret = mca_read(port);
 		break;
 
 	case 0x0105:
-		if (!(dev->setup & PS2_SETUP_IO))
+		if (! (dev->setup & PS2_SETUP_IO))
 			ret = dev->planar_read(dev, port);
 		else if ((dev->setup & PS2_SETUP_VGA) && (dev->adapter_setup & PS2_CARD_SETUP))
 			ret = mca_read(port);
 		break;
 
 	case 0x0106:
-		if (!(dev->setup & PS2_SETUP_IO))
+		if (! (dev->setup & PS2_SETUP_IO))
 			ret = dev->planar_read(dev, port);
 		else if ((dev->setup & PS2_SETUP_VGA) && (dev->adapter_setup & PS2_CARD_SETUP))
 			ret = mca_read(port);
 		break;
 
 	case 0x0107:
-		if (!(dev->setup & PS2_SETUP_IO))
+		if (! (dev->setup & PS2_SETUP_IO))
 			ret = dev->planar_read(dev, port);
 		else if ((dev->setup & PS2_SETUP_VGA) && (dev->adapter_setup & PS2_CARD_SETUP))
 			ret = mca_read(port);
@@ -1352,63 +1369,65 @@ ps2_mca_write(uint16_t port, uint8_t val, priv_t priv)
 		break;
 
 	case 0x0096:
+		if ((val & 0x80) && !(dev->adapter_setup & 0x80))
+        	mca_reset();
 		dev->adapter_setup = val;
 		mca_set_index(val & 7);
 		break;
 
 	case 0x0100:
-		if (!(dev->setup & PS2_SETUP_IO))
+		if (! (dev->setup & PS2_SETUP_IO))
 			dev->planar_write(dev, port, val);
 		else if ((dev->setup & PS2_SETUP_VGA) && (dev->adapter_setup & PS2_CARD_SETUP))
 			mca_write(port, val);
 		break;
 
 	case 0x0101:
-		if (!(dev->setup & PS2_SETUP_IO))
+		if (! (dev->setup & PS2_SETUP_IO))
 			dev->planar_write(dev, port, val);
-		else if ((dev->setup & PS2_SETUP_VGA) && (dev->setup & PS2_SETUP_VGA) && (dev->adapter_setup & PS2_CARD_SETUP))
+		else if ((dev->setup & PS2_SETUP_VGA) && (dev->adapter_setup & PS2_CARD_SETUP))
 			mca_write(port, val);
 		break;
 
 	case 0x0102:
-		if (!(dev->setup & PS2_SETUP_IO))
+		if (! (dev->setup & PS2_SETUP_IO))
 			dev->planar_write(dev, port, val);
-		else if (!(dev->setup & PS2_SETUP_VGA))
+		else if ( !(dev->setup & PS2_SETUP_VGA))
 			dev->pos_vga = val;
 		else if (dev->adapter_setup & PS2_CARD_SETUP)
 			mca_write(port, val);
 		break;
 
 	case 0x0103:
-		if (!(dev->setup & PS2_SETUP_IO))
+		if (! (dev->setup & PS2_SETUP_IO))
 			dev->planar_write(dev, port, val);
 		else if (dev->adapter_setup & PS2_CARD_SETUP)
 			mca_write(port, val);
 		break;
 
 	case 0x0104:
-		if (!(dev->setup & PS2_SETUP_IO))
+		if (! (dev->setup & PS2_SETUP_IO))
 			dev->planar_write(dev, port, val);
 		else if (dev->adapter_setup & PS2_CARD_SETUP)
 			mca_write(port, val);
 		break;
 
 	case 0x0105:
-		if (!(dev->setup & PS2_SETUP_IO))
+		if (! (dev->setup & PS2_SETUP_IO))
 			dev->planar_write(dev, port, val);
 		else if (dev->adapter_setup & PS2_CARD_SETUP)
 			mca_write(port, val);
 		break;
 
 	case 0x0106:
-		if (!(dev->setup & PS2_SETUP_IO))
+		if (! (dev->setup & PS2_SETUP_IO))
 			dev->planar_write(dev, port, val);
 		else if (dev->adapter_setup & PS2_CARD_SETUP)
 			mca_write(port, val);
 		break;
 
 	case 0x0107:
-		if (!(dev->setup & PS2_SETUP_IO))
+		if (! (dev->setup & PS2_SETUP_IO))
 			dev->planar_write(dev, port, val);
 		else if (dev->adapter_setup & PS2_CARD_SETUP)
 			mca_write(port, val);
@@ -1468,7 +1487,7 @@ ps2_init(const device_t *info, void *arg)
 
     dev->setup = 0xff;
 
-    switch(dev->type) {
+    switch (dev->type) {
 	case 50:	/* Model 50 */
     		device_add(&keyboard_ps2_mca_device);
 		model_50_init(dev);
@@ -1493,7 +1512,7 @@ ps2_init(const device_t *info, void *arg)
 
     saved_dev = dev;
 
-    return((priv_t)dev);
+    return(dev);
 }
 
 
@@ -1504,7 +1523,7 @@ static const CPU cpus_ps2_m50[] = {
 };
 
 static const machine_t m50_info = {
-    MACHINE_MCA | MACHINE_AT | MACHINE_PS2 | MACHINE_VIDEO | MACHINE_HDC_PS2,
+    MACHINE_MCA | MACHINE_AT | MACHINE_PS2 | MACHINE_VIDEO | MACHINE_FDC_PS2 | MACHINE_HDC_PS2,
     0,
     1, 10, 1, 64, -1,
     {{"",cpus_ps2_m50}}
@@ -1523,7 +1542,7 @@ const device_t m_ps2_m50 = {
 
 
 static const machine_t m55_info = {
-    MACHINE_MCA | MACHINE_AT | MACHINE_PS2 | MACHINE_VIDEO | MACHINE_HDC_PS2,
+    MACHINE_MCA | MACHINE_AT | MACHINE_PS2 | MACHINE_VIDEO | MACHINE_FDC_PS2 | MACHINE_HDC_PS2,
     0,
     1, 8, 1, 64, 16,
     {{"Intel",cpus_i386SX},{"AMD",cpus_Am386SX},{"Cyrix",cpus_486SLC}}
@@ -1542,7 +1561,7 @@ const device_t m_ps2_m55sx = {
 
 
 static const machine_t m70_3_info = {
-    MACHINE_MCA | MACHINE_AT | MACHINE_PS2 | MACHINE_VIDEO | MACHINE_HDC_PS2,
+    MACHINE_MCA | MACHINE_AT | MACHINE_PS2 | MACHINE_VIDEO | MACHINE_FDC_PS2 | MACHINE_HDC_PS2,
     0,
     2, 16, 2, 64, -1,
     {{"Intel",cpus_i386DX},{"AMD",cpus_Am386DX},{"Cyrix",cpus_486DLC}}
@@ -1561,7 +1580,7 @@ const device_t m_ps2_m70_3 = {
 
 
 static const machine_t m70_4_info = {
-    MACHINE_MCA | MACHINE_AT | MACHINE_PS2 | MACHINE_HDC_PS2,
+    MACHINE_MCA | MACHINE_AT | MACHINE_PS2 | MACHINE_FDC_PS2 | MACHINE_HDC_PS2,
     MACHINE_VIDEO,
     2, 16, 2, 64, -1,
     {{"Intel",cpus_i486},{"AMD",cpus_Am486},{"Cyrix",cpus_Cx486}}

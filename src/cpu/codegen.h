@@ -8,12 +8,12 @@
  *
  *		Definitions for the code generator.
  *
- * Version:	@(#)codegen.h	1.0.6	2019/05/17
+ * Version:	@(#)codegen.h	1.0.7	2020/11/18
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2008-2018 Sarah Walker.
+ *		Copyright 2008-2020 Sarah Walker.
  *		Copyright 2016-2018 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -156,11 +156,7 @@ extern int		cpu_new_blocks, cpu_new_blocks_latched,
 			cpu_reps, cpu_reps_latched,
 			cpu_notreps, cpu_notreps_latched;
 
-extern int		cpu_recomp_blocks, cpu_recomp_full_ins,
-			cpu_recomp_blocks_latched, cpu_recomp_ins_latched,
-			cpu_recomp_full_ins_latched,
-			cpu_recomp_flushes, cpu_recomp_flushes_latched,
-			cpu_recomp_evicted, cpu_recomp_evicted_latched,
+extern int      	cpu_recomp_evicted, cpu_recomp_evicted_latched,
 			cpu_recomp_reuse, cpu_recomp_reuse_latched,
 			cpu_recomp_removed, cpu_recomp_removed_latched;
 
@@ -168,6 +164,7 @@ extern codegen_timing_t	codegen_timing_pentium;
 extern codegen_timing_t	codegen_timing_686;
 extern codegen_timing_t	codegen_timing_486;
 extern codegen_timing_t	codegen_timing_winchip;
+extern codegen_timing_t	codegen_timing_winchip2;
 
 extern void	codegen_timing_set(codegen_timing_t *timing);
 

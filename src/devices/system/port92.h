@@ -8,13 +8,11 @@
  *
  *		Definitions for the Port92 pseudo-device.
  *
- * Version:	@(#)port92.h	1.0.1	2019/05/15
+ * Version:	@(#)port92.h	1.0.3	2021/03/16
  *
- * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
- *		Sarah Walker, <tommowalker@tommowalker.co.uk>
+ * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
- *		Copyright 2008-2018 Sarah Walker.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -36,6 +34,11 @@
  */
 #ifndef PORT_92_H
 # define PORT_92_H
+
+typedef struct {
+    uint8_t	reg,
+		mask;
+} port92_t;
 
 
 extern const device_t	port92_device;

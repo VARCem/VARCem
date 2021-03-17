@@ -17,7 +17,7 @@
  *		website (for 32bit and 64bit Windows) are working, and
  *		need no additional support files other than sound fonts.
  *
- * Version:	@(#)midi_fluidsynth.c	1.0.19	2020/07/17
+ * Version:	@(#)midi_fluidsynth.c	1.0.20	2021/03/16
  *
  *		Code borrowed from scummvm.
  *
@@ -25,7 +25,7 @@
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2020 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -52,7 +52,9 @@
 #include <string.h>
 #include <stdlib.h>
 #include <wchar.h>
-#include <fluidsynth.h>
+#ifdef USE_FLUIDSYNTH
+# include <fluidsynth.h>
+#endif
 #define dbglog sound_midi_log
 #include "../../emu.h"
 #include "../../config.h"
@@ -144,7 +146,7 @@ typedef struct fluidsynth {
 } fluidsynth_t;
 
 
-fluidsynth_t fsdev;
+static fluidsynth_t fsdev;
 
 
 static int
@@ -157,7 +159,7 @@ fluidsynth_available(void)
 static void
 fluidsynth_poll(void)
 {
-    fluidsynth_t* data = &fsdev;
+    fluidsynth_t *data = &fsdev;
 
     data->midi_pos++;
     if (data->midi_pos == 48000/RENDER_RATE) {
@@ -170,7 +172,7 @@ fluidsynth_poll(void)
 static void
 fluidsynth_thread(void *param)
 {
-    fluidsynth_t* data = (fluidsynth_t*)param;
+    fluidsynth_t *data = (fluidsynth_t*)param;
     int buf_pos = 0;
     int buf_size = data->buf_size / BUFFER_SEGMENTS;
 
@@ -205,10 +207,10 @@ fluidsynth_thread(void *param)
 }
 
 
-void
+static void
 fluidsynth_msg(uint8_t *msg)
 {
-    fluidsynth_t* data = &fsdev;
+    fluidsynth_t *data = &fsdev;
     uint32_t val = *((uint32_t*)msg);
     uint32_t param2 = (uint8_t) ((val >> 16) & 0xFF);
     uint32_t param1 = (uint8_t) ((val >>  8) & 0xFF);
@@ -252,7 +254,7 @@ fluidsynth_msg(uint8_t *msg)
 }
 
 
-void
+static void
 fluidsynth_sysex(uint8_t *data, unsigned int len)
 {
     fluidsynth_t* d = &fsdev;

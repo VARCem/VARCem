@@ -8,7 +8,7 @@
  *
  *		Implementation of the CPU's dynamic recompiler.
  *
- * Version:	@(#)386_dynarec.c	1.0.12	2020/09/09
+ * Version:	@(#)386_dynarec.c	1.0.14	2020/12/11
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -82,8 +82,7 @@ uint32_t	cpu_cur_status = 0;
 int		cpu_reps, cpu_reps_latched;
 int		cpu_notreps, cpu_notreps_latched;
 int		cpu_recomp_blocks, cpu_recomp_full_ins, cpu_new_blocks;
-int		cpu_recomp_blocks_latched, cpu_recomp_ins_latched,
-		cpu_recomp_full_ins_latched, cpu_new_blocks_latched;
+int		cpu_new_blocks_latched;
 
 int		inrecomp = 0;
 int		cpu_block_end = 0;
@@ -95,32 +94,6 @@ int oddeven=0;
 
 uint32_t rmdat32;
 
-
-static INLINE uint32_t
-get_phys(uint32_t addr)
-{
-    if (! ((addr ^ get_phys_virt) & ~0xfff))
-	return get_phys_phys | (addr & 0xfff);
-
-    get_phys_virt = addr;
-
-    if (! (cr0 >> 31)) {
-	get_phys_phys = (addr & rammask) & ~0xfff;
-
-	return addr & rammask;
-    }
-
-    if (readlookup2[addr >> 12] != -1)
-	get_phys_phys = ((uintptr_t)readlookup2[addr >> 12] + (addr & ~0xfff)) - (uintptr_t)ram;
-    else {
-	get_phys_phys = (mmutranslatereal(addr, 0) & rammask) & ~0xfff;
-
-	if (!cpu_state.abrt && mem_addr_is_ram(get_phys_phys))
-		addreadlookup(get_phys_virt, get_phys_phys);
-    }
-
-    return get_phys_phys | (addr & 0xfff);
-}
 
 static INLINE void
 fetch_ea_32_long(uint32_t rmdat)
@@ -154,7 +127,7 @@ fetch_ea_32_long(uint32_t rmdat)
                 {
                         easeg = ss;
                         ea_rseg = SS;
-                        cpu_state.ea_seg = &_ss;
+                        cpu_state.ea_seg = &cpu_state.seg_ss;
                 }
                 if (((sib >> 3) & 7) != 4) 
                         cpu_state.eaaddr += cpu_state.regs[(sib >> 3) & 7].l << (sib >> 6);
@@ -168,7 +141,7 @@ fetch_ea_32_long(uint32_t rmdat)
                         {
                                 easeg = ss;
                                 ea_rseg = SS;
-                                cpu_state.ea_seg = &_ss;
+                                cpu_state.ea_seg = &cpu_state.seg_ss;
                         }
                         if (cpu_mod == 1) 
                         { 
@@ -224,7 +197,7 @@ static INLINE void fetch_ea_16_long(uint32_t rmdat)
                 {
                         easeg = ss;
                         ea_rseg = SS;
-                        cpu_state.ea_seg = &_ss;
+                        cpu_state.ea_seg = &cpu_state.seg_ss;
                 }
                 cpu_state.eaaddr &= 0xFFFF;
         }
@@ -273,21 +246,21 @@ void x86_int(uint32_t num)
                 {
                         if (stack32)
                         {
-                                writememw(ss,ESP-2,flags);
+                                writememw(ss,ESP-2,cpu_state.flags);
                                 writememw(ss,ESP-4,CS);
                                 writememw(ss,ESP-6,cpu_state.pc);
                                 ESP-=6;
                         }
                         else
                         {
-                                writememw(ss,((SP-2)&0xFFFF),flags);
+                                writememw(ss,((SP-2)&0xFFFF),cpu_state.flags);
                                 writememw(ss,((SP-4)&0xFFFF),CS);
                                 writememw(ss,((SP-6)&0xFFFF),cpu_state.pc);
                                 SP-=6;
                         }
 
-                        flags&=~I_FLAG;
-                        flags&=~T_FLAG;
+                        cpu_state.flags&=~I_FLAG;
+                        cpu_state.flags&=~T_FLAG;
                         oxpc=cpu_state.pc;
                         cpu_state.pc=readmemw(0,addr);
                         loadcs(readmemw(0,addr+2));
@@ -318,21 +291,21 @@ void x86_int_sw(uint32_t num)
                 {
                         if (stack32)
                         {
-                                writememw(ss,ESP-2,flags);
+                                writememw(ss,ESP-2,cpu_state.flags);
                                 writememw(ss,ESP-4,CS);
                                 writememw(ss,ESP-6,cpu_state.pc);
                                 ESP-=6;
                         }
                         else
                         {
-                                writememw(ss,((SP-2)&0xFFFF),flags);
+                                writememw(ss,((SP-2)&0xFFFF),cpu_state.flags);
                                 writememw(ss,((SP-4)&0xFFFF),CS);
                                 writememw(ss,((SP-6)&0xFFFF),cpu_state.pc);
                                 SP-=6;
                         }
 
-                        flags&=~I_FLAG;
-                        flags&=~T_FLAG;
+                        cpu_state.flags&=~I_FLAG;
+                        cpu_state.flags&=~T_FLAG;
                         oxpc=cpu_state.pc;
                         cpu_state.pc=readmemw(0,addr);
                         loadcs(readmemw(0,addr+2));
@@ -357,13 +330,13 @@ int x86_int_sw_rm(int num)
 
         if (cpu_state.abrt) return 1;
 
-        writememw(ss,((SP-2)&0xFFFF),flags); if (cpu_state.abrt) {ERRLOG("abrt5\n"); return 1; }
+        writememw(ss,((SP-2)&0xFFFF),cpu_state.flags); if (cpu_state.abrt) {ERRLOG("abrt5\n"); return 1; }
         writememw(ss,((SP-4)&0xFFFF),CS);
         writememw(ss,((SP-6)&0xFFFF),cpu_state.pc); if (cpu_state.abrt) {ERRLOG("abrt6\n"); return 1; }
         SP-=6;
 
-        eflags &= ~VIF_FLAG;
-        flags &= ~T_FLAG;
+        cpu_state.eflags &= ~VIF_FLAG;
+        cpu_state.flags &= ~T_FLAG;
         cpu_state.pc = new_pc;
         loadcs(new_cs);
         oxpc=cpu_state.pc;
@@ -474,7 +447,7 @@ int checkio(uint32_t port)
         if (cpu_state.abrt) return 0;
         if ((t+(port>>3))>tr.limit) return 1;
         cpl_override = 1;
-        d = readmemb386l(0, tr.base + t + (port >> 3));
+        d = readmembl(tr.base + t + (port >> 3));
         cpl_override = 0;
         return d&(1<<(port&7));
 }
@@ -559,7 +532,7 @@ int dontprint=0;
 #include "386_ops.h"
 
 
-#define CACHE_ON() (!(cr0 & (1 << 30)) /*&& (cr0 & 1)*/ && !(flags & T_FLAG))
+#define CACHE_ON() (!(cr0 & (1 << 30)) /*&& (cr0 & 1)*/ && !(cpu_state.flags & T_FLAG))
 
 #ifdef USE_DYNAREC
 static int cycles_main = 0;
@@ -588,7 +561,6 @@ void exec386_dynarec(int cycs)
         {
                 oldcs = CS;
                 cpu_state.oldpc = cpu_state.pc;
-                oldcpl = CPL;
                 cpu_state.op32 = use32;
 
 
@@ -602,16 +574,15 @@ void exec386_dynarec(int cycs)
                         {
                                 oldcs=CS;
                                 cpu_state.oldpc = cpu_state.pc;
-                                oldcpl=CPL;
                                 cpu_state.op32 = use32;
 
-                                cpu_state.ea_seg = &_ds;
+                                cpu_state.ea_seg = &cpu_state.seg_ds;
                                 cpu_state.ssegs = 0;
                 
                                 fetchdat = fastreadl(cs + cpu_state.pc);
                                 if (!cpu_state.abrt)
                                 {               
-                                        trap = flags & T_FLAG;
+                                        trap = cpu_state.flags & T_FLAG;
                                         opcode = fetchdat & 0xFF;
                                         fetchdat >>= 8;
 
@@ -749,16 +720,15 @@ inrecomp=0;
                         {
                                 oldcs=CS;
                                 cpu_state.oldpc = cpu_state.pc;
-                                oldcpl=CPL;
                                 cpu_state.op32 = use32;
 
-                                cpu_state.ea_seg = &_ds;
+                                cpu_state.ea_seg = &cpu_state.seg_ds;
                                 cpu_state.ssegs = 0;
                 
                                 fetchdat = fastreadl(cs + cpu_state.pc);
                                 if (!cpu_state.abrt)
                                 {               
-                                        trap = flags & T_FLAG;
+                                        trap = cpu_state.flags & T_FLAG;
                                         opcode = fetchdat & 0xFF;
                                         fetchdat >>= 8;
 
@@ -819,10 +789,9 @@ inrecomp=0;
                         {
                                 oldcs=CS;
                                 cpu_state.oldpc = cpu_state.pc;
-                                oldcpl=CPL;
                                 cpu_state.op32 = use32;
 
-                                cpu_state.ea_seg = &_ds;
+                                cpu_state.ea_seg = &cpu_state.seg_ds;
                                 cpu_state.ssegs = 0;
                 
                                 codegen_endpc = (cs + cpu_state.pc) + 8;
@@ -830,7 +799,7 @@ inrecomp=0;
 
                                 if (!cpu_state.abrt)
                                 {               
-                                        trap = flags & T_FLAG;
+                                        trap = cpu_state.flags & T_FLAG;
                                         opcode = fetchdat & 0xFF;
                                         fetchdat >>= 8;
 
@@ -911,13 +880,13 @@ inrecomp=0;
                         }
                         else
                         {
-                                writememw(ss,(SP-2)&0xFFFF,flags);
+                                writememw(ss,(SP-2)&0xFFFF,cpu_state.flags);
                                 writememw(ss,(SP-4)&0xFFFF,CS);
                                 writememw(ss,(SP-6)&0xFFFF,cpu_state.pc);
                                 SP-=6;
                                 addr = (1 << 2) + idt.base;
-                                flags&=~I_FLAG;
-                                flags&=~T_FLAG;
+                                cpu_state.flags&=~I_FLAG;
+                                cpu_state.flags&=~T_FLAG;
                                 cpu_state.pc=readmemw(0,addr);
                                 loadcs(readmemw(0,addr+2));
                         }
@@ -934,7 +903,7 @@ inrecomp=0;
                                 nmi = 0;
                         }
                 }
-                else if (flags&I_FLAG)
+                else if (cpu_state.flags&I_FLAG)
                 {
                         temp=pic_interrupt();
                         if (temp!=0xFF)
@@ -947,13 +916,13 @@ inrecomp=0;
                                 }
                                 else
                                 {
-                                        writememw(ss,(SP-2)&0xFFFF,flags);
+                                        writememw(ss,(SP-2)&0xFFFF,cpu_state.flags);
                                         writememw(ss,(SP-4)&0xFFFF,CS);
                                         writememw(ss,(SP-6)&0xFFFF,cpu_state.pc);
                                         SP-=6;
                                         addr=temp<<2;
-                                        flags&=~I_FLAG;
-                                        flags&=~T_FLAG;
+                                        cpu_state.flags&=~I_FLAG;
+                                        cpu_state.flags&=~T_FLAG;
                                         oxpc=cpu_state.pc;
                                         cpu_state.pc=readmemw(0,addr);
                                         loadcs(readmemw(0,addr+2));

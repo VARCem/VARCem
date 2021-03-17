@@ -8,14 +8,14 @@
  *
  *		Implementation of the SiS 85C496/497 based machines.
  *
- * Version:	@(#)m_sis49x.c	1.0.14	2019/05/28
+ * Version:	@(#)m_sis49x.c	1.0.17	2021/03/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
- *		Copyright 2016-2018 Miran Grca.
+ *		Copyright 2017-2021 Fred N. van Kempen.
+ *		Copyright 2016-2021 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -63,15 +63,15 @@ common_init(const device_t *info, void *arg)
     /* Add machine device to system. */
     device_add_ex(info, (priv_t)arg);
 
-    switch(info->local) {
-	case 0:		/* Generic SiS496 */
+    switch (info->local) {
+	case 0:		/* Lucky Star LS-486E */
 //////////
 		pci_init(PCI_CONFIG_TYPE_1);
 		pci_register_slot(0x05, PCI_CARD_SPECIAL, 0, 0, 0, 0);
 		pci_register_slot(0x0B, PCI_CARD_NORMAL, 1, 2, 3, 4);
 		pci_register_slot(0x0D, PCI_CARD_NORMAL, 2, 3, 4, 1);
 		pci_register_slot(0x0F, PCI_CARD_NORMAL, 3, 4, 1, 2);
-		pci_register_slot(0x07, PCI_CARD_NORMAL, 4, 1, 2, 3);
+		pci_register_slot(0x06, PCI_CARD_NORMAL, 4, 1, 2, 3);
 
 		pci_set_irq_routing(PCI_INTA, PCI_IRQ_DISABLED);
 		pci_set_irq_routing(PCI_INTB, PCI_IRQ_DISABLED);
@@ -84,6 +84,7 @@ common_init(const device_t *info, void *arg)
 		m_at_common_ide_init();
 		device_add(&keyboard_at_ami_device);
 		device_add(&fdc_at_device);
+		device_add(&fdc37c665_device);
 		break;
 
 	case 1:		/* Rise 418 */
@@ -105,9 +106,10 @@ common_init(const device_t *info, void *arg)
 		device_add(&keyboard_ps2_pci_device);
 		device_add(&ide_pci_2ch_device);
 		device_add(&fdc37c665_device);
+		break;
     }
 
-    return((priv_t)arg);
+    return(arg);
 }
 
 
@@ -119,7 +121,7 @@ static const machine_t ami_info = {
 };
 
 const device_t m_sis496_ami = {
-    "AMI 486 (SiS 496",
+    "Lucky Star LS-486E (SiS 496)",
     DEVICE_ROOT,
     0,
     L"sis496/ami",
@@ -131,7 +133,7 @@ const device_t m_sis496_ami = {
 
 
 static const machine_t rise_info = {
-    MACHINE_PCI | MACHINE_ISA | MACHINE_VLB | MACHINE_AT | MACHINE_HDC,
+    MACHINE_PCI | MACHINE_ISA | MACHINE_AT | MACHINE_HDC,
     0,
     1, 255, 1, 128, 0,
     {{"Intel",cpus_i486},{"AMD",cpus_Am486},{"Cyrix",cpus_Cx486}}

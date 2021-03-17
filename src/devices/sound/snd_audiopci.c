@@ -8,13 +8,13 @@
  *
  *		Implementation of the AudioPCI sound device.
  *
- * Version:	@(#)snd_audiopci.c	1.0.21	2020/02/03
+ * Version:	@(#)snd_audiopci.c	1.0.23	2021/03/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2020 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -190,7 +190,7 @@ static const int32_t codec_attn[]= {
 
 
 static void es1371_fetch(es1371_t *dev, int dac_nr);
-static void update_legacy(es1371_t *dev);
+static void update_legacy(es1371_t *dev, uint32_t old_legacy_ctrl);
 
 
 static void
@@ -455,6 +455,7 @@ static void
 es1371_outb(uint16_t port, uint8_t val, priv_t priv)
 {
     es1371_t *dev = (es1371_t *)priv;
+    uint32_t old_legacy_ctrl;
 
     DBGLOG(2, "es1371_outb: port=%04x val=%02x %04x:%08x\n", port, val, cs, cpu_state.pc);
 
@@ -505,14 +506,16 @@ es1371_outb(uint16_t port, uint8_t val, priv_t priv)
 		break;
 
 	case 0x1a:
+		old_legacy_ctrl = dev->legacy_ctrl;
 		dev->legacy_ctrl = (dev->legacy_ctrl & 0xff00ffff) | (val << 16);
-		update_legacy(dev);
+		update_legacy(dev, old_legacy_ctrl);
 		break;
 
 	case 0x1b:
+		old_legacy_ctrl = dev->legacy_ctrl;
 		dev->legacy_ctrl = (dev->legacy_ctrl & 0x00ffffff) | (val << 24);
 		es1371_update_irqs(dev);
-		update_legacy(dev);
+		update_legacy(dev, old_legacy_ctrl);
 		break;
 		
 	case 0x20:
@@ -881,40 +884,70 @@ cap_read_slave_dma(uint16_t port, priv_t priv)
 
 
 static void
-update_legacy(es1371_t *dev)
+update_legacy(es1371_t *dev, uint32_t old_legacy_ctrl)
 {
-    io_removehandler(0x0320, 8,
-	cap_read_sscape,NULL,NULL, cap_write_sscape,NULL,NULL, dev);
-    io_removehandler(0x0330, 8,
-	cap_read_sscape,NULL,NULL, cap_write_sscape,NULL,NULL, dev);
-    io_removehandler(0x0340, 8,
-	cap_read_sscape,NULL,NULL, cap_write_sscape,NULL,NULL, dev);
-    io_removehandler(0x0350, 8,
-	cap_read_sscape,NULL,NULL, cap_write_sscape,NULL,NULL, dev);
+    if (old_legacy_ctrl & LEGACY_CAPTURE_SSCAPE) {
+	switch ((old_legacy_ctrl >> LEGACY_SSCAPE_ADDR_SHIFT) & 3) {
+		case 0:
+			io_removehandler(0x0320, 0x0008,
+				cap_read_sscape,NULL,NULL, cap_write_sscape,NULL,NULL, dev);
+			break;
+		case 1:
+   			io_removehandler(0x0330, 0x0008,
+				cap_read_sscape,NULL,NULL, cap_write_sscape,NULL,NULL, dev);
+			break;
+   		case 2:
+			io_removehandler(0x0340, 0x0008,
+				cap_read_sscape,NULL,NULL, cap_write_sscape,NULL,NULL, dev);
+			break;
+		case 3:
+   			io_removehandler(0x0350, 0x0008,
+				cap_read_sscape,NULL,NULL, cap_write_sscape,NULL,NULL, dev);
+			break;
+	}
+    }
 
-    io_removehandler(0x5300, 0x0080,
-	cap_read_codec,NULL,NULL, cap_write_codec,NULL,NULL, dev);
-    io_removehandler(0xe800, 0x0080,
-	cap_read_codec,NULL,NULL, cap_write_codec,NULL,NULL, dev);
-    io_removehandler(0xf400, 0x0080,
-	cap_read_codec,NULL,NULL, cap_write_codec,NULL,NULL, dev);
+    if (old_legacy_ctrl & LEGACY_CAPTURE_CODEC) {
+	switch ((old_legacy_ctrl >> LEGACY_CODEC_ADDR_SHIFT) & 3) {
+		case 0:
+   			io_removehandler(0x5300, 0x0080,
+				cap_read_codec,NULL,NULL, cap_write_codec,NULL,NULL, dev);
+			break;
+		case 2:
+   			io_removehandler(0xe800, 0x0080,
+				cap_read_codec,NULL,NULL, cap_write_codec,NULL,NULL, dev);
+			break;
+		case 3:
+   			io_removehandler(0xf400, 0x0080,
+				cap_read_codec,NULL,NULL, cap_write_codec,NULL,NULL, dev);
+			break;
+	}
+    }
 
-    io_removehandler(0x0220, 0x0010,
-	cap_read_sb,NULL,NULL, cap_write_sb,NULL,NULL, dev);
-    io_removehandler(0x0240, 0x0010,
-	cap_read_sb,NULL,NULL, cap_write_sb,NULL,NULL, dev);
+    if (old_legacy_ctrl & LEGACY_CAPTURE_SB) {
+	if (!(old_legacy_ctrl & LEGACY_SB_ADDR))
+   		io_removehandler(0x0220, 0x0010,
+			cap_read_sb,NULL,NULL, cap_write_sb,NULL,NULL, dev);
+	else
+   		io_removehandler(0x0240, 0x0010,
+			cap_read_sb,NULL,NULL, cap_write_sb,NULL,NULL, dev);
+    }
+    if (old_legacy_ctrl & LEGACY_CAPTURE_ADLIB)
+	io_removehandler(0x0388, 0x0004,
+		cap_read_adlib,NULL,NULL, cap_write_adlib,NULL,NULL, dev);
 
-    io_removehandler(0x0388, 0x0004,
-	cap_read_adlib,NULL,NULL, cap_write_adlib,NULL,NULL, dev);
-
-    io_removehandler(0x0020, 0x0002,
-	cap_read_master_pic,NULL,NULL, cap_write_master_pic,NULL,NULL, dev);
-    io_removehandler(0x0000, 0x0010,
-	cap_read_master_dma,NULL,NULL, cap_write_master_dma,NULL,NULL, dev);
-    io_removehandler(0x00a0, 0x0002,
-	cap_read_slave_pic,NULL,NULL, cap_write_slave_pic,NULL,NULL, dev);
-    io_removehandler(0x00c0, 0x0020,
-	cap_read_slave_dma,NULL,NULL, cap_write_slave_dma,NULL,NULL, dev);
+    if (old_legacy_ctrl & LEGACY_CAPTURE_MASTER_PIC)
+	io_sethandler(0x0020, 0x0002, 
+		cap_read_master_pic,NULL,NULL, cap_write_master_pic,NULL,NULL, dev);
+    if (old_legacy_ctrl & LEGACY_CAPTURE_MASTER_DMA)
+	io_sethandler(0x0000, 0x0010, 
+		cap_read_master_dma,NULL,NULL, cap_write_master_dma,NULL,NULL, dev);
+    if (old_legacy_ctrl & LEGACY_CAPTURE_SLAVE_PIC)
+	io_sethandler(0x00a0, 0x0002, 
+		cap_read_slave_pic,NULL,NULL, cap_write_slave_pic,NULL,NULL, dev);
+    if (old_legacy_ctrl & LEGACY_CAPTURE_SLAVE_DMA)
+	io_sethandler(0x00c0, 0x0020, 
+		cap_read_slave_dma,NULL,NULL, cap_write_slave_dma,NULL,NULL, dev);
 
     if (dev->legacy_ctrl & LEGACY_CAPTURE_SSCAPE) {
 	switch ((dev->legacy_ctrl >> LEGACY_SSCAPE_ADDR_SHIFT) & 3) {

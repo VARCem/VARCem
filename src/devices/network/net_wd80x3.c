@@ -14,14 +14,14 @@
  *
  *		as well as a number of compatibles.
  *
- * Version:	@(#)net_wd80x3.c	1.0.8	2019/05/13
+ * Version:	@(#)net_wd80x3.c	1.0.10	2021/03/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		TheCollector1995, <mariogplayer@gmail.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
- *		Copyright 2016-2018 Miran Grca.
+ *		Copyright 2017-2021 Fred N. van Kempen.
+ *		Copyright 2016-2021 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -66,9 +66,9 @@
 
 
 enum {
-    WD8003E = 0,			/* 8-bit ISA WD8003E */
-    WD8013EBT,				/* 16-bit ISA WD8013EBT */
-    WD8013EPA				/* MCA WD8013EP/A */
+    WD8003E = 0,			// 8-bit ISA WD8003E
+    WD8013EBT,				// 16-bit ISA WD8013EBT
+    WD8013EPA				// MCA WD8013EP/A
 };
 
 
@@ -77,10 +77,10 @@ enum {
 #define WE_WD8003S	0x02
 #define WE_WD8003E	0x03
 #define WE_WD8013EBT	0x05
-#define	WE_TOSHIBA1	0x11	/* named PCETA1 */
-#define	WE_TOSHIBA2	0x12	/* named PCETA2 */
-#define	WE_TOSHIBA3	0x13	/* named PCETB */
-#define	WE_TOSHIBA4	0x14	/* named PCETC */
+#define	WE_TOSHIBA1	0x11		// named PCETA1
+#define	WE_TOSHIBA2	0x12		// named PCETA2
+#define	WE_TOSHIBA3	0x13		// named PCETB
+#define	WE_TOSHIBA4	0x14		// named PCETC
 #define	WE_WD8003W	0x24
 #define	WE_WD8003EB	0x25
 #define	WE_WD8013W	0x26
@@ -108,8 +108,8 @@ typedef struct {
     uint32_t	ram_addr,
 		ram_size;
 
-    uint8_t	macaddr[32];		/* ASIC ROM'd MAC address, even bytes */
-    uint8_t	maclocal[6];		/* configured MAC (local) address */
+    uint8_t	macaddr[32];		// ASIC ROM'd MAC address, even bytes
+    uint8_t	maclocal[6];		// configured MAC (local) address
 
     /* Memory for WD cards*/
     uint8_t	reg1;
@@ -278,7 +278,7 @@ nic_tx(nic_t *dev, uint32_t val)
 
     /* Generate an interrupt if not masked */
     if (dev->dp8390.IMR.tx_inte)
-		nic_interrupt(dev, 1);
+	nic_interrupt(dev, 1);
 
     dev->dp8390.tx_timer_active = 0;
 }
@@ -417,7 +417,7 @@ page0_write(nic_t *dev, uint32_t off, uint8_t val)
 
     DBGLOG(2, "%s: Page0 write to register 0x%02x, value=0x%02x\n",
 						dev->name, off, val);
-    switch(off) {
+    switch (off) {
 	case 0x01:	/* PSTART */
 		dev->dp8390.page_start = val;
 		break;
@@ -1364,6 +1364,13 @@ nic_mca_write(int port, uint8_t val, priv_t priv)
 }
 
 
+static uint8_t
+nic_mca_feedb(priv_t priv)
+{
+    return 1;
+}
+
+
 static void
 nic_close(priv_t priv)
 {
@@ -1391,7 +1398,7 @@ nic_init(const device_t *info, UNUSED(void *parent))
     dev->name = info->name;
     dev->board = info->local;
 
-    switch(dev->board) {
+    switch (dev->board) {
 	case WD8003E:
 		dev->board_chip = WE_WD8003E;
 		dev->maclocal[0] = 0x00;  /* 00:00:C0 (WD/SMC OID) */
@@ -1421,7 +1428,7 @@ nic_init(const device_t *info, UNUSED(void *parent))
 	dev->base_irq = device_get_config_int("irq");
 	dev->ram_addr = device_get_config_hex20("ram_addr");
     } else {
-	mca_add(nic_mca_read, nic_mca_write, dev);	
+	mca_add(nic_mca_read, nic_mca_write, nic_mca_feedb, NULL, dev);	
     }
 
     /* See if we have a local MAC address configured. */

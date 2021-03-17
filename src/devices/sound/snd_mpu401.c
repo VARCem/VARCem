@@ -8,7 +8,7 @@
  *
  *		Roland MPU-401 emulation.
  *
- * Version:	@(#)snd_mpu401.c	1.0.16	2019/05/17
+ * Version:	@(#)snd_mpu401.c	1.0.18	2021/03/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -16,7 +16,7 @@
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		DOSBox Team,
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *		Copyright 2008-2017 DOSBox Team.
@@ -969,6 +969,13 @@ mpu401_mca_write(int port, uint8_t val, priv_t priv)
 }
 
 
+static uint8_t
+mpu401_mca_feedb(priv_t priv)
+{
+    return 1;
+}
+
+
 static priv_t
 mpu401_standalone_init(const device_t *info, UNUSED(void *parent))
 {
@@ -982,7 +989,7 @@ mpu401_standalone_init(const device_t *info, UNUSED(void *parent))
     if (info->flags & DEVICE_MCA) {
 	dev->pos_regs[0] = 0x0F;
 	dev->pos_regs[1] = 0x6C;
-	mca_add(mpu401_mca_read, mpu401_mca_write, dev);
+	mca_add(mpu401_mca_read, mpu401_mca_write, mpu401_mca_feedb, NULL, dev);
 
 	base = 0;	/* Tell mpu401_init() that this is the MCA variant. */
 	irq = 2;	/* According to @6c0f.adf, the IRQ is fixed to 2. */

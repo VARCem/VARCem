@@ -50,17 +50,12 @@
 #include "../../plat.h"
 #include "video.h"
 #include "vid_svga.h"
+#include "vid_vga.h"
 
 
 #define BIOS_ROM_PATH	L"video/ibm/vga/ibm_vga.bin"
 
-
-typedef struct {
-    svga_t	svga;
-
-    rom_t	bios_rom;
-} vga_t;
-
+svga_t *mb_vga = NULL;
 
 static video_timings_t vga_timing = {VID_ISA, 8,16,32, 8,16,32};
 
@@ -138,6 +133,8 @@ vga_close(priv_t priv)
 {
     vga_t *dev = (vga_t *)priv;
 
+    mb_vga = NULL;
+
     svga_close(&dev->svga);
 
     free(dev);
@@ -161,6 +158,30 @@ force_redraw(priv_t priv)
     dev->svga.fullchange = changeframecount;
 }
 
+#if 0
+void 
+vga_disable(priv_t priv)
+{
+        vga_t *dev = (vga_t *)priv;
+        svga_t *svga = &dev->svga;
+
+        io_removehandler(0x03a0, 0x0040, vga_in, NULL, NULL, vga_out, NULL, NULL, dev);
+        mem_map_disable(&svga->mapping);
+}
+
+void 
+vga_enable(priv_t priv)
+{
+        vga_t *dev = (vga_t *)priv;
+        svga_t *svga = &dev->svga;
+
+        io_sethandler(0x03c0, 0x0020, vga_in, NULL, NULL, vga_out, NULL, NULL, dev);
+        if (!(svga->miscout & 1))
+                io_sethandler(0x03a0, 0x0020, vga_in, NULL, NULL, vga_out, NULL, NULL, dev);
+
+        mem_map_enable(&svga->mapping);
+}
+#endif
 
 static priv_t
 vga_init(const device_t *info, UNUSED(void *parent))

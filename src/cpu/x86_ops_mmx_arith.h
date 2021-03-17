@@ -8,13 +8,13 @@
  *
  *		Miscellaneous x86 CPU Instructions.
  *
- * Version:	@(#)x86_ops_mmx_arith.h	1.0.1	2018/02/14
+ * Version:	@(#)x86_ops_mmx_arith.h	1.0.2	2020/12/11
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2008-2018 Sarah Walker.
- *		Copyright 2016-2018 Miran Grca.
+ *		Copyright 2008-2020 Sarah Walker.
+ *		Copyright 2016-2020 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -331,6 +331,7 @@ static int opPMULLW_a16(uint32_t fetchdat)
         {
                 MMX_REG src;
         
+                SEG_CHECK_READ(cpu_state.ea_seg);
                 src.l[0] = readmeml(easeg, cpu_state.eaaddr);
                 src.l[1] = readmeml(easeg, cpu_state.eaaddr + 4); if (cpu_state.abrt) return 0;
                 cpu_state.MM[cpu_reg].w[0] *= src.w[0];
@@ -358,6 +359,7 @@ static int opPMULLW_a32(uint32_t fetchdat)
         {
                 MMX_REG src;
         
+                SEG_CHECK_READ(cpu_state.ea_seg);
                 src.l[0] = readmeml(easeg, cpu_state.eaaddr);
                 src.l[1] = readmeml(easeg, cpu_state.eaaddr + 4); if (cpu_state.abrt) return 0;
                 cpu_state.MM[cpu_reg].w[0] *= src.w[0];
@@ -386,6 +388,7 @@ static int opPMULHW_a16(uint32_t fetchdat)
         {
                 MMX_REG src;
         
+                SEG_CHECK_READ(cpu_state.ea_seg);
                 src.l[0] = readmeml(easeg, cpu_state.eaaddr);
                 src.l[1] = readmeml(easeg, cpu_state.eaaddr + 4); if (cpu_state.abrt) return 0;
                 cpu_state.MM[cpu_reg].w[0] = ((int32_t)cpu_state.MM[cpu_reg].sw[0] * (int32_t)src.sw[0]) >> 16;
@@ -413,6 +416,7 @@ static int opPMULHW_a32(uint32_t fetchdat)
         {
                 MMX_REG src;
         
+                SEG_CHECK_READ(cpu_state.ea_seg);
                 src.l[0] = readmeml(easeg, cpu_state.eaaddr);
                 src.l[1] = readmeml(easeg, cpu_state.eaaddr + 4); if (cpu_state.abrt) return 0;
                 cpu_state.MM[cpu_reg].w[0] = ((int32_t)cpu_state.MM[cpu_reg].sw[0] * (int32_t)src.sw[0]) >> 16;

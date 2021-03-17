@@ -8,13 +8,13 @@
  *
  *		Implementation of the "port 92" pseudo-device.
  *
- * Version:	@(#)port92.c	1.0.1	2019/05/15
+ * Version:	@(#)port92.c	1.0.3	2021/04/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *		Copyright 2016-2019 Miran Grca.
  *		Copyright 2008-2019 Sarah Walker.
  *
@@ -50,12 +50,6 @@
 #include "port92.h"
 
 
-typedef struct {
-    uint8_t	reg,
-		mask;
-} port92_t;
-
-
 static void
 p92_reset(priv_t priv)
 {
@@ -71,7 +65,7 @@ p92_reset(priv_t priv)
 
 
 static uint8_t
-p92_read(uint16_t port, priv_t priv)
+p92_in(uint16_t port, priv_t priv)
 {
     port92_t *dev = (port92_t *)priv;
 
@@ -80,7 +74,7 @@ p92_read(uint16_t port, priv_t priv)
 
 
 static void
-p92_write(uint16_t port, uint8_t val, priv_t priv)
+p92_out(uint16_t port, uint8_t val, priv_t priv)
 {
     port92_t *dev = (port92_t *)priv;
 
@@ -104,7 +98,7 @@ p92_close(priv_t priv)
     port92_t *dev = (port92_t *)priv;
 
     io_removehandler(0x0092, 1,
-		     p92_read,NULL,NULL, p92_write,NULL,NULL, dev);
+		     p92_in,NULL,NULL, p92_out,NULL,NULL, dev);
 
     free(dev);
 }
@@ -121,11 +115,11 @@ p92_init(const device_t *info, UNUSED(void *parent))
     dev->mask = (info->local) ? 0xfc : 0x00;
 
     io_sethandler(0x0092, 1,
-		  p92_read,NULL,NULL, p92_write,NULL,NULL, dev);
+		  p92_in,NULL,NULL, p92_out,NULL,NULL, dev);
 
-    p92_reset((priv_t)dev);
+    p92_reset(dev);
 
-    return((priv_t)dev);
+    return(dev);
 }
 
 

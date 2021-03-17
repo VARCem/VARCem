@@ -9,13 +9,13 @@
  *		Implementation of the SMC FDC37C932FR and FDC37C935 Super
  *		I/O Chips.
  *
- * Version:	@(#)sio_fdc37c93x.c	1.0.15	2019/05/17
+ * Version:	@(#)sio_fdc37c93x.c	1.0.17	2021/03/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2018,2019 Fred N. van Kempen.
- *		Copyright 2016-2018 Miran Grca.
+ *		Copyright 2018-2021 Fred N. van Kempen.
+ *		Copyright 2016-2021 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -138,8 +138,11 @@ static uint8_t
 gpio_read(uint16_t port, priv_t priv)
 {
     fdc37c93x_t *dev = (fdc37c93x_t *)priv;
+    uint8_t ret = 0xff;
 
-    return dev->gpio_regs[port & 1];
+    ret = dev->gpio_regs[port & 1];
+
+    return ret;
 }
 
 
@@ -148,7 +151,8 @@ gpio_write(uint16_t port, uint8_t val, priv_t priv)
 {
     fdc37c93x_t *dev = (fdc37c93x_t *)priv;
 
-    dev->gpio_regs[port & 1] = val;
+    if (! (port & 1))
+	dev->gpio_regs[0] = (dev->gpio_regs[0] & 0xfc) | (val & 0x03);
 }
 
 
@@ -193,9 +197,10 @@ fdc_handler(fdc37c93x_t *dev)
 {
     uint8_t global_enable = !!(dev->regs[0x22] & (1 << 0));
     uint8_t local_enable = !!dev->ld_regs[0][0x30];
-    uint16_t ld_port;
+    uint16_t ld_port = 0;
 
     fdc_remove(dev->fdc);
+
     if (global_enable && local_enable) {
 	ld_port = make_port(dev, 0);
 	if ((ld_port >= 0x0100) && (ld_port <= 0x0ff8))
@@ -209,9 +214,9 @@ lpt_handler(fdc37c93x_t *dev)
 {
     uint8_t global_enable = !!(dev->regs[0x22] & (1 << 3));
     uint8_t local_enable = !!dev->ld_regs[3][0x30];
-    uint16_t ld_port;
+    uint16_t ld_port = 0;
+    uint8_t lpt_irq = dev->ld_regs[3][0x70];
 
-//   parallel_remove(0);
     if (global_enable && local_enable) {
 	ld_port = make_port(dev, 3);
 	if ((ld_port >= 0x0100) && (ld_port <= 0x0ffc))
@@ -226,9 +231,8 @@ serial_handler(fdc37c93x_t *dev, int uart)
     uint8_t uart_no = 4 + uart;
     uint8_t global_enable = !!(dev->regs[0x22] & (1 << uart_no));
     uint8_t local_enable = !!dev->ld_regs[uart_no][0x30];
-    uint16_t ld_port;
+    uint16_t ld_port = 0;
 
-//    serial_remove(uart);
     if (global_enable && local_enable) {
 	ld_port = make_port(dev, uart_no);
 	if ((ld_port >= 0x0100) && (ld_port <= 0x0ff8))
@@ -243,7 +247,7 @@ access_bus_read(uint16_t port, priv_t priv)
     access_bus_t *dev = (access_bus_t *)priv;
     uint8_t ret = 0xff;
 
-    switch(port & 3) {
+    switch (port & 3) {
 	case 0:
 		ret = (dev->status & 0xbf);
 		break;
@@ -270,7 +274,7 @@ access_bus_write(uint16_t port, uint8_t val, priv_t priv)
 {
     access_bus_t *dev = (access_bus_t *)priv;
 
-    switch(port & 3) {
+    switch (port & 3) {
 	case 0:
 		dev->control = (val & 0xcf);
 		break;
@@ -306,7 +310,7 @@ access_bus_init(const device_t *info, UNUSED(void *parent))
     access_bus_t *dev = (access_bus_t *)mem_alloc(sizeof(access_bus_t));
     memset(dev, 0x00, sizeof(access_bus_t));
 
-    return((priv_t)dev);
+    return(dev);
 }
 
 
@@ -326,7 +330,7 @@ access_bus_handler(fdc37c93x_t *dev)
 {
     uint8_t global_enable = !!(dev->regs[0x22] & (1 << 6));
     uint8_t local_enable = !!dev->ld_regs[9][0x30];
-    uint16_t ld_port;
+    uint16_t ld_port = 0;
 
     io_removehandler(dev->access_bus->base, 4,
 		     access_bus_read,NULL,NULL,
@@ -438,6 +442,8 @@ fdc37c93x_write(uint16_t port, uint8_t val, priv_t priv)
 			case 0x30:
 			case 0x60:
 			case 0x61:
+				if ((dev->cur_reg == 0x30) && (val & 0x01))
+					dev->regs[0x22] |= 0x01;
 				if (valxor)
 					fdc_handler(dev);
 				break;
@@ -493,6 +499,9 @@ fdc37c93x_write(uint16_t port, uint8_t val, priv_t priv)
 			case 0x30:
 			case 0x60:
 			case 0x61:
+			case 0x70:
+				if ((dev->cur_reg == 0x30) && (val & 0x01))
+					dev->regs[0x22] |= 0x08;
 				if (valxor)
 					lpt_handler(dev);
 				break;
@@ -506,6 +515,8 @@ fdc37c93x_write(uint16_t port, uint8_t val, priv_t priv)
 			case 0x60:
 			case 0x61:
 			case 0x70:
+				if ((dev->cur_reg == 0x30) && (val & 0x01))
+					dev->regs[0x22] |= 0x10;
 				if (valxor)
 					serial_handler(dev, 0);
 				break;
@@ -519,6 +530,8 @@ fdc37c93x_write(uint16_t port, uint8_t val, priv_t priv)
 			case 0x60:
 			case 0x61:
 			case 0x70:
+				if ((dev->cur_reg == 0x30) && (val & 0x01))
+					dev->regs[0x22] |= 0x20;
 				if (valxor)
 					serial_handler(dev, 1);
 				break;
@@ -545,6 +558,8 @@ fdc37c93x_write(uint16_t port, uint8_t val, priv_t priv)
 			case 0x60:
 			case 0x61:
 			case 0x70:
+				if ((dev->cur_reg == 0x30) && (val & 0x01))
+					dev->regs[0x22] |= 0x40;
 				if (valxor)
 					access_bus_handler(dev);
 				break;
@@ -710,12 +725,14 @@ fdc37c93x_init(const device_t *info, void *parent)
     if (dev->chip_id == 0x03)
 	dev->access_bus = device_add_parent(&access_bus_device, parent);
 
+    io_sethandler(0x370, 0x0002,
+		  fdc37c93x_read, NULL, NULL, fdc37c93x_write, NULL, NULL, dev);
     io_sethandler(0x3f0, 2,
 		  fdc37c93x_read,NULL,NULL, fdc37c93x_write,NULL,NULL, dev);
 
     fdc37c93x_reset(dev);
 
-    return((priv_t)dev);
+    return(dev);
 }
 
 
@@ -723,6 +740,16 @@ const device_t fdc37c932fr_device = {
     "SMC FDC37C932FR Super I/O",
     0,
     0x03,
+    NULL,
+    fdc37c93x_init, fdc37c93x_close, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL
+};
+
+const device_t fdc37c932qf_device = {
+    "SMC FDC37C932QF Super I/O",
+    0,
+    0x30,
     NULL,
     fdc37c93x_init, fdc37c93x_close, NULL,
     NULL, NULL, NULL, NULL,

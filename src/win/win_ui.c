@@ -875,7 +875,7 @@ again:
     win_mouse_init();
 
     /* Fire up the machine. */
-    pc_reset_hard();
+    pc_reset_hard_init();
 
     /* Set the PAUSE mode depending on the renderer. */
     pc_pause(0);
@@ -1054,13 +1054,16 @@ plat_get_kbd_state(void)
 
     /* Grab the system keyboard state. */
     memset(kbdata, 0x00, sizeof(kbdata));
-    GetKeyboardState(kbdata);
-
-    /* Pick out the keys we are interested in. */
-    if (kbdata[VK_NUMLOCK]) ret |= KBD_FLAG_NUM;
-    if (kbdata[VK_CAPITAL]) ret |= KBD_FLAG_CAPS;
-    if (kbdata[VK_SCROLL]) ret |= KBD_FLAG_SCROLL;
-    if (kbdata[VK_PAUSE]) ret |= KBD_FLAG_PAUSE;
+    
+	if (GetKeyboardState(kbdata)) {
+		/* Pick out the keys we are interested in. */
+		if (kbdata[VK_NUMLOCK]) ret |= KBD_FLAG_NUM;
+		if (kbdata[VK_CAPITAL]) ret |= KBD_FLAG_CAPS;
+		if (kbdata[VK_SCROLL]) ret |= KBD_FLAG_SCROLL;
+		if (kbdata[VK_PAUSE]) ret |= KBD_FLAG_PAUSE;
+	}
+	else
+		DEBUG(0, "GetKeyboardState failed\n");
 
     return(ret);
 }

@@ -8,13 +8,13 @@
  *
  *		Trident TVGA (8900B/8900C/8900D) emulation.
  *
- * Version:	@(#)vid_tvga.c	1.0.16	2019/05/17
+ * Version:	@(#)vid_tvga.c	1.0.17	2020/12/02
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2020 Fred N. van Kempen.
  *		Copyright 2016-2019 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -234,7 +234,17 @@ tvga_out(uint16_t addr, uint8_t val, priv_t priv)
 		return;
 
 	case 0x3cf:
-		switch (svga->gdcaddr & 15) {
+		switch (svga->gdcaddr & 0xf) {
+
+		    case 0x6:
+        	    old = svga->gdcreg[6];
+            	svga_out(addr, val, svga);
+                if ((old & 0xc) != 0 && (val & 0xc) == 0) {
+                /*override mask - TVGA supports linear 128k at A0000*/
+                    svga->banked_mask = 0x1ffff;
+                }
+                return;	
+
 			case 0x0e:
 				svga->gdcreg[0xe] = val ^ 2;
 				dev->tvga_3d9 = svga->gdcreg[0xe] & 0xf;

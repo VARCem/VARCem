@@ -8,13 +8,13 @@
  *
  *		Definitions for the floppy disk	controller driver.
  *
- * Version:	@(#)fdc.h	1.0.9	2019/05/20
+ * Version:	@(#)fdc.h	1.0.10	2021/03/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2018,2019 Fred N. van Kempen.
+ *		Copyright 2018-2021 Fred N. van Kempen.
  *		Copyright 2016-2019 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -46,21 +46,21 @@
 
 
 /* FDC internal flags. */
-#define FDC_FLAG_PCJR		0x01	/* PCjr */
-#define FDC_FLAG_DISKCHG_ACTLOW	0x02	/* Amstrad, PS/1, PS/2 ISA */
-#define FDC_FLAG_AT		0x04	/* AT+, PS/x */
-#define FDC_FLAG_PS1		0x08	/* PS/1, PS/2 ISA */
-#define FDC_FLAG_SUPERIO	0x10	/* Super I/O chips */
-#define FDC_FLAG_START_RWC_1	0x20	/* W83877F, W83977F */
-#define FDC_FLAG_MORE_TRACKS	0x40	/* W83877F, W83977F, PC87306, PC87309 */
-#define FDC_FLAG_NSC		0x80	/* PC87306, PC87309 */
-#define FDC_FLAG_TOSHIBA	0x100	/* Toshiba TC8565 (T1200) */
-#define FDC_FLAG_AMSTRAD	0x200	/* Non-AT Amstrad machines */
-#define FDC_FLAG_NSDP		0x400	/* DP8473N, DP8473V */
+#define FDC_FLAG_PCJR		0x01	// PCjr
+#define FDC_FLAG_DISKCHG_ACTLOW	0x02	// Amstrad, PS/1, PS/2 ISA
+#define FDC_FLAG_AT		0x04	// AT+, PS/x
+#define FDC_FLAG_PS1		0x08	// PS/1, PS/2 ISA
+#define FDC_FLAG_SUPERIO	0x10	// Super I/O chips
+#define FDC_FLAG_START_RWC_1	0x20	// W83877F, W83977F
+#define FDC_FLAG_MORE_TRACKS	0x40	// W83877F, W83977F, PC87306, PC87309
+#define FDC_FLAG_NSC		0x80	// PC87306, PC87309
+#define FDC_FLAG_TOSHIBA	0x100	// Toshiba TC8565 (T1200)
+#define FDC_FLAG_AMSTRAD	0x200	// Non-AT Amstrad machines
+#define FDC_FLAG_NSDP		0x400	// DP8473N, DP8473V
 
 
 typedef struct {
-    uint8_t	dor, stat, command, dat, st0, swap;
+    uint8_t	dor, stat, command, processed_cmd, dat, st0, swap;
     uint8_t	swwp, disable_write;
     uint8_t	params[256], res[256];
     uint8_t	specify[256], format_dat[256];
@@ -201,7 +201,7 @@ extern void	fdc_sectorid(fdc_t *fdc, uint8_t track, uint8_t side,
 			     uint8_t sector, uint8_t size, uint8_t crc1,
 			     uint8_t crc2);
 
-extern uint8_t	fdc_read(uint16_t addr, priv_t priv);
+extern uint8_t	fdc_in(uint16_t port, priv_t priv);
 extern void	fdc_reset(priv_t priv);
 
 extern uint8_t	fdc_get_current_drive(void);

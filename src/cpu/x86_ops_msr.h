@@ -8,7 +8,7 @@
  *
  *		Miscellaneous x86 CPU Instructions.
  *
- * Version:	@(#)x86_ops_msr.h	1.0.1	2018/02/14
+ * Version:	@(#)x86_ops_msr.h	1.0.2	2020/12/15
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -37,7 +37,7 @@
 
 static int opRDTSC(uint32_t fetchdat)
 {
-        if (!cpu_hasrdtsc)
+        if (!cpu_has_feature(CPU_FEATURE_RDTSC))
         {
                 cpu_state.pc = cpu_state.oldpc;
                 x86illegal();

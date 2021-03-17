@@ -16,7 +16,7 @@
  *
  * FIXME:	move statbar calls to upper layer
  *
- * Version:	@(#)net_ne2000.c	1.0.20	2020/06/05
+ * Version:	@(#)net_ne2000.c	1.0.22	2021/03/16
  *
  * Based on	@(#)ne2k.cc v1.56.2.1 2004/02/02 22:37:22 cbothamy
  *
@@ -25,7 +25,7 @@
  *		Miran Grca, <mgrca8@gmail.com>
  *		Peter Grehan, <grehan@iprg.nokia.com>
  *
- *		Copyright 2017-2020 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Portions Copyright (C) 2002  MandrakeSoft S.A.
  *
@@ -72,12 +72,12 @@
 
 
 enum {
-    NE2K_NE1000 = 0,			/* 8-bit ISA NE1000 */
-    NE2K_NE2000,			/* 16-bit ISA NE2000 */
-    NE2K_NE2_MCA,			/* 16-bit MCA NE/2 */
-    NE2K_NE2_ENEXT_MCA,			/* 16-bit MCA NE/2 */
-    NE2K_RTL8019AS,			/* 16-bit ISA PnP Realtek 8019AS */
-    NE2K_RTL8029AS			/* 32-bit PCI Realtek 8029AS */
+    NE2K_NE1000 = 0,			// 8-bit ISA NE1000
+    NE2K_NE2000,			// 16-bit ISA NE2000
+    NE2K_NE2_MCA,			// 16-bit MCA NE/2
+    NE2K_NE2_ENEXT_MCA,			// 16-bit MCA NE/2
+    NE2K_RTL8019AS,			// 16-bit ISA PnP Realtek 8019AS
+    NE2K_RTL8029AS			// 32-bit PCI Realtek 8029AS
 };
 
 enum {
@@ -95,11 +95,11 @@ enum {
 #define ROM_PATH_RTL8029	L"network/rtl8029as/rtl8029as.rom"
 
 /* PCI info. */
-#define PNP_VENDID		0x4a8c		/* Realtek, Inc */
-#define PCI_VENDID		0x10ec		/* Realtek, Inc */
-#define PNP_DEVID		0x8019		/* RTL8029AS */
-#define PCI_DEVID		0x8029		/* RTL8029AS */
-#define PCI_REGSIZE		256		/* size of PCI space */
+#define PNP_VENDID		0x4a8c		// Realtek, Inc
+#define PCI_VENDID		0x10ec		// Realtek, Inc
+#define PNP_DEVID		0x8019		// RTL8029AS
+#define PCI_DEVID		0x8029		// RTL8029AS
+#define PCI_REGSIZE		256		// size of PCI space
 
 
 /* ISA-PNP data. */
@@ -138,7 +138,7 @@ typedef struct {
     uint8_t	_9346cr;
 
     /* PCI data. */
-    int		card;			/* PCI card slot */
+    int		card;			// PCI card slot
     bar_t	pci_bar[2];
     uint8_t	pci_regs[PCI_REGSIZE];
 
@@ -166,9 +166,9 @@ typedef struct {
     /* NatSemi DP8390 state. */
     dp8390_t	dp8390;
 
-    uint8_t	maclocal[6];		/* configured MAC (local) address */
-    uint8_t	macaddr[32];		/* for NE1000/NE2000 probing */
-    uint8_t	eeprom[128];		/* for RTL8029AS */
+    uint8_t	maclocal[6];		// configured MAC (local) address
+    uint8_t	macaddr[32];		// for NE1000/NE2000 probing
+    uint8_t	eeprom[128];		// for RTL8029AS
 } nic_t;
 
 
@@ -185,7 +185,7 @@ nic_interrupt(nic_t *dev, int set)
 		picint(1<<dev->base_irq);
 	  else
 		picintc(1<<dev->base_irq);
-	}
+    }
 }
 
 
@@ -199,7 +199,7 @@ nic_reset(priv_t priv)
 
     DBGLOG(1, "%s: reset\n", dev->name);
 
-    switch(dev->board) {
+    switch (dev->board) {
 	case NE2K_NE1000:
 		/* Initialize the MAC address. */
 		dev->macaddr[0]  = dp->physaddr[0];
@@ -2327,6 +2327,15 @@ nic_mca_write(int port, uint8_t val, priv_t priv)
 }
 
 
+static uint8_t
+nic_mca_feedb(priv_t priv)
+{
+    nic_t *dev = (nic_t *)priv;
+
+    return(dev->pos_regs[2] & 0x01);
+}
+
+
 static void
 nic_rom_init(nic_t *dev, const wchar_t *fn)
 {
@@ -2459,7 +2468,7 @@ nic_init(const device_t *info, UNUSED(void *parent))
 	}
     } else if (dev->is_mca) {
 	/* Let MCA do its thing. */
-	mca_add(nic_mca_read, nic_mca_write, dev);	
+	mca_add(nic_mca_read, nic_mca_write, nic_mca_feedb, NULL, dev);	
     } else {
 	/* Manual configuration. */
 	dev->base_address = device_get_config_hex16("base");

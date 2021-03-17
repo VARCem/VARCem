@@ -8,12 +8,12 @@
  *
  *		Definitions for the CDROM module..
  *
- * Version:	@(#)cdrom.h	1.0.17	2019/05/17
+ * Version:	@(#)cdrom.h	1.0.18	2021/03/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -79,7 +79,7 @@ enum {
     CDROM_BUS_SCSI,
     CDROM_BUS_USB
 };
-#define CDROM_BUS_MAX	(CDROM_BUS_USB)	/* USB exclusive */
+#define CDROM_BUS_MAX	(CDROM_BUS_USB)	// USB exclusive
 
 
 /* To shut up the GCC compilers. */
@@ -120,18 +120,18 @@ typedef struct {
 typedef struct cdrom {
     int		id;
 
-    uint8_t	speed_idx,		/* default speed [index] */
-		cur_speed;		/* currently set speed [index] */
-    int8_t	bus_type,		/* 0 = ATAPI, 1 = SCSI */
-		bus_mode,		/* Bit 0 = PIO suported;
-					 * Bit 1 = DMA supportd. */
+    uint8_t	speed_idx,		// default speed [index]
+		cur_speed;		// currently set speed [index]
+    int8_t	bus_type,		// 0 = ATAPI, 1 = SCSI
+		bus_mode,		// Bit 0 = PIO suported;
+					// Bit 1 = DMA supportd.
 		sound_on,
-		can_lock,		/* device can be locked */
-		is_locked;		/* device is currently locked */
+		can_lock,		// device can be locked
+		is_locked;		// device is currently locked
 
     union {
-	uint8_t ide_channel;		/* IDE drive: channel (0/1) */
-	struct {			/* SCSI drive: ID and LUN */
+	uint8_t ide_channel;		// IDE drive: channel (0/1)
+	struct {			// SCSI drive: ID and LUN
 		int8_t  id;
 		int8_t  lun;
 	} scsi;
@@ -148,9 +148,9 @@ typedef struct cdrom {
 	     	cd_end,
 		cdrom_capacity;
 
-    const cdrom_ops_t *ops;			/* device ops */
+    const cdrom_ops_t *ops;		// device ops
 
-    void	*local;				/* local data for handler */
+    void	*local;			// local data for handler
 
     void	(*reset)(struct cdrom *);
 

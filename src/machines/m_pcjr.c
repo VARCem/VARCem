@@ -8,13 +8,13 @@
  *
  *		Emulation of the IBM PCjr.
  *
- * Version:	@(#)m_pcjr.c	1.0.23	2019/05/17
+ * Version:	@(#)m_pcjr.c	1.0.26	2021/03/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -167,12 +167,12 @@ recalc_timings(pcjr_t *dev)
 
 
 static void
-vid_out(uint16_t addr, uint8_t val, priv_t priv)
+vid_out(uint16_t port, uint8_t val, priv_t priv)
 {
     pcjr_t *dev = (pcjr_t *)priv;
     uint8_t old;
 
-    switch (addr) {
+    switch (port) {
 	case 0x3d4:
 		dev->crtcreg = val & 0x1f;
 		return;
@@ -195,8 +195,13 @@ vid_out(uint16_t addr, uint8_t val, priv_t priv)
 			if (dev->array_index & 0x10)
 				val &= 0x0f;
 			dev->array[dev->array_index & 0x1f] = val;
-			if (!(dev->array_index & 0x1f))
-				cga_comp_update(dev->cpriv, val);
+			if (! (dev->array_index & 0x1f)) {
+				/* Mode Control 1 register ? */
+#if 0
+				if (val & 0x10)
+#endif
+					cga_comp_update(dev->cpriv, val);
+			}
 		}
 		dev->array_ff = !dev->array_ff;
 		break;
@@ -211,12 +216,12 @@ vid_out(uint16_t addr, uint8_t val, priv_t priv)
 
 
 static uint8_t
-vid_in(uint16_t addr, priv_t priv)
+vid_in(uint16_t port, priv_t priv)
 {
     pcjr_t *dev = (pcjr_t *)priv;
     uint8_t ret = 0xff;
 
-    switch (addr) {
+    switch (port) {
 	case 0x3d4:
 		ret = dev->crtcreg;
 		break;
@@ -578,7 +583,7 @@ vid_poll(priv_t priv)
 
 
 static void
-kbd_write(uint16_t port, uint8_t val, priv_t priv)
+kbd_out(uint16_t port, uint8_t val, priv_t priv)
 {
     pcjr_t *dev = (pcjr_t *)priv;
 
@@ -620,7 +625,7 @@ kbd_write(uint16_t port, uint8_t val, priv_t priv)
 
 
 static uint8_t
-kbd_read(uint16_t port, priv_t priv)
+kbd_in(uint16_t port, priv_t priv)
 {
     pcjr_t *dev = (pcjr_t *)priv;
     uint8_t ret = 0xff;
@@ -776,9 +781,11 @@ pcjr_init(const device_t *info, UNUSED(void *arg))
     dev->display_type = machine_get_config_int("display_type");
     dev->composite = (dev->display_type != PCJR_RGB);
     if (dev->composite)
-	dev->cpriv = cga_comp_init(0);
+		dev->cpriv = cga_comp_init(1);
+	else
+		dev->cpriv = cga_comp_init(0);
 
-    pic_init();
+    pic_init_pcjr();
 
     pit_init();
     pit_set_out_func(&pit, 0, irq0_timer);
@@ -791,21 +798,23 @@ pcjr_init(const device_t *info, UNUSED(void *arg))
     }
 
     /* Initialize the video controller. */
+    video_load_font(L"video/ibm/mda/mda.rom", 0);
     mem_map_add(&dev->mapping, 0xb8000, 0x08000,
-		vid_read, NULL, NULL,
-		vid_write, NULL, NULL,  NULL, 0, dev);
+		vid_read,NULL,NULL, vid_write,NULL,NULL, NULL, 0, dev);
     io_sethandler(0x03d0, 16,
 		  vid_in,NULL,NULL, vid_out,NULL,NULL, dev);
     timer_add(vid_poll, dev, &dev->vidtime, TIMER_ALWAYS_ENABLED);
     video_inform(VID_TYPE_CGA, &pcjr_timings);
+	cga_palette = 0;
+    video_palette_rebuild();
 
     /* Initialize the keyboard. */
     keyboard_scan = 1;
     key_queue_start = key_queue_end = 0;
     io_sethandler(0x0060, 4,
-		  kbd_read, NULL, NULL, kbd_write, NULL, NULL, dev);
+		  kbd_in,NULL,NULL, kbd_out,NULL,NULL, dev);
     io_sethandler(0x00a0, 8,
-		  kbd_read, NULL, NULL, kbd_write, NULL, NULL, dev);
+		  kbd_in,NULL,NULL, kbd_out,NULL,NULL, dev);
     timer_add(kbd_poll, dev, &keyboard_delay, TIMER_ALWAYS_ENABLED);
     keyboard_set_table(scancode_xt);
     keyboard_send = kbd_adddata_ex;
@@ -816,7 +825,7 @@ pcjr_init(const device_t *info, UNUSED(void *arg))
     /* Add the floppy controller. */
     device_add(&fdc_pcjr_device);
 
-    return((priv_t)dev);
+    return(dev);
 }
 
 

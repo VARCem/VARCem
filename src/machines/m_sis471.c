@@ -8,7 +8,7 @@
  *
  *		Emulation of the SiS 85c471 based machines.
  *
- * Version:	@(#)m_sis471.c	1.0.16	2020/06/05
+ * Version:	@(#)m_sis471.c	1.0.17	2020/06/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -59,7 +59,7 @@ common_init(const device_t *info, void *arg)
 
     device_add(&memregs_device);
 
-    switch(info->local) {
+    switch (info->local) {
 	default:
 		m_at_ide_init();
 		break;
@@ -79,7 +79,7 @@ static const machine_t ami_info = {
 };
 
 const device_t m_sis471_ami = {
-    "AMI 486 (SiS 471)",
+    "EPOX 486 (SiS 471)",
     DEVICE_ROOT,
     0,
     L"sis471/ami",

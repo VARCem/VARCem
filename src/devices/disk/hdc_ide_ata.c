@@ -14,12 +14,14 @@
  *		Devices currently implemented are hard disk, CD-ROM and
  *		ZIP IDE/ATAPI devices.
  *
- * Version:	@(#)hdc_ide_ata.c	1.0.35	2019/05/17
+ * Version:	@(#)hdc_ide_ata.c	1.0.38	2021/03/16
  *
- * Authors:	Miran Grca, <mgrca8@gmail.com>
+ * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
+ *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2016-2019 Miran Grca.
+ *		Copyright 2021 Fred N. van Kempen.
+ *		Copyright 2016-2021 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -72,57 +74,64 @@
 
 
 /* Bits of 'atastat' */
-#define ERR_STAT			0x01 /* Error */
-#define IDX_STAT			0x02 /* Index */
-#define CORR_STAT			0x04 /* Corrected data */
-#define DRQ_STAT			0x08 /* Data request */
-#define DSC_STAT                	0x10 /* Drive seek complete */
-#define SERVICE_STAT            	0x10 /* ATAPI service */
-#define DWF_STAT			0x20 /* Drive write fault */
-#define DRDY_STAT			0x40 /* Ready */
-#define BSY_STAT			0x80 /* Busy */
+#define ERR_STAT			0x01 // Error
+#define IDX_STAT			0x02 // Index
+#define CORR_STAT			0x04 // Corrected data
+#define DRQ_STAT			0x08 // Data request
+#define DSC_STAT                	0x10 // Drive seek complete
+#define SERVICE_STAT            	0x10 // ATAPI service
+#define DWF_STAT			0x20 // Drive write fault
+#define DRDY_STAT			0x40 // Ready
+#define BSY_STAT			0x80 // Busy
 
 /* Bits of 'error' */
-#define AMNF_ERR			0x01 /* Address mark not found */
-#define TK0NF_ERR			0x02 /* Track 0 not found */
-#define ABRT_ERR			0x04 /* Command aborted */
-#define MCR_ERR				0x08 /* Media change request */
-#define IDNF_ERR			0x10 /* Sector ID not found */
-#define MC_ERR				0x20 /* Media change */
-#define UNC_ERR				0x40 /* Uncorrectable data error */
-#define BBK_ERR				0x80 /* Bad block mark detected */
+#define AMNF_ERR			0x01 // Address mark not found
+#define TK0NF_ERR			0x02 // Track 0 not found 
+#define ABRT_ERR			0x04 // Command aborted
+#define MCR_ERR				0x08 // Media change request
+#define IDNF_ERR			0x10 // Sector ID not found
+#define MC_ERR				0x20 // Media change
+#define UNC_ERR				0x40 // Uncorrectable data error
+#define BBK_ERR				0x80 // Bad block mark detected
 
 /* ATA Commands */
 #define WIN_NOP				0x00
-#define WIN_SRST			0x08 /* ATAPI Device Reset */
+#define WIN_SRST			0x08 // ATAPI Device Reset
 #define WIN_RECAL			0x10
-#define WIN_READ			0x20 /* 28-Bit Read */
-#define WIN_READ_NORETRY                0x21 /* 28-Bit Read - no retry */
-#define WIN_WRITE			0x30 /* 28-Bit Write */
-#define WIN_WRITE_NORETRY		0x31 /* 28-Bit Write - no retry */
-#define WIN_VERIFY			0x40 /* 28-Bit Verify */
-#define WIN_VERIFY_ONCE			0x41 /* Added by OBattler - deprected older ATA command, according to the specification I found, it is identical to 0x40 */
+#define WIN_READ			0x20 // 28-Bit Read
+#define WIN_READ_NORETRY                0x21 // 28-Bit Read - no retry
+#define WIN_WRITE			0x30 // 28-Bit Write
+#define WIN_WRITE_NORETRY		0x31 // 28-Bit Write - no retry
+#define WIN_VERIFY			0x40 // 28-Bit Verify
+
+/*
+ * Added by OBattler -
+ * deprected older ATA command, according to the
+ * specification I found, it is identical to 0x40.
+ */
+#define WIN_VERIFY_ONCE			0x41
+
 #define WIN_FORMAT			0x50
 #define WIN_SEEK			0x70
-#define WIN_DRIVE_DIAGNOSTICS           0x90 /* Execute Drive Diagnostics */
-#define WIN_SPECIFY			0x91 /* Initialize Drive Parameters */
-#define WIN_PACKETCMD			0xA0 /* Send a packet command. */
-#define WIN_PIDENTIFY			0xA1 /* Identify ATAPI device */
-#define WIN_READ_MULTIPLE               0xC4
-#define WIN_WRITE_MULTIPLE              0xC5
-#define WIN_SET_MULTIPLE_MODE           0xC6
-#define WIN_READ_DMA                    0xC8
-#define WIN_READ_DMA_ALT                0xC9
-#define WIN_WRITE_DMA                   0xCA
-#define WIN_WRITE_DMA_ALT               0xCB
-#define WIN_STANDBYNOW1			0xE0
-#define WIN_IDLENOW1			0xE1
-#define WIN_SETIDLE1			0xE3
-#define WIN_CHECKPOWERMODE1		0xE5
-#define WIN_SLEEP1			0xE6
-#define WIN_IDENTIFY			0xEC /* Ask drive to identify itself */
-#define WIN_SET_FEATURES		0xEF
-#define WIN_READ_NATIVE_MAX		0xF8
+#define WIN_DRIVE_DIAGNOSTICS           0x90 // Execute Drive Diagnostics
+#define WIN_SPECIFY			0x91 // Initialize Drive Parameters
+#define WIN_PACKETCMD			0xa0 // Send a packet command
+#define WIN_PIDENTIFY			0xa1 // Identify ATAPI device
+#define WIN_READ_MULTIPLE               0xc4
+#define WIN_WRITE_MULTIPLE              0xc5
+#define WIN_SET_MULTIPLE_MODE           0xc6
+#define WIN_READ_DMA                    0xc8
+#define WIN_READ_DMA_ALT                0xc9
+#define WIN_WRITE_DMA                   0xca
+#define WIN_WRITE_DMA_ALT               0xcb
+#define WIN_STANDBYNOW1			0xe0
+#define WIN_IDLENOW1			0xe1
+#define WIN_SETIDLE1			0xe3
+#define WIN_CHECKPOWERMODE1		0xe5
+#define WIN_SLEEP1			0xe6
+#define WIN_IDENTIFY			0xec // ask drive to identify itself
+#define WIN_SET_FEATURES		0xef
+#define WIN_READ_NATIVE_MAX		0xf8
 
 #define FEATURE_SET_TRANSFER_MODE	0x03
 #define FEATURE_ENABLE_IRQ_OVERLAPPED	0x5d
@@ -179,66 +188,83 @@ ide_get_period(ide_t *ide, int size)
 			case 0:
 				period = 10.0 / 3.0;
 				break;
+
 			case 1:
 				period = (period * 600.0) / 383.0;
 				break;
+
 			case 2:
 				period = 25.0 / 3.0;
 				break;
+
 			case 3:
 				period = 100.0 / 9.0;
 				break;
+
 			case 4:
 				period = 50.0 / 3.0;
 				break;
 		}
 		break;
+
 	case 0x100:	/* Single Word DMA */
 		switch(ide->mdma_mode & 0xff) {
 			case 0:
 				period = 25.0 / 12.0;
 				break;
+
 			case 1:
 				period = 25.0 / 6.0;
 				break;
+
 			case 2:
 				period = 25.0 / 3.0;
 				break;
 		}
 		break;
+
 	case 0x200:	/* Multiword DMA */
 		switch(ide->mdma_mode & 0xff) {
 			case 0:
 				period = 25.0 / 6.0;
 				break;
+
 			case 1:
 				period = 40.0 / 3.0;
 				break;
+
 			case 2:
 				period = 50.0 / 3.0;
 				break;
 		}
 		break;
+
 	case 0x300:	/* Ultra DMA */
 		switch(ide->mdma_mode & 0xff) {
 			case 0:
 				period = 50.0 / 3.0;
 				break;
+
 			case 1:
 				period = 25.0;
 				break;
+
 			case 2:
 				period = 100.0 / 3.0;
 				break;
+
 			case 3:
 				period = 400.0 / 9.0;
 				break;
+
 			case 4:
 				period = 200.0 / 3.0;
 				break;
+
 			case 5:
 				period = 100.0;
 				break;
+
 		}
 		break;
     }
@@ -310,8 +336,8 @@ ide_irq_raise(ide_t *ide)
 		picint(1 << ide_boards[ide->board]->irq);
     }
 
-    ide->irqstat=1;
-    ide->service=1;
+    ide->irqstat = 1;
+    ide->service = 1;
 }
 
 
@@ -330,7 +356,7 @@ ide_irq_lower(ide_t *ide)
 		picintc(1 << ide_boards[ide->board]->irq);
     }
 
-    ide->irqstat=0;
+    ide->irqstat = 0;
 }
 
 
@@ -681,13 +707,13 @@ loadhd(ide_t *ide, int d, const wchar_t *fn)
 void
 ide_set_signature(ide_t *ide)
 {
-    scsi_device_data_t *atapi = (scsi_device_data_t *) ide->p;
+    scsi_device_data_t *atapi = (scsi_device_data_t *) ide->sc;
 
-    ide->sector=1;
-    ide->head=0;
+    ide->sector = 1;
+    ide->head = 0;
 
     if (ide_drive_is_atapi(ide)) {
-	ide->set_signature(ide->p);
+	ide->set_signature(ide->sc);
 	ide->secount = atapi->phase;
 	ide->cylinder = atapi->request_length;
     } else {
@@ -832,38 +858,42 @@ ide_board_close(int board)
     int c, d;
     scsi_device_data_t *atapi;
 
-    /* Close hard disk image files (if previously open) */
+	/* Close hard disk image files (if previously open) */
     for (d = 0; d < 2; d++) {
-	c = (board << 1) + d;
-	dev = ide_drives[c];
-	if (dev == NULL) continue;
+		c = (board << 1) + d;
+		dev = ide_drives[c];
+	
+		if (dev == NULL) 
+			continue;
 
-	if ((dev->type == IDE_HDD) && (dev->hdd_num != -1)) {
-		hdd_image_close(dev->hdd_num);
-		dev->hdd_num = -1;
-	}
-
-	if (board < 4) {
-		if (ide_drive_is_atapi(dev)) {
-			atapi = (scsi_device_data_t *) dev->p;
-			atapi->status = DRDY_STAT | DSC_STAT;
+		if ((dev->type == IDE_HDD) && (dev->hdd_num != -1)) {
+			hdd_image_close(dev->hdd_num);
+			dev->hdd_num = -1;
 		}
+
+		if (board < 4) {
+			if (dev->type == IDE_ATAPI) {
+				atapi = dev->sc;
+				atapi->status = DRDY_STAT | DSC_STAT;
+			}
+		}
+
+		if (dev->buffer) {
+			free(dev->buffer);
+			dev->buffer = NULL;
+		}
+
+		if (dev->sector_buffer) {
+			free(dev->sector_buffer);
+			dev->sector_buffer = NULL;
+		}
+
+		if (dev)
+			free(dev);
+		
+		ide_drives[c] = NULL;
+
 	}
-
-	if (dev->buffer) {
-		free(dev->buffer);
-		dev->buffer = NULL;
-	}
-
-	if (dev->sector_buffer) {
-		free(dev->sector_buffer);
-		dev->sector_buffer = NULL;
-	}
-
-	ide_drives[c] = NULL;
-
-	free(dev);
-    }
 }
 
 
@@ -985,7 +1015,7 @@ ide_write_data(ide_t *ide, uint32_t val, int length)
 		return;
 
 	if (ide_drive_is_atapi(ide))
-		ide->packet_write(ide->p, val, length);
+		ide->packet_write(ide->sc, val, length);
 	return;
     }
 
@@ -994,14 +1024,17 @@ ide_write_data(ide_t *ide, uint32_t val, int length)
 		idebufferb[ide->pos] = val & 0xff;
 		ide->pos++;
 		break;
+
 	case 2:
 		idebufferw[ide->pos >> 1] = val & 0xffff;
 		ide->pos += 2;
 		break;
+
 	case 4:
 		idebufferl[ide->pos >> 2] = val;
 		ide->pos += 4;
 		break;
+
 	default:
 		return;
     }
@@ -1085,7 +1118,7 @@ ide_write_devctl(uint16_t addr, uint8_t val, priv_t priv)
     DEBUG("ide_write_devctl %04X %02X from %04X(%08X):%08X\n", addr, val, CS, cs, cpu_state.pc);
 
     if ((ide->fdisk & 4) && !(val&4) && (ide->type != IDE_NONE || ide_other->type != IDE_NONE)) {
-	atapi = (scsi_device_data_t *) ide->p;
+	atapi = (scsi_device_data_t *) ide->sc;
 
 	timer_process();
 	if (ide_drive_is_atapi(ide))
@@ -1133,8 +1166,8 @@ ide_writeb(uint16_t addr, uint8_t val, priv_t priv)
     if ((ide->type == IDE_NONE) && ((addr == 0x0) || (addr == 0x7)))
 	return;
 
-    atapi = (scsi_device_data_t *) ide->p;
-    atapi_other = (scsi_device_data_t *) ide_other->p;
+    atapi = (scsi_device_data_t *) ide->sc;
+    atapi_other = (scsi_device_data_t *) ide_other->sc;
 
     switch (addr) {
 	case 0x0: /* Data */
@@ -1477,7 +1510,7 @@ ide_bad_command:
 static uint32_t
 ide_read_data(ide_t *ide, int length)
 {
-    scsi_device_data_t *atapi = (scsi_device_data_t *) ide->p;
+    scsi_device_data_t *atapi = (scsi_device_data_t *) ide->sc;
     uint32_t temp = 0;
 
     if (!ide->buffer) {
@@ -1500,7 +1533,7 @@ ide_read_data(ide_t *ide, int length)
     if (ide->command == WIN_PACKETCMD) {
 	ide->pos = 0;
 	if (ide_drive_is_atapi(ide)) {
-		temp = ide->packet_read(ide->p, length);
+		temp = ide->packet_read(ide->sc, length);
 	} else {
 		DEBUG("Drive not ATAPI (position: %i)\n", ide->pos);
 		return 0;
@@ -1555,16 +1588,15 @@ ide_read_data(ide_t *ide, int length)
 static uint8_t
 ide_status(ide_t *ide, int ch)
 {
-    scsi_device_data_t *atapi = (scsi_device_data_t *) ide->p;
+    scsi_device_data_t *atapi = (scsi_device_data_t *) ide->sc;
 
     if (ide->type == IDE_NONE)
 	return 0;
-    else {
-	if (ide_drive_is_atapi(ide))
-		return (atapi->status & ~DSC_STAT) | (ide->service ? SERVICE_STAT : 0);
-	else
-		return ide->atastat;
-    }
+
+    if (ide_drive_is_atapi(ide))
+	return (atapi->status & ~DSC_STAT) | (ide->service ? SERVICE_STAT : 0);
+
+    return ide->atastat;
 }
 
 
@@ -1578,7 +1610,7 @@ ide_readb(uint16_t addr, priv_t priv)
 
     ch = dev->cur_dev;
     ide = ide_drives[ch];
-    atapi = (scsi_device_data_t *) ide->p;
+    atapi = (scsi_device_data_t *) ide->sc;
 
     uint8_t temp = 0xff;
     uint16_t tempw;
@@ -1673,9 +1705,7 @@ uint8_t
 ide_read_alt_status(uint16_t addr, priv_t priv)
 {
     uint8_t temp = 0xff;
-
     ide_board_t *dev = (ide_board_t *)priv;
-
     ide_t *ide;
     int ch;
 
@@ -1748,9 +1778,9 @@ ide_callback(priv_t priv)
     ch = dev->cur_dev;
 
     ide = ide_drives[ch];
-    atapi = (scsi_device_data_t *) ide->p;
+    atapi = (scsi_device_data_t *) ide->sc;
     ide_other = ide_drives[ch ^ 1];
-    atapi_other = (scsi_device_data_t *) ide_other->p;
+    atapi_other = (scsi_device_data_t *) ide_other->sc;
 
     ide_set_callback(ide->board, 0LL);
 
@@ -1774,7 +1804,7 @@ ide_callback(priv_t priv)
 		atapi->status = DRDY_STAT | DSC_STAT;
 		atapi->error = 1;
 		if (ide->stop)
-			ide->stop(ide->p);
+			ide->stop(ide->sc);
 	}
 
 	ide_set_signature(ide_other);
@@ -1782,7 +1812,7 @@ ide_callback(priv_t priv)
 		atapi_other->status = DRDY_STAT | DSC_STAT;
 		atapi_other->error = 1;
 		if (ide_other->stop)
-			ide_other->stop(ide_other->p);
+			ide_other->stop(ide_other->sc);
 	}
 
 	return;
@@ -1820,7 +1850,7 @@ ide_callback(priv_t priv)
 			atapi->status = DRDY_STAT | DSC_STAT;
 			atapi->error = 1;
 			if (ide->device_reset)
-				ide->device_reset(ide->p);
+				ide->device_reset(ide->sc);
 		}
 		ide_irq_raise(ide);
 		if (ide_drive_is_atapi(ide))
@@ -1897,7 +1927,7 @@ ide_callback(priv_t priv)
 			ide->sector_pos = 256;
 		hdd_image_read(ide->hdd_num, ide_get_sector(ide), ide->sector_pos, ide->sector_buffer);
 
-		ide->pos=0;
+		ide->pos = 0;
 
 		if (ide_bus_master_read) {
 			/* We should not abort - we should simply wait for the host to start DMA. */
@@ -1952,7 +1982,7 @@ ide_callback(priv_t priv)
 		memcpy(ide->buffer, &ide->sector_buffer[ide->sector_pos*512], 512);
 
 		ide->sector_pos++;
-		ide->pos=0;
+		ide->pos = 0;
 
 		ide->atastat = DRQ_STAT | DRDY_STAT | DSC_STAT;
 		if (!ide->blockcount)
@@ -2058,7 +2088,7 @@ ide_callback(priv_t priv)
 			goto abort_cmd;
 		if (ide->cfg_spt == 0)
 			goto id_not_found;
-		ide->pos=0;
+		ide->pos = 0;
 		ide->atastat = DRDY_STAT | DSC_STAT;
 		ide_irq_raise(ide);
 		ui_sb_icon_update(SB_DISK | hdd[ide->hdd_num].bus, 1);
@@ -2079,7 +2109,7 @@ ide_callback(priv_t priv)
 
 	case WIN_DRIVE_DIAGNOSTICS:
 		ide_set_signature(ide);
-		ide->error=1; /*No error detected*/
+		ide->error = 1; /*No error detected*/
 
 		if (ide_drive_is_atapi(ide)) {
 			atapi->status = 0;
@@ -2092,7 +2122,7 @@ ide_callback(priv_t priv)
 		}
 
 		ide_set_signature(ide_other);
-		ide_other->error=1; /*No error detected*/
+		ide_other->error = 1; /*No error detected*/
 
 		if (ide_drive_is_atapi(ide_other)) {
 			atapi_other->status = 0;
@@ -2174,7 +2204,7 @@ ide_callback(priv_t priv)
 			goto abort_cmd;
 		} else {
 			ide_identify(ide);
-			ide->pos=0;
+			ide->pos = 0;
 			ide->atastat = DRQ_STAT | DRDY_STAT | DSC_STAT;
 			ide_irq_raise(ide);
 		}
@@ -2184,7 +2214,7 @@ ide_callback(priv_t priv)
 		if (!ide_drive_is_atapi(ide) || !ide->packet_callback)
 			goto abort_cmd;
 
-		ide->packet_callback(ide->p);
+		ide->packet_callback(ide->sc);
 		return;
 
 	case 0xFF:

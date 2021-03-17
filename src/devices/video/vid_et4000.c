@@ -8,14 +8,14 @@
  *
  *		Emulation of the Tseng Labs ET4000.
  *
- * Version:	@(#)vid_et4000.c	1.0.18	2019/05/17
+ * Version:	@(#)vid_et4000.c	1.0.13	2021/03/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		GreatPsycho, <greatpsycho@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -235,12 +235,21 @@ et4000_out(uint16_t addr, uint8_t val, priv_t priv)
 		return;
 
 	case 0x3cf:
-		if ((svga->gdcaddr & 15) == 6) {
+		if ((svga->gdcaddr & 0x0f) == 6) {
 			if (!(svga->crtc[0x36] & 0x10) && !(val & 0x08)) {
 				svga->write_bank = (dev->banking & 0x0f) * 0x10000;
 				svga->read_bank = ((dev->banking >> 4) & 0x0f) * 0x10000;
 			} else
 				svga->write_bank = svga->read_bank = 0;
+		
+			old = svga->gdcreg[6];
+            svga_out(addr, val, svga);
+            if ((old & 0xc) != 0 && (val & 0xc) == 0) {
+                /*override mask - ET4000 supports linear 128k at A0000*/
+                svga->banked_mask = 0x1ffff;
+            }
+            return;	
+		
 		}
 		break;
 
@@ -411,7 +420,6 @@ et4000_recalctimings(svga_t *svga)
     if (svga->crtc[0x35] & 4)    svga->dispend += 0x400;
     if (svga->crtc[0x35] & 8)    svga->vsyncstart += 0x400;
     if (svga->crtc[0x35] & 0x10) svga->split += 0x400;
-    if (!svga->rowoffset)        svga->rowoffset = 0x100;
     if (svga->crtc[0x3f] & 1)    svga->htotal += 256;
     if (svga->attrregs[0x16] & 0x20) svga->hdisp <<= 1;
 
@@ -446,6 +454,10 @@ et4000_recalctimings(svga_t *svga)
 
     if (dev->type == 2 || dev->type == 3) {
 	if ((svga->render == svga_render_text_80) && ((svga->crtc[0x37] & 0x0A) == 0x0A)) {
+		if(dev->port_32cb_val & 0x80) {
+            svga->ma_latch -= 2;
+            svga->ca_adj = -2;
+        }
 		if ((dev->port_32cb_val & 0xB4) == ((svga->crtc[0x37] & 3) == 2 ? 0xB4 : 0xB0)) {
 			svga->render = svga_render_text_80_ksc5601;
 		}
@@ -475,6 +487,13 @@ et4000_mca_write(int port, uint8_t val, priv_t priv)
     et4000->pos_regs[port & 7] = val;
 }
 
+static uint8_t 
+et4000_mca_feedb(priv_t priv)
+{
+        et4000_t *dev = (et4000_t *)priv;
+
+        return (dev->pos_regs[2] & 1);
+}
 
 static priv_t
 et4000_init(const device_t *info, UNUSED(void *parent))
@@ -511,7 +530,7 @@ et4000_init(const device_t *info, UNUSED(void *parent))
 
 		dev->pos_regs[0] = 0xf2;	/* ET4000 MCA board ID */
 		dev->pos_regs[1] = 0x80;	
-		mca_add(et4000_mca_read, et4000_mca_write, dev);
+		mca_add(et4000_mca_read, et4000_mca_write, et4000_mca_feedb, NULL, dev);
 		break;
 
 	case 2:		/* Korean ET4000 */

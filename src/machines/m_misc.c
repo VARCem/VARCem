@@ -8,13 +8,13 @@
  *
  *		Implementation of various systems and mainboards.
  *
- * Version:	@(#)m_misc.c	1.0.5	2020/06/14
+ * Version:	@(#)m_misc.c	1.0.7	2021/03/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2020 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -67,7 +67,7 @@ common_init(const device_t *info, void *arg)
     /* Allocate machine device to system. */
     device_add_ex(info, (priv_t)arg);
 
-    switch(info->local) {
+    switch (info->local) {
 	/* Shuttle HOT-557: Award 430VX PCI/430VX/Award/UMC UM8669F*/
 	case 0:
 		pci_init(PCI_CONFIG_TYPE_1);
@@ -112,7 +112,7 @@ common_init(const device_t *info, void *arg)
 		device_add(&keyboard_ps2_pci_device);
 		break;
 
-	/* President: Award 430FX PCI/430FX/Award/Unknown SIO */
+	/* President: Award 430FX PCI/430FX/Award/Winbond 83877f */
 	case 11:
 		pci_init(PCI_CONFIG_TYPE_1);
 		pci_register_slot(0x00, PCI_CARD_SPECIAL, 0, 0, 0, 0);
@@ -205,7 +205,7 @@ common_init(const device_t *info, void *arg)
 
 
 static const machine_t aw430vx_info = {
-    MACHINE_PCI | MACHINE_ISA | MACHINE_VLB | MACHINE_AT | MACHINE_PS2 | MACHINE_HDC,
+    MACHINE_PCI | MACHINE_ISA | MACHINE_AT | MACHINE_PS2 | MACHINE_HDC,
     0,
     8, 128, 8, 128, -1,
     {{"Intel",cpus_Pentium},{"IDT",cpus_WinChip},CPU_AMD_K56,{"Cyrix",cpus_6x86}}
@@ -224,7 +224,7 @@ const device_t m_aw430vx = {
 
 
 static const machine_t mb500n_info = {
-    MACHINE_PCI | MACHINE_ISA | MACHINE_VLB | MACHINE_AT | MACHINE_HDC,
+    MACHINE_PCI | MACHINE_ISA | MACHINE_AT | MACHINE_HDC,
     0,
     8, 128, 8, 128, -1,
     {{"Intel",cpus_PentiumS5},{"IDT",cpus_WinChip},CPU_AMD_K5}
@@ -262,7 +262,7 @@ const device_t m_president = {
 
 
 static const machine_t epox_info = {
-    MACHINE_PCI | MACHINE_ISA | MACHINE_VLB | MACHINE_AT | MACHINE_PS2 | MACHINE_HDC,
+    MACHINE_PCI | MACHINE_ISA | MACHINE_AT | MACHINE_PS2 | MACHINE_HDC,
     0,
     8, 128, 8, 128, -1,
     {{"Intel",cpus_Pentium},{"IDT",cpus_WinChip},CPU_AMD_K56,{"Cyrix",cpus_6x86}}
@@ -281,7 +281,7 @@ const device_t m_p55va = {
 
 
 static const machine_t jetway_info = {
-    MACHINE_PCI | MACHINE_ISA | MACHINE_VLB | MACHINE_AT | MACHINE_PS2 | MACHINE_HDC,
+    MACHINE_PCI | MACHINE_ISA | MACHINE_AT | MACHINE_PS2 | MACHINE_HDC,
     0,
     8, 128, 8, 128, -1,
     {{"Intel",cpus_Pentium},{"IDT",cpus_WinChip},CPU_AMD_K56,{"Cyrix",cpus_6x86}}
@@ -300,14 +300,14 @@ const device_t m_j656vxd = {
 
 
 static const machine_t t2s_info = {
-    MACHINE_PCI | MACHINE_ISA | MACHINE_VLB | MACHINE_AT | MACHINE_PS2 | MACHINE_HDC,
+    MACHINE_PCI | MACHINE_ISA | MACHINE_AT | MACHINE_PS2 | MACHINE_HDC,
     0,
     8, 768, 8, 128, -1,
     {{"Intel",cpus_Pentium},{"IDT",cpus_WinChip},CPU_AMD_K56,{"Cyrix",cpus_6x86}}
 };
 
 const device_t m_p55t2s = {
-    "ASUS P55T2S",
+    "Supermicro P55T2S",
     DEVICE_ROOT,
     14,
     L"supermicro/p55t2s",

@@ -10,13 +10,13 @@
  *
  * TODO:	Stack allocation of big buffers (line 688 et al.)
  *
- * Version:	@(#)snd_adlibgold.c	1.0.17	2020/07/14
+ * Version:	@(#)snd_adlibgold.c	1.0.19	2021/03/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2020 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *		Copyright 2016-2019 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -56,6 +56,9 @@
 #include "snd_filters.h"
 #include "snd_opl.h"
 #include "snd_ym7128.h"
+#ifdef _MSC_VER
+# include <malloc.h>
+#endif
 
 
 typedef struct {
@@ -166,8 +169,10 @@ static int treble_cut[6] =
         (int)(0.354 * 16384)  /*-3 dB - filter output is at +6 dB*/
 };
 
-void adgold_timer_poll();
+
+void adgold_timer_poll(priv_t priv);
 void adgold_update(adgold_t *adgold);
+
 
 void adgold_update_irq_status(adgold_t *adgold)
 {
@@ -695,7 +700,7 @@ static void adgold_get_buffer(int32_t *buffer, int len, priv_t priv)
 # ifdef __cplusplus
         int16_t *adgold_buffer = (int16_t *)mem_alloc(sizeof(int16_t) * len * 2);
 # else
-        int16_t *adgold_buffer = (int16_t *)_alloca(sizeof(int16_t) * len * 2);
+        int16_t *adgold_buffer = (int16_t *)_malloca(sizeof(int16_t) * len * 2);
 # endif
 #else
         int16_t adgold_buffer[len*2];
@@ -809,7 +814,9 @@ static void adgold_get_buffer(int32_t *buffer, int len, priv_t priv)
 #ifdef _MSC_VER
 # ifdef __cplusplus
 	free(adgold_buffer);
-# endif
+# else
+        _freea(adgold_buffer);
+#endif
 #endif
 }
 

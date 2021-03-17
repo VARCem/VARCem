@@ -8,13 +8,13 @@
  *
  *		CD-ROM image support.
  *
- * Version:	@(#)cdrom_image.cpp	1.0.21	2019/05/17
+ * Version:	@(#)cdrom_image.cpp	1.0.22	2020/11/30
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		RichardG,
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017,2020 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -51,7 +51,6 @@
 #include "cdrom.h"
 #include "cdrom_image.h"
 #include "cdrom_dosbox.h"
-
 
 #ifdef ENABLE_CDROM_IMAGE_LOG
 int cdrom_image_do_log = ENABLE_CDROM_IMAGE_LOG;
@@ -494,12 +493,12 @@ read_mode1(cdrom_t *dev, int flags, uint32_t lba, uint32_t msf, int mode2, uint8
 {
     CDROM_Interface_Image *img = (CDROM_Interface_Image *)dev->local;
 
-    if ((dev->img_type == IMAGE_TYPE_ISO) || (img->GetSectorSize(lba) == 2048))
-	read_sector_to_buffer(dev, raw_buffer, msf, lba, mode2, 2048);
+    if ((dev->img_type == IMAGE_TYPE_ISO) || (dev->img_type == IMAGE_TYPE_CHD) || (img->GetSectorSize(lba) == 2048))
+		read_sector_to_buffer(dev, raw_buffer, msf, lba, mode2, 2048);
     else if (img->GetSectorSize(lba) == 2352)
-	img->ReadSector(raw_buffer, true, lba);
+		img->ReadSector(raw_buffer, true, lba);
     else
-	img->ReadSectorSub(raw_buffer, lba);
+		img->ReadSectorSub(raw_buffer, lba);
 
     cdrom_sector_size = 0;
 
@@ -1085,13 +1084,15 @@ cdrom_image_open(cdrom_t *dev, const wchar_t *fn)
     CDROM_Interface_Image *img;
 
     wcscpy(dev->image_path, fn);
-
-    if (! wcscasecmp(plat_get_extension(fn), L"ISO"))
-	dev->img_type = 1;
+  
+	if (! wcscasecmp(plat_get_extension(fn), L"ISO"))
+		dev->img_type = 1;
     else if (! wcscasecmp(plat_get_extension(fn), L"CUE"))
-	dev->img_type = 2;
-    else
-	dev->img_type = 0;
+		dev->img_type = 2;
+	else if (! wcscasecmp(plat_get_extension(fn), L"CHD"))
+		dev->img_type = 3;
+	else
+		dev->img_type = 0;
 
     /* Create new instance of the CDROM_Image class. */
     img = new CDROM_Interface_Image();
@@ -1113,9 +1114,9 @@ cdrom_image_open(cdrom_t *dev, const wchar_t *fn)
     dev->cd_state = CD_STOPPED;
     dev->seek_pos = 0;
     dev->cd_buflen = 0;
-    dev->cdrom_capacity = image_get_capacity(dev);
-    DEBUG("CD-ROM: capacity %i sectors (%i bytes)\n",
-	dev->cdrom_capacity, dev->cdrom_capacity << 11);
+    dev->cdrom_capacity = image_get_capacity(dev) + 1;
+	DEBUG("CD-ROM: capacity %i sectors (%i bytes)\n",
+			dev->cdrom_capacity, dev->cdrom_capacity << 11);
 
     return 0;
 }

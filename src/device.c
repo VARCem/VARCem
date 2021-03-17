@@ -11,14 +11,14 @@
  *
  * **TODO**	Merge the various 'add' variants, its getting too messy.
  *
- * Version:	@(#)device.c	1.0.27	2019/05/15
+ * Version:	@(#)device.c	1.0.30	2021/03/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
- *		Copyright 2016-2018 Miran Grca.
+ *		Copyright 2017-2021 Fred N. van Kempen.
+ *		Copyright 2016-2021 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -56,7 +56,7 @@
 #include "plat.h"
 
 
-#define DEVICE_MAX	256			/* max # of devices */
+#define DEVICE_MAX	256			// max # of devices
 
 
 typedef struct clonedev {
@@ -106,20 +106,24 @@ device_flags(uint32_t flags)
 
     /* System types. */
     switch(flags & 0x000f) {
-	case DEVICE_ALL:		/* any/all system */
+	case DEVICE_ALL:		// any/all system
 		p = "ANY";
 		break;
 
-	case DEVICE_PCJR:		/* requires an IBM PCjr */
+	case DEVICE_PCJR:		// requires an IBM PCjr
 		p = "PCjr";
 		break;
 
-	case DEVICE_AT:			/* requires an AT-compatible system */
+	case DEVICE_AT:			// requires an AT-compatible system
 		p = "AT";
 		break;
 
-	case DEVICE_PS2:		/* requires a PS/1 or PS/2 system */
+	case DEVICE_PS2:		// requires a PS/1 or PS/2 system
 		p = "PS/2";
+		break;
+    
+	default:		
+		p = "ANY";
 		break;
     }
     strcat(sp, p); sp += strlen(sp);
@@ -130,35 +134,35 @@ device_flags(uint32_t flags)
 	sp += strlen(sp);
 
 	switch(flags & 0xff00) {
-		case DEVICE_S100:	/* requires an S100 bus slot */
+		case DEVICE_S100:	// requires an S100 bus slot
 			p = "S-100";
 			break;
 
-		case DEVICE_ISA:	/* requires an ISA bus slot */
+		case DEVICE_ISA:	// requires an ISA bus slot
 			p = "ISA";
 			break;
 
-		case DEVICE_EISA:	/* requires an EISA bus slot */
+		case DEVICE_EISA:	// requires an EISA bus slot
 			p = "EISA";
 			break;
 
-		case DEVICE_VLB:	/* requires a VLB bus slot */
+		case DEVICE_VLB:	// requires a VLB bus slot
 			p = "VLB";
 			break;
 
-		case DEVICE_PCI:	/* requires a PCI bus slot */
+		case DEVICE_PCI:	// requires a PCI bus slot
 			p = "PCI";
 			break;
 
-		case DEVICE_AGP:	/* requires an AGP bus slot */
+		case DEVICE_AGP:	// requires an AGP bus slot
 			p = "AGP";
 			break;
 
-		case DEVICE_MCA:	/* requires an MCA bus slot */
+		case DEVICE_MCA:	// requires an MCA bus slot
 			p = "MCA";
 			break;
 
-		case DEVICE_CBUS:	/* requires a C-BUS bus slot (PC98) */
+		case DEVICE_CBUS:	// requires a C-BUS bus slot (PC98)
 			p = "CBUS";
 			break;
 	}
@@ -167,7 +171,7 @@ device_flags(uint32_t flags)
 
     /* Options. */
     if (flags & 0xffff0000) switch(flags & 0xffff0000) {
-	case DEVICE_UNSTABLE:		/* unstable device, be cautious */
+	case DEVICE_UNSTABLE:		// unstable device, be cautious
 		strcat(sp, ", <UNS>");
 		sp += strlen(sp);
 		break;
@@ -705,7 +709,9 @@ device_is_valid(const device_t *device, int mflags)
 
     if ((device->flags & DEVICE_PCI) && !(mflags & MACHINE_PCI)) return(0);
 
-    if ((device->flags & DEVICE_PS2) && !(mflags & MACHINE_HDC_PS2)) return(0);
+//FIXME: what?
+    if ((device->flags & DEVICE_PS2) && (!(mflags & MACHINE_HDC_PS2) && !(mflags & MACHINE_PS2))) return(0);
+
     if ((device->flags & DEVICE_AGP) && !(mflags & MACHINE_AGP)) return(0);
 
     return(1);

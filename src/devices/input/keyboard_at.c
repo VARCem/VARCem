@@ -16,15 +16,15 @@
  *		 it either will not process ctrl-alt-esc, or it will not do
  *		 ANY input.
  *
- * Version:	@(#)keyboard_at.c	1.0.30	2019/05/23
+ * Version:	@(#)keyboard_at.c	1.0.32	2021/03/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
- *		Copyright 2016-2018 Miran Grca.
- *		Copyright 2008-2018 Sarah Walker.
+ *		Copyright 2017-2021 Fred N. van Kempen.
+ *		Copyright 2016-2021 Miran Grca.
+ *		Copyright 2008-2021 Sarah Walker.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -1928,7 +1928,7 @@ add_data_kbd(uint16_t val)
 				break;
 			} else {
 				/* Num lock on and no shifts are pressed, send non-inverted fake shift. */
-				switch(keyboard_mode & 0x02) {
+				switch(keyboard_mode & 0x03) {
 					case 1:
 						fake_shift[0] = 0xe0; fake_shift[1] = 0x2a;
 						add_data_vals(dev, fake_shift, 2);
@@ -1940,14 +1940,14 @@ add_data_kbd(uint16_t val)
 						break;
 
 					default:
-						DEBUG("N/A (scan code set %i)\n", keyboard_mode & 0x02);
+						DEBUG("N/A (scan code set %i)\n", keyboard_mode & 0x03);
 						break;
 				}
 			}
 		} else {
 			if (shift_states & STATE_LSHIFT) {
 				/* Num lock off and left shift pressed. */
-				switch(keyboard_mode & 0x02) {
+				switch(keyboard_mode & 0x03) {
 					case 1:
 						fake_shift[0] = 0xe0; fake_shift[1] = 0xaa;
 						add_data_vals(dev, fake_shift, 2);
@@ -1959,13 +1959,13 @@ add_data_kbd(uint16_t val)
 						break;
 
 					default:
-						DEBUG("N/A (scan code set %i)\n", keyboard_mode & 0x02);
+						DEBUG("N/A (scan code set %i)\n", keyboard_mode & 0x03);
 						break;
 				}
 			}
 			if (shift_states & STATE_RSHIFT) {
 				/* Num lock off and right shift pressed. */
-				switch(keyboard_mode & 0x02) {
+				switch(keyboard_mode & 0x03) {
 					case 1:
 						fake_shift[0] = 0xe0; fake_shift[1] = 0xb6;
 						add_data_vals(dev, fake_shift, 2);
@@ -1977,7 +1977,7 @@ add_data_kbd(uint16_t val)
 						break;
 
 					default:
-						DEBUG("N/A (scan code set %i)\n", keyboard_mode & 0x02);
+						DEBUG("N/A (scan code set %i)\n", keyboard_mode & 0x03);
 						break;
 				}
 			}
@@ -1995,7 +1995,7 @@ add_data_kbd(uint16_t val)
 				break;
 			} else {
 				/* Num lock on and no shifts are pressed, send non-inverted fake shift. */
-				switch(keyboard_mode & 0x02) {
+				switch(keyboard_mode & 0x03) {
 					case 1:
 						fake_shift[0] = 0xe0; fake_shift[1] = 0xaa;
 						add_data_vals(dev, fake_shift, 2);
@@ -2007,14 +2007,14 @@ add_data_kbd(uint16_t val)
 						break;
 
 					default:
-						DEBUG("N/A (scan code set %i)\n", keyboard_mode & 0x02);
+						DEBUG("N/A (scan code set %i)\n", keyboard_mode & 0x03);
 						break;
 				}
 			}
 		} else {
 			if (shift_states & STATE_LSHIFT) {
 				/* Num lock off and left shift pressed. */
-				switch(keyboard_mode & 0x02) {
+				switch(keyboard_mode & 0x03) {
 					case 1:
 						fake_shift[0] = 0xe0; fake_shift[1] = 0x2a;
 						add_data_vals(dev, fake_shift, 2);
@@ -2026,13 +2026,13 @@ add_data_kbd(uint16_t val)
 						break;
 
 					default:
-						DEBUG("N/A (scan code set %i)\n", keyboard_mode & 0x02);
+						DEBUG("N/A (scan code set %i)\n", keyboard_mode & 0x03);
 						break;
 				}
 			}
 			if (shift_states & STATE_RSHIFT) {
 				/* Num lock off and right shift pressed. */
-				switch(keyboard_mode & 0x02) {
+				switch(keyboard_mode & 0x03) {
 					case 1:
 						fake_shift[0] = 0xe0; fake_shift[1] = 0x36;
 						add_data_vals(dev, fake_shift, 2);
@@ -2044,7 +2044,7 @@ add_data_kbd(uint16_t val)
 						break;
 
 					default:
-						DEBUG("N/A (scan code set %i)\n", keyboard_mode & 0x02);
+						DEBUG("N/A (scan code set %i)\n", keyboard_mode & 0x03);
 						break;
 				}
 			}

@@ -8,13 +8,13 @@
  *
  *		Definitions for the 64-bit code generator.
  *
- * Version:	@(#)codegen_x86-64.h	1.0.2	2018/11/13
+ * Version:	@(#)codegen_x86-64.h	1.0.3	2020/12/13
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
  *
  *		Copyright 2008-2018 Sarah Walker.
- *		Copyright 2016-2018 Miran Grca.
+ *		Copyright 2016-2020 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -48,7 +48,8 @@
 #define HASH(l) ((l) & 0x1ffff)
 
 #define BLOCK_EXIT_OFFSET 0x7e0
-#define BLOCK_GPF_OFFSET (BLOCK_EXIT_OFFSET - 20)
+//#define BLOCK_GPF_OFFSET (BLOCK_EXIT_OFFSET - 20)
+#define BLOCK_GPF_OFFSET (BLOCK_EXIT_OFFSET - 15)
 
 #define BLOCK_MAX 1620
 

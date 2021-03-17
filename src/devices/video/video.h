@@ -8,7 +8,7 @@
  *
  *		Definitions for the video controller module.
  *
- * Version:	@(#)video.h	1.0.40	2020/02/18
+ * Version:	@(#)video.h	1.0.41	2021/03/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -179,17 +179,18 @@ extern const device_t	cga_device;
 extern const device_t	pgc_device;
 
 /* Cirrus Logic GD-series cards. */
-#if defined(DEV_BRANCH)
-//extern const device_t gd5402_onboard_isa_device;
+extern const device_t   gd5402_onboard_device;
 extern const device_t	gd5402_isa_device;
 extern const device_t	gd5420_isa_device;
 extern const device_t	gd5422_isa_device;
+extern const device_t	gd5422_onboard_device;
 extern const device_t	gd5424_vlb_device;
-#endif
 extern const device_t	gd5426_vlb_device;
+extern const device_t	gd5426_onboard_vlb_device;
 extern const device_t	gd5428_isa_device;
-//extern const device_t ibm_gd5428_mca_device;
+extern const device_t   gd5428_mca_device;
 extern const device_t	gd5428_vlb_device;
+extern const device_t	gd5428_onboard_vlb_device;
 extern const device_t	gd5429_isa_device;
 extern const device_t	gd5429_vlb_device;
 extern const device_t	gd5430_vlb_device;
@@ -251,6 +252,7 @@ extern const device_t	incolor_device;
 
 /* Hercules ColorPlus series cards and compatibles. */
 extern const device_t	colorplus_device;
+extern const device_t   colorplus_onboard_device;
 
 /* Matrox MGA series cards. */
 //extern const device_t	mystique_device;
@@ -290,6 +292,7 @@ extern const device_t	s3_bahamas64_vlb_device;
 extern const device_t	s3_bahamas64_pci_device;
 extern const device_t	s3_9fx_vlb_device;
 extern const device_t	s3_9fx_pci_device;
+extern const device_t   s3_onboard_86c864_vlb_device;
 extern const device_t	s3_phoenix_trio32_vlb_device;
 extern const device_t	s3_phoenix_trio32_pci_device;
 extern const device_t	s3_phoenix_trio64_vlb_device;

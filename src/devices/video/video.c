@@ -8,7 +8,7 @@
  *
  *		Main video-rendering module.
  *
- * Version:	@(#)video.c	1.0.33	2021/02/18
+ * Version:	@(#)video.c	1.0.34	2021/03/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -654,9 +654,6 @@ calc_8to32(int c)
 }
 
 
-
-
-
 static int
 calc_15to32(int c)
 {
@@ -794,11 +791,11 @@ video_init(void)
     for (c = 0; c < 256; c++)
 	video_6to8[c] = calc_6to8(c);
 	
-    video_8togs = malloc(4 * 256);
+    video_8togs = (uint32_t *)mem_alloc(4 * 256);
     for (c = 0; c < 256; c++)
 	video_8togs[c] = c | (c << 16) | (c << 24);
 
-    video_8to32 = malloc(4 * 256);
+    video_8to32 = (uint32_t *)mem_alloc(4 * 256);
     for (c = 0; c < 256; c++)
 	video_8to32[c] = calc_8to32(c);
     
@@ -988,7 +985,11 @@ video_load_font(const wchar_t *fn, fontformat_t num)
                        	(void)fread(&fontdatm[c][0], 1, 8, fp);
 		for (c = 0; c < 256; c++)
                        	(void)fread(&fontdatm[c][8], 1, 8, fp);
+		(void)fseek(fp, 6144, SEEK_SET);
+		for (c = 0; c < 256; c++)
+                       	(void)fread(&fontdat[c][0], 1, 8, fp);
 		break;
+
 
 	case FONT_CGA_THIN:	/* CGA, thin font */
 	case FONT_CGA_THICK:	/* CGA, thick font */

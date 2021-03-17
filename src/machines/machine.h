@@ -8,7 +8,7 @@
  *
  *		Handling of the emulated machines.
  *
- * Version:	@(#)machine.h	1.0.37	2021/03/09
+ * Version:	@(#)machine.h	1.0.38	2021/03/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -53,6 +53,7 @@
 #define MACHINE_PCI		0x000200	/* sys has PCI bus */
 #define MACHINE_AGP		0x000400	/* sys has AGP bus */
 #define MACHINE_FDC		0x010000	/* sys has int FDC */
+#define MACHINE_FDC_PS2		0x012000	/* sys has int PS/2 FDC */    
 #define MACHINE_HDC		0x020000	/* sys has int HDC */
 #define MACHINE_HDC_PS2		0x040000	/* sys has int PS/2 HDC */
 #define MACHINE_MOUSE		0x080000	/* sys has int mouse */
@@ -113,6 +114,7 @@ extern const device_t	m_amstrad_200;
 extern const device_t	m_amstrad_ppc;
 extern const device_t	m_amstrad_2086;
 extern const device_t	m_amstrad_3086;
+extern const device_t	m_amstrad_5086;
 
 extern const device_t	m_amstrad_mega_sx;
 extern const device_t	m_amstrad_mega_dx;
@@ -129,6 +131,10 @@ extern const device_t	m_att_6300;
 extern const device_t	m_tandy_1k;
 extern const device_t	m_tandy_1k_hx;
 extern const device_t	m_tandy_1k_sl2;
+
+#if defined(DEV_BRANCH)
+extern const device_t	m_thom_to16;
+#endif
 
 extern const device_t	m_tosh_1000;
 extern const device_t	m_tosh_1200;
@@ -162,6 +168,10 @@ extern const device_t	m_kmxc02;
 extern const device_t	m_tosh_3100e;
 
 extern const device_t	m_cbm_pc30;
+#if defined(DEV_BRANCH)
+extern const device_t	m_cbm_sl386sx;
+extern const device_t	m_cbm_sl386sx25;
+#endif
 
 #if defined(DEV_BRANCH) && defined(USE_COMPAQ)
 extern const device_t	m_cpq_p1;
@@ -196,6 +206,15 @@ extern const device_t	m_opti495_486_award;
 extern const device_t	m_opti495_386sx_mr;
 extern const device_t	m_opti495_386dx_mr;
 extern const device_t	m_opti495_486_mr;
+
+#if defined(DEV_BRANCH)
+extern const device_t 	m_opti895_hot419;
+extern const device_t	m_opti895_dp4044;
+#endif
+
+#if defined(DEV_BRANCH) && defined(USE_SL)
+extern const device_t	m_sl82c460_386dx_ami;
+#endif
 
 #if defined(DEV_BRANCH) && defined(USE_SIS471)
 extern const device_t	m_sis471_ami;
@@ -237,7 +256,15 @@ extern const device_t	m_p55va;
 extern const device_t	m_j656vxd;
 extern const device_t	m_p55t2s;
 
+/* HP machines. */
+#if defined(DEV_BRANCH)
+extern const device_t	m_hpv486;
+#endif
+
 /* Packard Bell machines. */
+#if defined(DEV_BRANCH)
+extern const device_t	m_pb300;
+#endif
 extern const device_t	m_pb410a;
 extern const device_t	m_pb640;
 

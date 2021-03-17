@@ -8,7 +8,7 @@
  *
  *		Handling of the emulated machines.
  *
- * Version:	@(#)machine_table.c	1.0.48	2021/03/09
+ * Version:	@(#)machine_table.c	1.0.49	2021/03/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -83,6 +83,9 @@ static const struct {
     { "[8088] Schneider EuroPC",		"schneider_europc",	&m_europc		},
     { "[8088] Tandy 1000",			"tandy_1000",		&m_tandy_1k		},
     { "[8088] Tandy 1000 HX",			"tandy_1000hx",		&m_tandy_1k_hx		},
+#if defined(DEV_BRANCH)
+    { "[8088] Thomson TO16",			"thom_to16",		&m_thom_to16		},
+#endif
     { "[8088] Toshiba T1000",			"toshiba_t1000",	&m_tosh_1000		},
     { "[8088] VTech Laser Turbo XT",		"vtech_ltxt",		&m_laser_xt		},
     { "[8088] Xi8088",				"malinov_xi8088",	&m_xi8088		},
@@ -95,6 +98,7 @@ static const struct {
     { "[8086] Amstrad PC1640",			"amstrad_pc1640",	&m_amstrad_1640		},
     { "[8086] Amstrad PC2086",			"amstrad_pc2086",	&m_amstrad_2086		},
     { "[8086] Amstrad PC3086",			"amstrad_pc3086",	&m_amstrad_3086		},
+    { "[8086] Amstrad PC5086",			"amstrad_pc5086",	&m_amstrad_5086		},
     { "[8086] Amstrad PC20(0)",			"amstrad_pc200",	&m_amstrad_200		},
     { "[8086] Amstrad PPC512/640",		"amstrad_ppc512",	&m_amstrad_ppc		},
     { "[8086] AT&T PC6300",			"att_6300",		&m_att_6300		},
@@ -143,15 +147,27 @@ static const struct {
 
     { "[386SX ISA] Amstrad MegaPC",		"amstrad_megapc",	&m_amstrad_mega_sx	},
     { "[386SX ISA] Arche AMA-932J",		"arche_ama932j",	&m_ama932j		},
+#if defined(DEV_BRANCH)
+    { "[386SX ISA] Commodore SL386SX-16",	"commodore_sl386sx",	&m_cbm_sl386sx		},
+    { "[386SX ISA] Commodore SL386SX-25",	"commodore_sl386sx25",	&m_cbm_sl386sx25	},
+#endif
     { "[386SX ISA] DTK 386SX clone",		"dtk_386",		&m_neat_dtk		},
     { "[386SX ISA] KMX-C-02",			"kmxc02",		&m_kmxc02		},
 
+#if defined(DEV_BRANCH)
+    { "[386SX ISA] Packard Bell Legend 300SX",	"pbell_pb300",		&m_pb300		},
+
     { "[386SX MCA] IBM PS/2 model 55SX",	"ibm_ps2_m55sx",	&m_ps2_m55sx		},
+#endif    
 
     /* 80386DX */
     { "[386DX ISA] AMI 386DX (Opti495)",	"ami_386dx_opti495",	&m_opti495_386dx_ami	},
     { "[386DX ISA] Award 386DX (Opti495)",	"award_386dx_opti495",	&m_opti495_386dx_award	},
     { "[386DX ISA] MR 386DX (Opti495)",		"mr_386dx_opti495",	&m_opti495_386dx_mr	},
+
+#if defined(DEV_BRANCH) && defined(USE_SL)
+    { "[386DX ISA] FIC 386-SC-HG (SL Haydn)",   "ami_386dx_sl460",  &m_sl82c460_386dx_ami   },
+#endif
 
     { "[386DX ISA] Amstrad MegaPC 386DX",	"amstrad_megapc_dx",	&m_amstrad_mega_dx	},
 #if defined(DEV_BRANCH) && defined(USE_COMPAQ)
@@ -166,19 +182,26 @@ static const struct {
 
     { "[486 ISA] Olystar LIL1429 (ALi-1429)",	"ami_486_ali1429",	&m_ali1429_ami		},
 #if defined(DEV_BRANCH) && defined(USE_SIS471)
-    { "[486 ISA] AMI 486 (SiS471)",		"ami_486_sis471",	&m_sis471_ami		},
+    { "[486 ISA] EPOX 486 (SiS471)",		"ami_486_sis471",	&m_sis471_ami		},
 #endif
     { "[486 ISA] AMI WinBIOS486 (ALi1429)",	"ami_win486_ali1429",	&m_ali1429_win		},
     { "[486 ISA] Award 486 (Opti495)",		"award_486_opti495",	&m_opti495_486_award	},
     { "[486 ISA] MR 486 (Opti495)",		"mr_486dx_opti495",	&m_opti495_486_mr	},
 
+#if defined(DEV_BRANCH) 
+    { "[486 ISA] Shuttle Hot-419 (Opti895)",	"hot419_opti895",	&m_opti895_hot419	},
+    { "[486 ISA] DataExpert EXP4044 (Opti 895)","dp4044_opti895",	&m_opti895_dp4044	},
+#endif
     { "[486 ISA] DTK PKM-0038S E-2",		"dtk_486",		&m_dtk486		},
+#if defined(DEV_BRANCH)    
+    { "[486 ISA] HP Vectra 486VL Series",       "hp_v486",		&m_hpv486		},
+#endif    
     { "[486 ISA] Packard Bell PB410A",		"pbell_pb410a",		&m_pb410a		},
 
     { "[486 MCA] IBM PS/2 model 70 (type 4)",	"ibm_ps2_m70_type4",	&m_ps2_m70_4		},
 
 #if defined(DEV_BRANCH) && defined(USE_SIS496)
-    { "[486 PCI] AMI 486 (SiS496)",		"ami_486_sis496",	&m_sis496_ami		},
+    { "[486 PCI] Lucky Star LS-486E (SiS496)",	"ami_486_sis496",	&m_sis496_ami		},
 #endif
     { "[486 PCI] Rise Computer R418",		"rise_r418",		&m_rise418		},
 

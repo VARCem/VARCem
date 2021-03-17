@@ -8,14 +8,14 @@
  *
  *		Implementation of the MCA bus primitives.
  *
- * Version:	@(#)mca.c	1.0.3	2019/05/13
+ * Version:	@(#)mca.c	1.0.5	2021/03/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
- *		Copyright 2016-2018 Miran Grca.
+ *		Copyright 2017-2021 Fred N. van Kempen.
+ *		Copyright 2016-2021 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -45,34 +45,38 @@
 #include "mca.h"
 
 
-void    (*mca_card_write[8])(int addr, uint8_t val, priv_t);
-uint8_t	(*mca_card_read[8])(int addr, priv_t);
-priv_t	*mca_priv[8];
+#define MCA_CARD_MAX	8
 
-static int mca_index;
-static int mca_nr_cards;
+
+typedef struct mca {
+    void	(*card_write)(int addr, uint8_t val, priv_t);
+    uint8_t	(*card_read)(int addr, priv_t);
+    uint8_t	(*card_feedb)(priv_t);
+    void	(*card_reset)(priv_t);
+
+    priv_t	priv;
+} mca_t;
+
+
+static mca_t	cards[MCA_CARD_MAX];
+static int	mca_nr_cards;
+static int	mca_index;
 
 
 void
 mca_init(int nr_cards)
 {
-    int c;
+    memset(cards, 0x00, sizeof(cards));
 
-    for (c = 0; c < 8; c++) {
-	mca_card_read[c] = NULL;
-	mca_card_write[c] = NULL;
-	mca_priv[c] = NULL;
-    }
-
-    mca_index = 0;
     mca_nr_cards = nr_cards;
+    mca_index = 0;
 }
 
 
 void
-mca_set_index(int index)
+mca_set_index(int idx)
 {
-    mca_index = index;
+    mca_index = idx;
 }
 
 
@@ -82,10 +86,10 @@ mca_read(uint16_t port)
     if (mca_index >= mca_nr_cards)
 	return 0xff;
 
-    if (! mca_card_read[mca_index])
+    if (! cards[mca_index].card_read)
 	return 0xff;
 
-    return mca_card_read[mca_index](port, mca_priv[mca_index]);
+    return cards[mca_index].card_read(port, cards[mca_index].priv);
 }
 
 
@@ -95,21 +99,54 @@ mca_write(uint16_t port, uint8_t val)
     if (mca_index >= mca_nr_cards)
 	return;
 
-    if (mca_card_write[mca_index])
-	mca_card_write[mca_index](port, val, mca_priv[mca_index]);
+    if (cards[mca_index].card_write)
+	cards[mca_index].card_write(port, val, cards[mca_index].priv);
+}
+
+
+uint8_t 
+mca_feedb(void)
+{
+    uint8_t ret = 0xff;
+
+    if (mca_index >= mca_nr_cards)
+	return ret;
+
+    if (cards[mca_index].card_feedb)
+	ret = cards[mca_index].card_feedb(cards[mca_index].priv);
+
+    return ret;
+}
+
+
+void 
+mca_reset(void)
+{
+    int c;
+
+    for (c = 0; c < MCA_CARD_MAX; c++) {
+	if (cards[mca_index].card_reset)
+		cards[mca_index].card_reset(cards[mca_index].priv);
+    }
 }
 
 
 void
-mca_add(uint8_t (*read)(int, priv_t), void (*write)(int, uint8_t, priv_t), priv_t priv)
+mca_add(uint8_t (*read)(int, priv_t), void (*write)(int, uint8_t, priv_t), uint8_t (*feedb)(priv_t), void (*reset)(priv_t), priv_t priv)
 {
+    mca_t *ptr;
     int c;
 
     for (c = 0; c < mca_nr_cards; c++) {
-	if (! mca_card_read[c] && !mca_card_write[c]) {
-		mca_card_read[c] = read;
-		mca_card_write[c] = write;
-		mca_priv[c] = priv;
+	ptr = &cards[c];
+
+	if (!ptr->card_read && !ptr->card_write) {
+		ptr->card_read = read;
+		ptr->card_write = write;
+		ptr->card_feedb = feedb;
+		ptr->card_reset = reset;
+		ptr->priv = priv;
+
 		return;
 	}
     }
