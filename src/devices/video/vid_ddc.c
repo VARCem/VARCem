@@ -8,7 +8,7 @@
  *
  *		DDC monitor emulation.
  *
- * Version:	@(#)vid_ddc.c	1.0.1	2021/03/16
+ * Version:	@(#)vid_ddc.c	1.0.2	2021/03/16
  *
  * Author:	RichardG, <richardg867@gmail.com>
  *
@@ -132,8 +132,11 @@ typedef struct {
 priv_t
 ddc_init(void *i2c)
 {
-    edid_t *edid = mem_alloc(sizeof(edid_t));
+    edid_t *edid;
+    uint8_t *bytes;
+    int c;
 
+    edid = mem_alloc(sizeof(edid_t));
     memset(edid, 0x00, sizeof(edid_t));
     memset(&edid->magic[1], 0xff, sizeof(edid->magic) - 2);
 
@@ -201,15 +204,15 @@ ddc_init(void *i2c)
     edid->descriptors[3].range_limits.padding[0] = 0x0a;
     memset(&edid->descriptors[3].range_limits.padding[1], 0x20, sizeof(edid->descriptors[3].range_limits.padding) - 1);
 
-    uint8_t *edid_bytes = (uint8_t *) edid;
-    for (uint8_t c = 0; c < 127; c++)
-        edid->checksum += edid_bytes[c];
+    bytes = (uint8_t *)edid;
+    for (c = 0; c < 127; c++)
+        edid->checksum += bytes[c];
     edid->checksum = 256 - edid->checksum;
-    for (uint8_t c = 128; c < 255; c++)
-        edid->checksum2 += edid_bytes[c];
+    for (c = 128; c < 255; c++)
+        edid->checksum2 += bytes[c];
     edid->checksum2 = 256 - edid->checksum2;
 
-    return i2c_eeprom_init(i2c, 0x50, edid_bytes, sizeof(edid_t), 0);
+    return i2c_eeprom_init(i2c, 0x50, bytes, sizeof(edid_t), 0);
 }
 
 
