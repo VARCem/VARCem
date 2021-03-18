@@ -13,13 +13,13 @@
  *		B4 to 40, two writes to 43, then two reads
  *			- value _does_ change!
  *
- * Version:	@(#)pit.c	1.0.17	2019/05/17
+ * Version:	@(#)pit.c	1.0.18	2021/03/18
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *		Copyright 2016-2019 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -56,6 +56,7 @@
 #ifdef USE_CASSETTE
 # include <cassette.h>
 #endif
+#include "../../plat.h"
 #include "clk.h"
 #include "nmi.h"
 #include "pic.h"
@@ -539,7 +540,7 @@ ps2_irq0(int new_out, int old_out)
 
 
 static void
-ps2_nmi(int new_out, int old_out)
+ps2_nmi(int new_out, UNUSED(int old_out))
 {
     nmi = new_out;
 

@@ -8,13 +8,13 @@
  *
  *		Implementation of the Intel 430xx-based Acer machines.
  *
- * Version:	@(#)m_acer.c	1.0.6	2019/05/28
+ * Version:	@(#)m_acer.c	1.0.7	2021/03/18
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -56,6 +56,7 @@
 #include "../devices/input/keyboard.h"
 #include "../devices/sio/sio.h"
 #include "../devices/disk/hdc.h"
+#include "../plat.h"
 #include "machine.h"
 
 
@@ -102,7 +103,7 @@ acer_close(priv_t priv)
 
 
 static priv_t
-acer_init(const device_t *info, void *arg)
+acer_init(const device_t *info, UNUSED(void *arg))
 {
     acer_t *dev;
 

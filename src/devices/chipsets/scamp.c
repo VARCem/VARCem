@@ -13,7 +13,7 @@
  *		8MB of DRAM chips', because it works fine with bus-based
  *		memory expansion.
  *
- * Version:	@(#)scamp.c	1.0.1	2021/03/16
+ * Version:	@(#)scamp.c	1.0.1	2021/03/18
  *
  * Authors:	Sarah Walker, <http://pcem-emulator.co.uk/>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -714,7 +714,7 @@ scamp_close(priv_t priv)
 
 
 static void *
-scamp_init(const device_t *info, UNUSED(void *parent))
+scamp_init(UNUSED(const device_t *info), UNUSED(void *parent))
 {
     uint32_t addr;
     int c;

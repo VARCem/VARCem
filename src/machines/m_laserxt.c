@@ -8,13 +8,13 @@
  *
  *		Emulation of the Laser XT series of machines.
  *
- * Version:	@(#)m_laserxt.c	1.0.14	2019/05/17
+ * Version:	@(#)m_laserxt.c	1.0.15	2021/03/18
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -53,6 +53,7 @@
 #include "../devices/input/keyboard.h"
 #include "../devices/floppy/fdd.h"
 #include "../devices/floppy/fdc.h"
+#include "../plat.h"
 #include "machine.h"
 
 
@@ -181,7 +182,7 @@ laser_close(priv_t priv)
 
 
 static priv_t
-laser_init(const device_t *info, void *arg)
+laser_init(const device_t *info, UNUSED(void *arg))
 {
     laser_t *dev;
     int i;

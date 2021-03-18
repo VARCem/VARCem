@@ -8,7 +8,7 @@
  *
  *		Implementation of the C&T 82c100 chipset.
  *
- * Version:	@(#)cs82c100.c	1.0.1	2021/03/16
+ * Version:	@(#)cs82c100.c	1.0.1	2021/03/18
  *
  * Authors:	Altheos, <altheos@varcem.com>
  * 		Davide78, ?
@@ -115,7 +115,7 @@ cs82c100_close(priv_t priv)
 
 
 static priv_t
-cs82c100_init(const device_t *info, UNUSED(void *parent))
+cs82c100_init(UNUSED(const device_t *info), UNUSED(void *parent))
 {
     cs82c100_t *dev;
 

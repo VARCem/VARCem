@@ -8,7 +8,7 @@
  *
  *		Implementation of ISA-based PS/2 machines.
  *
- * Version:	@(#)m_ps2_isa.c	1.0.23	2021/03/16
+ * Version:	@(#)m_ps2_isa.c	1.0.24	2021/03/18
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -59,6 +59,7 @@
 #include "../devices/floppy/fdd.h"
 #include "../devices/floppy/fdc.h"
 #include "../devices/video/video.h" 
+#include "../plat.h"
 #include "machine.h"
 
 
@@ -225,7 +226,7 @@ ps2_close(priv_t priv)
 
 
 static priv_t
-ps2_init(const device_t *info, void *arg)
+ps2_init(const device_t *info, UNUSED(void *arg))
 {
     ps2_t *dev;
 
@@ -281,7 +282,7 @@ const device_t m_ps2_m30_286 = {
     "IBM PS/2 M30/286",
     DEVICE_ROOT,
     0,
-    L"ibm/ps2_m30_286",
+    L"ibm/ps2/m30_286",
     ps2_init, ps2_close, NULL,
     NULL, NULL, NULL,
     &m30_info,

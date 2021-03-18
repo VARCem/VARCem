@@ -8,7 +8,7 @@
  *
  *		Implementation of the VLSI 82C480 chipset.
  *
- * Version:	@(#)vl82c480.c	1.0.1	2021/03/16
+ * Version:	@(#)vl82c480.c	1.0.1	2021/03/18
  *
  * Authors:	Altheos, <altheos@varcem.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -186,7 +186,7 @@ vl82c480_close(priv_t priv)
 
 
 static priv_t
-vl82c480_init(const device_t *info, UNUSED(void *parent))
+vl82c480_init(UNUSED(const device_t *info), UNUSED(void *parent))
 {
     vl82c480_t *dev;
     

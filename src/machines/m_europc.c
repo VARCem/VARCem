@@ -69,7 +69,7 @@
  * FIXME:	Find a new way to handle the switching of color/mono on
  *		external cards. New video_get_type(int card) function?
  *
- * Version:	@(#)m_europc.c	1.0.28	2020/10/11
+ * Version:	@(#)m_europc.c	1.0.29	2021/03/18
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -78,7 +78,7 @@
  *		Schneider's schematics and technical manuals, and the
  *		input from people with real EuroPC hardware.
  *
- *		Copyright 2017-2020 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -134,6 +134,7 @@
 #include "../devices/floppy/fdc.h"
 #include "../devices/disk/hdc.h"
 #include "../devices/video/video.h"
+#include "../plat.h"
 #include "machine.h"
 
 
@@ -559,7 +560,7 @@ europc_close(priv_t priv)
  * user.
  */
 static priv_t
-europc_init(const device_t *info, void *arg)
+europc_init(const device_t *info, UNUSED(void *arg))
 {
     europc_t *dev;
     void *priv;

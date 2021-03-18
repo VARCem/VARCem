@@ -52,6 +52,7 @@
 #include "io.h"
 #include "mem.h"
 #include "rom.h"
+#include "plat.h"
 #ifdef USE_DYNAREC
 # include "cpu/codegen.h"
 #else
@@ -335,7 +336,7 @@ mmutranslate_noabrt(uint32_t addr, int rw)
 
 
 void
-mmu_invalidate(uint32_t addr)
+mmu_invalidate(UNUSED(uint32_t addr))
 {
     flushmmucache_cr3();
 }
@@ -1002,7 +1003,7 @@ mem_writeb_phys(uint32_t addr, uint8_t val)
 
 
 uint8_t
-mem_read_ram(uint32_t addr, void *priv)
+mem_read_ram(uint32_t addr, UNUSED(priv_t priv))
 {
     addreadlookup(mem_logical_addr, addr);
 
@@ -1011,7 +1012,7 @@ mem_read_ram(uint32_t addr, void *priv)
 
 
 uint16_t
-mem_read_ramw(uint32_t addr, void *priv)
+mem_read_ramw(uint32_t addr, UNUSED(priv_t priv))
 {
     addreadlookup(mem_logical_addr, addr);
 
@@ -1020,7 +1021,7 @@ mem_read_ramw(uint32_t addr, void *priv)
 
 
 uint32_t
-mem_read_raml(uint32_t addr, void *priv)
+mem_read_raml(uint32_t addr, UNUSED(priv_t priv))
 {
     addreadlookup(mem_logical_addr, addr);
 
@@ -1079,7 +1080,7 @@ mem_write_raml_page(uint32_t addr, uint32_t val, page_t *p)
 
 
 void
-mem_write_ram(uint32_t addr, uint8_t val, void *priv)
+mem_write_ram(uint32_t addr, uint8_t val, UNUSED(priv_t priv))
 {
     addwritelookup(mem_logical_addr, addr);
     mem_write_ramb_page(addr, val, &pages[addr >> 12]);
@@ -1087,7 +1088,7 @@ mem_write_ram(uint32_t addr, uint8_t val, void *priv)
 
 
 void
-mem_write_ramw(uint32_t addr, uint16_t val, void *priv)
+mem_write_ramw(uint32_t addr, uint16_t val, UNUSED(priv_t priv))
 {
     addwritelookup(mem_logical_addr, addr);
     mem_write_ramw_page(addr, val, &pages[addr >> 12]);
@@ -1095,7 +1096,7 @@ mem_write_ramw(uint32_t addr, uint16_t val, void *priv)
 
 
 void
-mem_write_raml(uint32_t addr, uint32_t val, void *priv)
+mem_write_raml(uint32_t addr, uint32_t val, UNUSED(priv_t priv))
 {
     addwritelookup(mem_logical_addr, addr);
     mem_write_raml_page(addr, val, &pages[addr >> 12]);
@@ -1103,7 +1104,7 @@ mem_write_raml(uint32_t addr, uint32_t val, void *priv)
 
 
 static uint8_t
-mem_read_remapped(uint32_t addr, void *priv)
+mem_read_remapped(uint32_t addr, UNUSED(priv_t priv))
 {
     if (addr >= (1024UL * mem_size) && addr < (1024UL * (mem_size + 384)))
 	addr = 0xA0000 + (addr - (mem_size * 1024));
@@ -1115,7 +1116,7 @@ mem_read_remapped(uint32_t addr, void *priv)
 
 
 static uint16_t
-mem_read_remappedw(uint32_t addr, void *priv)
+mem_read_remappedw(uint32_t addr, UNUSED(priv_t priv))
 {
     if ((addr >= (1024UL * mem_size)) && (addr < (1024UL * (mem_size + 384))))
 	addr = 0xA0000 + (addr - (mem_size * 1024));
@@ -1127,7 +1128,7 @@ mem_read_remappedw(uint32_t addr, void *priv)
 
 
 static uint32_t
-mem_read_remappedl(uint32_t addr, void *priv)
+mem_read_remappedl(uint32_t addr, UNUSED(priv_t priv))
 {
     if ((addr >= (1024UL * mem_size)) && (addr < (1024UL * (mem_size + 384))))
 	addr = 0xA0000 + (addr - (mem_size * 1024));
@@ -1139,7 +1140,7 @@ mem_read_remappedl(uint32_t addr, void *priv)
 
 
 static void
-mem_write_remapped(uint32_t addr, uint8_t val, void *priv)
+mem_write_remapped(uint32_t addr, uint8_t val, UNUSED(priv_t priv))
 {
     uint32_t oldaddr = addr;
 
@@ -1153,7 +1154,7 @@ mem_write_remapped(uint32_t addr, uint8_t val, void *priv)
 
 
 static void
-mem_write_remappedw(uint32_t addr, uint16_t val, void *priv)
+mem_write_remappedw(uint32_t addr, uint16_t val, UNUSED(priv_t priv))
 {
     uint32_t oldaddr = addr;
 
@@ -1167,7 +1168,7 @@ mem_write_remappedw(uint32_t addr, uint16_t val, void *priv)
 
 
 static void
-mem_write_remappedl(uint32_t addr, uint32_t val, void *priv)
+mem_write_remappedl(uint32_t addr, uint32_t val, UNUSED(priv_t priv))
 {
     uint32_t oldaddr = addr;
 
@@ -1181,19 +1182,19 @@ mem_write_remappedl(uint32_t addr, uint32_t val, void *priv)
 
 
 void
-mem_write_null(uint32_t addr, uint8_t val, void *p)
+mem_write_null(UNUSED(uint32_t addr),UNUSED(uint8_t val),UNUSED(priv_t priv))
 {
 }
 
 
 void
-mem_write_nullw(uint32_t addr, uint16_t val, void *p)
+mem_write_nullw(UNUSED(uint32_t addr),UNUSED(uint16_t val),UNUSED(priv_t priv))
 {
 }
 
 
 void
-mem_write_nulll(uint32_t addr, uint32_t val, void *p)
+mem_write_nulll(UNUSED(uint32_t addr),UNUSED(uint32_t val),UNUSED(priv_t priv))
 {
 }
 

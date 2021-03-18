@@ -22,13 +22,13 @@
  *		61 50 52 0F 19 06 19 19 02 0D 0B 0C   MONO
  *		2D 28 22 0A 67 00 64 67 02 03 06 07   640x400
  *
- * Version:	@(#)m_t3100e_vid.c	1.0.14	2019/05/17
+ * Version:	@(#)m_t3100e_vid.c	1.0.15	2021/03/18
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -714,7 +714,7 @@ speed_changed(priv_t priv)
 
 
 static priv_t
-vid_init(const device_t *info, UNUSED(void *parent))
+vid_init(UNUSED(const device_t *info), UNUSED(void *parent))
 {
     vid_t *dev;
 

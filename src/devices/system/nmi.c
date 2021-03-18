@@ -8,7 +8,7 @@
  *
  *		Implementation of the NMI handler.
  *
- * Version:	@(#)nmi.c	1.0.4	2021/03/07
+ * Version:	@(#)nmi.c	1.0.4	2021/03/18
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -42,6 +42,7 @@
 #include <wchar.h>
 #include "../../emu.h"
 #include "../../io.h"
+#include "../../plat.h"
 #include "nmi.h"
 
 
@@ -52,7 +53,7 @@ int	nmi_mask = 0;
 
 
 static void
-nmi_write(uint16_t port, uint8_t val, priv_t priv)
+nmi_write(UNUSED(uint16_t port), uint8_t val, UNUSED(priv_t priv))
 {
     nmi_mask = val & 0x80;
 }

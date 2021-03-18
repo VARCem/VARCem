@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows using Visual Studio 2015.
 #
-# Version:	@(#)Makefile.VC	1.0.84	2021/03/12
+# Version:	@(#)Makefile.VC	1.0.85	2021/03/18
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -565,6 +565,34 @@ ifneq ($(PNG), n)
  MISCOBJ	+= png.obj
 endif
 
+# MiniVHD: N=no, Y=yes,linked, D=yes,dynamic, S=yes,static
+ifndef MINIVHD
+ MINIVHD	:= y
+endif
+ifneq ($(MINIVHD), n)
+ ifeq ($(MINIVHD_PATH), )
+  MINIVHD_PATH	:= $(EXT_PATH)/minivhd
+ endif
+ ifeq ($(MINIVHD), d)
+  OPTS		+= -DUSE_MINIVHD=2
+ else
+  OPTS		+= -DUSE_MINIVHD=1
+ endif
+ OPTS		+= -I$(MINIVHD_PATH)/include
+ ifeq ($(X64), y)
+  LIBS		+= -L$(MINIVHD_PATH)/lib/x64
+ else
+  LIBS		+= -L$(MINIVHD_PATH)/lib/x86
+ endif
+ ifeq ($(MINIVHD), y)
+  # FIXME: should be -lpng.dll
+  LIBS		+= -lminivhd.dll
+ endif
+ ifeq ($(PNG), s)
+  LIBS		+= -lminivhd
+ endif
+endif
+
 # WX: N=no, Y=yes,linked, D=yes,dynamic, S=yes,static
 ifneq ($(WX), n)
  OPTS		+= -DUSE_WX=$(WX) $(WX_FLAGS)
@@ -666,16 +694,6 @@ ifeq ($(DEV_BRANCH), y)
   OPTS		+= -DUSE_SL
   DEVBROBJ	+= m_sl82c460.obj
  endif
-
-  ifeq ($(MINIVHD), y)
-  OPTS		+= -DUSE_MINIVHD
-  MISCSOBJ	+= minivhd_util.obj minivhd_manage.obj minivhd_io.obj minivhd_struct_rw.obj minivhd_create.obj cwalk.obj libxml2_encoding.obj
-endif
-
-ifeq ($(LIBCHD), y)
-  OPTS		+= -DUSE_CHD
-  MISCOBJ   +=
-endif
 
 endif
 

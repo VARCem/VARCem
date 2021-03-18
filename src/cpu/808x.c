@@ -8,7 +8,7 @@
  *
  *		808x CPU emulation.
  *
- * Version:	@(#)808x.c	1.0.22	2021/03/12
+ * Version:	@(#)808x.c	1.0.23	2021/03/18
  *
  * Authors:	Miran Grca, <mgrca8@gmail.com>
  *		Andrew Jenner (reenigne), <andrew@reenigne.org>
@@ -719,7 +719,7 @@ do_pop(void)
 
 
 static void
-do_access(int num, int bits)
+do_access(int num, UNUSED(int bits))
 {
     switch (num) {
 	case 0: case 61: case 63: case 64:

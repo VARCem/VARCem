@@ -8,13 +8,13 @@
  *
  *		Implementation of the Intel 430/440-based machines.
  *
- * Version:	@(#)m_intel4x0.c	1.0.11	2020/02/12
+ * Version:	@(#)m_intel4x0.c	1.0.13	2021/03/18
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2020 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -151,7 +151,7 @@ batman_close(priv_t priv)
 
 
 static priv_t
-batman_init(const device_t *info, UNUSED(void *parent))
+batman_init(UNUSED(const device_t *info), UNUSED(void *parent))
 {
     batman_t *dev;
 
@@ -348,12 +348,13 @@ const device_t m_ambradp60 = {
     "Ambra DP60PCI",
     DEVICE_ROOT,
     0,
-    L"ambra/dp60",
+    L"ibm/ambra/dp60",
     common_init, NULL, NULL,
     NULL, NULL, NULL,
     &revenge_info,
     batman_config
 };
+
 
 static const machine_t plato_info = {
     MACHINE_PCI | MACHINE_ISA | MACHINE_AT | MACHINE_HDC,
@@ -377,7 +378,7 @@ const device_t m_ambradp90 = {
     "Ambra DP90PCI",
     DEVICE_ROOT,
     1,
-    L"ambra/dp90",
+    L"ibm/ambra/dp90",
     common_init, NULL, NULL,
     NULL, NULL, NULL,
     &plato_info,

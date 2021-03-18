@@ -8,7 +8,7 @@
  *
  *		Implementation of the ACC 2036 chipset.
  *
- * Version:	@(#)acc2036.c	1.0.1	2021/03/16
+ * Version:	@(#)acc2036.c	1.0.1	2021/03/18
  *
  * Authors:	Altheos, <altheos@varcem.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -166,7 +166,7 @@ acc2036_close(priv_t priv)
 
 
 static priv_t
-acc2036_init(const device_t *info, UNUSED(void *parent))
+acc2036_init(UNUSED(const device_t *info), UNUSED(void *parent))
 {
     acc2036_t *dev;
 

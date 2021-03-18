@@ -8,7 +8,7 @@
  *
  *		Handling of the emulated machines.
  *
- * Version:	@(#)machine.h	1.0.38	2021/03/16
+ * Version:	@(#)machine.h	1.0.39	2021/03/18
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -41,26 +41,26 @@
 
 
 /* Machine feature flags. */
-#define MACHINE_PC		0x000000	/* PC architecture */
-#define MACHINE_AT		0x000001	/* PC/AT architecture */
-#define MACHINE_PS2		0x000002	/* PS/2 architecture */
-#define MACHINE_NONMI		0x000004	/* sys does not have NMI's */
-#define MACHINE_ISA		0x000010	/* sys has ISA bus */
-#define MACHINE_CBUS		0x000020	/* sys has C-BUS bus */
-#define MACHINE_EISA		0x000040	/* sys has EISA bus */
-#define MACHINE_VLB		0x000080	/* sys has VL bus */
-#define MACHINE_MCA		0x000100	/* sys has MCA bus */
-#define MACHINE_PCI		0x000200	/* sys has PCI bus */
-#define MACHINE_AGP		0x000400	/* sys has AGP bus */
-#define MACHINE_FDC		0x010000	/* sys has int FDC */
-#define MACHINE_FDC_PS2		0x012000	/* sys has int PS/2 FDC */    
-#define MACHINE_HDC		0x020000	/* sys has int HDC */
-#define MACHINE_HDC_PS2		0x040000	/* sys has int PS/2 HDC */
-#define MACHINE_MOUSE		0x080000	/* sys has int mouse */
-#define MACHINE_SOUND		0x100000	/* sys has int sound */
-#define MACHINE_VIDEO		0x200000	/* sys has int video */
-#define MACHINE_SCSI		0x400000	/* sys has int SCSI */
-#define MACHINE_NETWORK		0x800000	/* sys has int network */
+#define MACHINE_PC		0x000000	// PC architecture
+#define MACHINE_AT		0x000001	// PC/AT architecture
+#define MACHINE_PS2		0x000002	// PS/2 architecture
+#define MACHINE_NONMI		0x000004	// sys does not have NMI's
+#define MACHINE_ISA		0x000010	// sys has ISA bus
+#define MACHINE_CBUS		0x000020	// sys has C-BUS bus
+#define MACHINE_EISA		0x000040	// sys has EISA bus
+#define MACHINE_VLB		0x000080	// sys has VL bus
+#define MACHINE_MCA		0x000100	// sys has MCA bus
+#define MACHINE_PCI		0x000200	// sys has PCI bus
+#define MACHINE_AGP		0x000400	// sys has AGP bus
+#define MACHINE_FDC		0x010000	// sys has int FDC
+#define MACHINE_FDC_PS2		0x012000	// sys has int PS/2 FDC
+#define MACHINE_HDC		0x020000	// sys has int HDC
+#define MACHINE_HDC_PS2		0x040000	// sys has int PS/2 HDC
+#define MACHINE_MOUSE		0x080000	// sys has int mouse
+#define MACHINE_SOUND		0x100000	// sys has int sound
+#define MACHINE_VIDEO		0x200000	// sys has int video
+#define MACHINE_SCSI		0x400000	// sys has int SCSI
+#define MACHINE_NETWORK		0x800000	// sys has int network
 
 #define IS_ARCH(a)		(machine->flags & (a)) ? 1 : 0;
 
@@ -132,9 +132,7 @@ extern const device_t	m_tandy_1k;
 extern const device_t	m_tandy_1k_hx;
 extern const device_t	m_tandy_1k_sl2;
 
-#if defined(DEV_BRANCH)
 extern const device_t	m_thom_to16;
-#endif
 
 extern const device_t	m_tosh_1000;
 extern const device_t	m_tosh_1200;
@@ -168,10 +166,8 @@ extern const device_t	m_kmxc02;
 extern const device_t	m_tosh_3100e;
 
 extern const device_t	m_cbm_pc30;
-#if defined(DEV_BRANCH)
 extern const device_t	m_cbm_sl386sx;
 extern const device_t	m_cbm_sl386sx25;
-#endif
 
 #if defined(DEV_BRANCH) && defined(USE_COMPAQ)
 extern const device_t	m_cpq_p1;
@@ -207,23 +203,17 @@ extern const device_t	m_opti495_386sx_mr;
 extern const device_t	m_opti495_386dx_mr;
 extern const device_t	m_opti495_486_mr;
 
-#if defined(DEV_BRANCH)
 extern const device_t 	m_opti895_hot419;
 extern const device_t	m_opti895_dp4044;
-#endif
 
 #if defined(DEV_BRANCH) && defined(USE_SL)
 extern const device_t	m_sl82c460_386dx_ami;
 #endif
 
-#if defined(DEV_BRANCH) && defined(USE_SIS471)
 extern const device_t	m_sis471_ami;
-#endif
 extern const device_t	m_dtk486;
 
-#if defined(DEV_BRANCH) && defined(USE_SIS496)
 extern const device_t	m_sis496_ami;
-#endif
 extern const device_t	m_rise418;
 
 /* Acer boards. */
@@ -231,7 +221,7 @@ extern const device_t	m_acer_m3a;
 extern const device_t	m_acer_v30;
 extern const device_t	m_acer_v35n;
 
-/* Ambra machines. */
+/* IBM Ambra machines. */
 extern const device_t	m_ambradp60;
 extern const device_t	m_ambradp90;
 
@@ -262,9 +252,7 @@ extern const device_t	m_hpv486;
 #endif
 
 /* Packard Bell machines. */
-#if defined(DEV_BRANCH)
 extern const device_t	m_pb300;
-#endif
 extern const device_t	m_pb410a;
 extern const device_t	m_pb640;
 

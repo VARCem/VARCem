@@ -110,7 +110,7 @@ pcilog(int level, const char *fmt, ...)
 
 
 static void
-pci_cf8_write(uint16_t port, uint32_t val, UNUSED(priv_t priv))
+pci_cf8_write(UNUSED(uint16_t port), uint32_t val, UNUSED(priv_t priv))
 {
     pci_index = val & 0xff;
     pci_func = (val >> 8) & 7;
@@ -121,7 +121,7 @@ pci_cf8_write(uint16_t port, uint32_t val, UNUSED(priv_t priv))
 
 
 static uint32_t
-pci_cf8_read(uint16_t port, UNUSED(priv_t priv))
+pci_cf8_read(UNUSED(uint16_t port), UNUSED(priv_t priv))
 {
     return pci_index | (pci_func << 8) |
 	   (pci_card << 11) | (pci_bus << 16) | (pci_enable << 31);
@@ -605,7 +605,7 @@ pci_slots_clear(void)
 
 
 static uint8_t
-trc_read(uint16_t port, UNUSED(priv_t priv))
+trc_read(UNUSED(uint16_t port), UNUSED(priv_t priv))
 {
     return trc_reg & 0xfb;
 }
@@ -625,7 +625,7 @@ trc_reset(uint8_t val)
 
 
 static void
-trc_write(uint16_t port, uint8_t val, UNUSED(priv_t priv))
+trc_write(UNUSED(uint16_t port), uint8_t val, UNUSED(priv_t priv))
 {
     DEBUG("TRC Write: %02X\n", val);
 

@@ -8,13 +8,13 @@
  *
  *		Emulation of Tandy models 1000, 1000HX and 1000SL2.
  *
- * Version:	@(#)m_tandy1000.c	1.0.24	2019/05/17
+ * Version:	@(#)m_tandy1000.c	1.0.25	2021/03/18
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *		Copyright 2016-2019 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -821,7 +821,7 @@ snd_get_buffer(int32_t *bufp, int len, priv_t priv)
 
 
 static priv_t
-snd_init(const device_t *info, UNUSED(void *parent))
+snd_init(UNUSED(const device_t *info), UNUSED(void *parent))
 {
     t1ksnd_t *dev;
 
@@ -861,7 +861,7 @@ static const device_t snd_device = {
 
 
 static void
-eep_write(uint16_t addr, uint8_t val, priv_t priv)
+eep_write(UNUSED(uint16_t addr), uint8_t val, priv_t priv)
 {
     t1keep_t *dev = (t1keep_t *)priv;
 
@@ -954,7 +954,7 @@ eep_close(priv_t priv)
 
 
 static priv_t
-eep_init(const device_t *info, UNUSED(void *parent))
+eep_init(UNUSED(const device_t *info), UNUSED(void *parent))
 {
     char temp[128];
     t1keep_t *dev;

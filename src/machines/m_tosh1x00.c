@@ -96,13 +96,13 @@
  *
  * FIXME:	The ROM drive should be re-done using the "option file".
  *
- * Version:	@(#)m_tosh1x00.c	1.0.25	2020/10/11
+ * Version:	@(#)m_tosh1x00.c	1.0.26	2021/03/18
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		John Elliott, <jce@seasip.info>
  *
- *		Copyright 2018-2020 Fred N. van Kempen.
+ *		Copyright 2018-2021 Fred N. van Kempen.
  *		Copyright 2018 Miran Grca.
  *		Copyright 2017,2018 John Elliott.
  *
@@ -273,7 +273,7 @@ tc8521_time_get(const uint8_t *regs, intclk_t *clk)
 
 /* This is called every second through the NVR/RTC hook. */
 static void
-tc8521_tick(nvr_t *nvr)
+tc8521_tick(UNUSED(nvr_t *nvr))
 {
     DEBUG("TC8521: ping\n");
 }
@@ -378,11 +378,14 @@ tc8521_init(nvr_t *nvr, int size)
 
 /* Given an EMS page ID, return its physical address in RAM. */
 static uint32_t
-ems_execaddr(t1000_t *dev, int pg, uint16_t val)
+ems_execaddr(t1000_t *dev, UNUSED(int pg), uint16_t val)
 {
-    if (! (val & 0x80)) return(0);	/* Bit 7 reset => not mapped */
-    if (! dev->ems_pages) return(0);	/* No EMS available: all used by 
-					 * HardRAM or conventional RAM */
+    if (! (val & 0x80))
+	return(0);	/* Bit 7 reset => not mapped */
+
+    if (! dev->ems_pages)
+	return(0);	/* No EMS available: all used by 
+			 * HardRAM or conventional RAM */
     val &= 0x7f;
 
     DBGLOG(1, "Select EMS page: %i of %i\n", val, dev->ems_pages);
@@ -881,7 +884,7 @@ nvram_mem_write(uint32_t addr, uint8_t val, priv_t priv)
 
 /* Port 0xc8 controls the ROM drive. */
 static uint8_t
-ctl_rom_read(uint16_t addr, priv_t priv)
+ctl_rom_read(UNUSED(uint16_t addr), priv_t priv)
 {
     t1000_t *dev = (t1000_t *)priv;
 
@@ -890,7 +893,7 @@ ctl_rom_read(uint16_t addr, priv_t priv)
 
 
 static void
-ctl_rom_write(uint16_t addr, uint8_t val, priv_t priv)
+ctl_rom_write(UNUSED(uint16_t addr), uint8_t val, priv_t priv)
 {
     t1000_t *dev = (t1000_t *)priv;
 
@@ -959,7 +962,7 @@ t1000_close(priv_t priv)
 
 
 static priv_t
-t1000_init(const device_t *info, void *arg)
+t1000_init(const device_t *info, UNUSED(void *arg))
 {
     t1000_t *dev;
     FILE *fp;
@@ -1155,7 +1158,7 @@ const device_t m_tosh_1200 = {
 
 
 void
-t1000_syskey(uint8_t andmask, uint8_t ormask, uint8_t xormask)
+t1000_syskey(UNUSED(uint8_t andmask), UNUSED(uint8_t ormask), UNUSED(uint8_t xormask))
 {
 #if 0
     t1000.syskeys &= ~andmask;

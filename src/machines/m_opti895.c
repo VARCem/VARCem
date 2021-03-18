@@ -8,11 +8,11 @@
  *
  *		Implementation of the Opti 82C495 based machines.
  *
- * Version:	@(#)m_opti8xx.c	1.0.1	2021/03/16
+ * Version:	@(#)m_opti8xx.c	1.0.2	2021/03/18
  *
  * Author:	Altheos, <altheos@varcem.com>
  *
- *		Copyright 2021 Altheos
+ *		Copyright 2021 Altheos.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -105,7 +105,7 @@ const device_t m_opti895_hot419 = {
     "Shuttle Hot-419",
     DEVICE_ROOT,
     1,
-    L"opti8xx/shuttle",
+    L"opti/opti8xx/shuttle",
     common_init, NULL, NULL,
     NULL, NULL, NULL,
     &hot419_info,
@@ -124,7 +124,7 @@ const device_t m_opti895_dp4044 = {
     "DataExpert EXP4044",
     DEVICE_ROOT,
     0,
-    L"opti8xx/dataexpert",
+    L"opti/opti8xx/dataexpert",
     common_init, NULL, NULL,
     NULL, NULL, NULL,
     &opti8xx_info,

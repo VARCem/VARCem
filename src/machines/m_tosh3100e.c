@@ -121,13 +121,13 @@
  *                       bit 2 set for single-pixel LCD font
  *                       bits 0,1 for display font
  *
- * Version:	@(#)m_t3100e.c	1.0.13	2019/05/13
+ * Version:	@(#)m_t3100e.c	1.0.14	2021/03/18
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		John Elliott, <jce@seasip.info>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2017-2018 John Elliott.
  *
@@ -164,6 +164,7 @@
 #include "../devices/input/mouse.h"
 #include "../devices/floppy/fdd.h"
 #include "../devices/floppy/fdc.h"
+#include "../plat.h"
 #include "machine.h"
 #include "m_tosh3100e.h"
 
@@ -378,7 +379,7 @@ map_ram(t3100e_t *dev, uint8_t val)
 
 
 static uint8_t
-sys_in(uint16_t addr, priv_t priv)
+sys_in(UNUSED(uint16_t addr), priv_t priv)
 {
     t3100e_t *dev = (t3100e_t *)priv;
 
@@ -393,7 +394,7 @@ sys_in(uint16_t addr, priv_t priv)
 
 /* Handle writes to the T3100e system control port at 0x8084 */
 static void
-sys_out(uint16_t addr, uint8_t val, priv_t priv)
+sys_out(UNUSED(uint16_t addr), uint8_t val, priv_t priv)
 {
     t3100e_t *dev = (t3100e_t *)priv;
 
@@ -634,7 +635,7 @@ t3100e_close(priv_t priv)
 
 
 static priv_t
-t3100e_init(const device_t *info, void *arg)
+t3100e_init(const device_t *info, UNUSED(void *arg))
 {
     t3100e_t *dev;
     void *kbd;

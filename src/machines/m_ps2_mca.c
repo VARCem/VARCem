@@ -48,7 +48,7 @@
  *
  *		This works around the timing loop mentioned above.
  *
- * Version:	@(#)m_ps2_mca.c	1.0.30	2021/03/16
+ * Version:	@(#)m_ps2_mca.c	1.0.31	2021/03/18
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -105,6 +105,7 @@
 #include "../devices/floppy/fdd.h"
 #include "../devices/floppy/fdc.h"
 #include "../devices/video/video.h"
+#include "../plat.h"
 #include "machine.h"
 
 
@@ -1448,7 +1449,7 @@ ps2_close(priv_t priv)
 
 
 static priv_t
-ps2_init(const device_t *info, void *arg)
+ps2_init(const device_t *info, UNUSED(void *arg))
 {
     ps2_t *dev;
 
@@ -1533,7 +1534,7 @@ const device_t m_ps2_m50 = {
     "IBM PS/2 M50 Type 1",
     DEVICE_ROOT,
     50,
-    L"ibm/ps2_m50",
+    L"ibm/ps2/m50",
     ps2_init, ps2_close, NULL,
     NULL, NULL, NULL,
     &m50_info,
@@ -1552,7 +1553,7 @@ const device_t m_ps2_m55sx = {
     "IBM PS/2 M55SX",
     DEVICE_ROOT,
     55,
-    L"ibm/ps2_m55sx",
+    L"ibm/ps2/m55sx",
     ps2_init, ps2_close, NULL,
     NULL, NULL, NULL,
     &m55_info,
@@ -1571,7 +1572,7 @@ const device_t m_ps2_m70_3 = {
     "IBM PS/2 M70 Type 3",
     DEVICE_ROOT,
     73,
-    L"ibm/ps2_m70_type3",
+    L"ibm/ps2/m70_type3",
     ps2_init, ps2_close, NULL,
     NULL, NULL, NULL,
     &m70_3_info,
@@ -1590,7 +1591,7 @@ const device_t m_ps2_m70_4 = {
     "IBM PS/2 M70 Type 4",
     DEVICE_ROOT,
     74,
-    L"ibm/ps2_m70_type4",
+    L"ibm/ps2/m70_type4",
     ps2_init, ps2_close, NULL,
     NULL, NULL, NULL,
     &m70_4_info,
@@ -1609,7 +1610,7 @@ const device_t m_ps2_m80 = {
     "IBM PS/2 M80",
     DEVICE_ROOT,
     80,
-    L"ibm/ps2_m80",
+    L"ibm/ps2/m80",
     ps2_init, ps2_close, NULL,
     NULL, NULL, NULL,
     &m80_info,

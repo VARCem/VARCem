@@ -8,7 +8,7 @@
  *
  *		Implementation of the APM handler.
  *
- * Version:	@(#)apm.c	1.0.3	2021/03/16
+ * Version:	@(#)apm.c	1.0.3	2021/03/18
  *
  * Authors:	Altheos, <altheos@varcem.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -38,11 +38,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <wchar.h>
-#include "../../plat.h"
 #include "../../cpu/cpu.h"
 #include "../../emu.h"
 #include "../../io.h"
 #include "../../device.h"
+#include "../../plat.h"
 #include "apm.h"
 
 
@@ -116,7 +116,7 @@ apm_close(priv_t priv)
 
 
 static priv_t
-apm_init(const device_t *info, UNUSED(void *parent))
+apm_init(UNUSED(const device_t *info), UNUSED(void *parent))
 {
     apm_t *dev;
     

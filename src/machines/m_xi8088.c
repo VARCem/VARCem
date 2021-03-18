@@ -8,13 +8,13 @@
  *
  *		Implementation of the Xi8088 open-source machine.
  *
- * Version:	@(#)m_xi8088.c	1.0.16	2019/05/17
+ * Version:	@(#)m_xi8088.c	1.0.17	2021/03/18
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -57,6 +57,7 @@
 #include "../devices/floppy/fdd.h"
 #include "../devices/floppy/fdc.h"
 #include "../devices/disk/hdc.h"
+#include "../plat.h"
 #include "machine.h"
 
 
@@ -114,7 +115,7 @@ xi_close(priv_t priv)
 
 
 static priv_t
-xi_init(const device_t *info, void *arg)
+xi_init(const device_t *info, UNUSED(void *arg))
 {
     xi8088_t *dev;
     priv_t kbd;

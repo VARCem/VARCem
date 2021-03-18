@@ -15,7 +15,7 @@
  *		_MUST_ enable the Internal mouse, or the PS/2 mouse as
  *		this is onboard. There is a jumper for this as well.
  *
- * Version:	@(#)m_pbell.c	1.0.8	2021/03/16
+ * Version:	@(#)m_pbell.c	1.0.9	2021/03/18
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -69,13 +69,14 @@
 #include "../devices/disk/hdc.h"
 #include "../devices/disk/hdc_ide.h"
 #include "../devices/video/video.h"
+#include "../plat.h"
 #include "machine.h"
 
 
 /* Read out the configuration port. */
 //FIXME: bit5 makes it sound an alarm of some kind!
 static uint8_t 
-port78_read(uint16_t addr, priv_t priv)
+port78_read(uint16_t addr, UNUSED(priv_t priv))
 {
     uint8_t ret = 0x00;
 

@@ -977,7 +977,7 @@ save_other(const config_t *cfg, const char *cat)
 /* Load "Hard Disks" section. */
 //FIXME: hdd[] should be loaded into config_t
 static void
-load_disks(config_t *cfg, const char *cat)
+load_disks(UNUSED(config_t *cfg), const char *cat)
 {
     char temp[512], tmp2[512], s[512];
     uint32_t max_spt, max_hpc, max_tracks;
@@ -1110,7 +1110,7 @@ load_disks(config_t *cfg, const char *cat)
 
 /* Save "Hard Disks" section. */
 static void
-save_disks(const config_t *cfg, const char *cat)
+save_disks(UNUSED(const config_t *cfg), const char *cat)
 {
     char temp[128], tmp2[128];
     const char *str;
@@ -1172,7 +1172,7 @@ save_disks(const config_t *cfg, const char *cat)
 /* Load "Floppy Drives" section. */
 //FIXME: we should load stuff into config_t !
 static void
-load_floppy(config_t *cfg, const char *cat)
+load_floppy(UNUSED(config_t *cfg), const char *cat)
 {
     char temp[512], *p;
     wchar_t *wp;
@@ -1228,7 +1228,7 @@ load_floppy(config_t *cfg, const char *cat)
 
 /* Save "Floppy Drives" section. */
 static void
-save_floppy(const config_t *cfg, const char *cat)
+save_floppy(UNUSED(const config_t *cfg), const char *cat)
 {
     char temp[512];
     int c;
@@ -1278,7 +1278,7 @@ save_floppy(const config_t *cfg, const char *cat)
 /* Load "Removable Devices" section. */
 //FIXME: stuff should be loaded into config_t !
 static void
-load_removable(config_t *cfg, const char *cat)
+load_removable(UNUSED(config_t *cfg), const char *cat)
 {
     char temp[512], tmp2[512], *p;
     char s[512];
@@ -1437,7 +1437,7 @@ load_removable(config_t *cfg, const char *cat)
 
 /* Save "Other Removable Devices" section. */
 static void
-save_removable(const config_t *cfg, const char *cat)
+save_removable(UNUSED(const config_t *cfg), const char *cat)
 {
     char temp[512], tmp2[512];
     int c;

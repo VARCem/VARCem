@@ -8,7 +8,7 @@
  *
  *		Implementation of the I2C bus and its operations.
  *
- * Version:	@(#)i2c.c	1.0.1	2021/03/16
+ * Version:	@(#)i2c.c	1.0.1	2021/03/18
  *
  * Author:	RichardG, <richardg867@gmail.com>
  *
@@ -49,10 +49,10 @@
 
 
 typedef struct _i2c_ {
-    uint8_t	(*start)(void *bus, uint8_t addr, uint8_t read, void *priv);
-    uint8_t	(*read)(void *bus, uint8_t addr, void *priv);
-    uint8_t	(*write)(void *bus, uint8_t addr, uint8_t data, void *priv);
-    void	(*stop)(void *bus, uint8_t addr, void *priv);
+    uint8_t	(*start)(void *bus, uint8_t addr, int8_t read, priv_t);
+    uint8_t	(*read)(void *bus, uint8_t addr, priv_t);
+    uint8_t	(*write)(void *bus, uint8_t addr, uint8_t data, priv_t);
+    void	(*stop)(void *bus, uint8_t addr, priv_t);
 
     void	*priv;
 
@@ -75,7 +75,7 @@ int i2c_do_log = ENABLE_I2C_LOG;
 
 
 #ifdef _LOGGING
-static void
+void
 i2c_log(int level, const char *fmt, ...)
 {
 # ifdef ENABLE_I2C_LOG
@@ -94,30 +94,32 @@ i2c_log(int level, const char *fmt, ...)
 void *
 i2c_addbus(const char *name)
 {
-    i2c_bus_t *bus = (i2c_bus_t *)mem_alloc(sizeof(i2c_bus_t));
-    memset(bus, 0, sizeof(i2c_bus_t));
+    i2c_bus_t *bus;
+
+    bus = (i2c_bus_t *)mem_alloc(sizeof(i2c_bus_t));
+    memset(bus, 0x00, sizeof(i2c_bus_t));
 
     bus->name = name;
 
-    return bus;
+    return(bus);
 }
 
 
 void
 i2c_removebus(void *bus_handle)
 {
-    int c;
+    i2c_bus_t *bus = (i2c_bus_t *)bus_handle;
     i2c_t *p, *q;
-    i2c_bus_t *bus = (i2c_bus_t *) bus_handle;
+    int c;
 
-    if (!bus_handle)
+    if (bus_handle == NULL)
 	return;
 
     for (c = 0; c < NADDRS; c++) {
 	p = bus->devices[c];
-	if (!p)
+	if (p == NULL)
 		continue;
-	while (p) {
+	while (p != NULL) {
 		q = p->next;
 		free(p);
 		p = q;
@@ -131,9 +133,9 @@ i2c_removebus(void *bus_handle)
 const char *
 i2c_getbusname(void *bus_handle)
 {
-    i2c_bus_t *bus = (i2c_bus_t *) bus_handle;
+    i2c_bus_t *bus = (i2c_bus_t *)bus_handle;
 
-    if (!bus_handle)
+    if (bus_handle == NULL)
 	return(NULL);
 
     return(bus->name);
@@ -142,13 +144,13 @@ i2c_getbusname(void *bus_handle)
 
 void
 i2c_sethandler(void *bus_handle, uint8_t base, int size,
-	uint8_t (*start)(void *bus, uint8_t addr, uint8_t read, priv_t priv),
-	uint8_t (*read)(void *bus, uint8_t addr, priv_t priv),
-	uint8_t (*write)(void *bus, uint8_t addr, uint8_t data, priv_t priv),
-	void (*stop)(void *bus, uint8_t addr, priv_t priv),
+	uint8_t (*start)(void *, uint8_t, int8_t, priv_t),
+	uint8_t (*read)(void *, uint8_t, priv_t),
+	uint8_t (*write)(void *, uint8_t, uint8_t, priv_t),
+	void (*stop)(void *, uint8_t, priv_t),
 	priv_t priv)
 {
-    i2c_bus_t *bus = (i2c_bus_t *) bus_handle;
+    i2c_bus_t *bus = (i2c_bus_t *)bus_handle;
     i2c_t *p, *q = NULL;
     int c;
 
@@ -182,10 +184,10 @@ i2c_sethandler(void *bus_handle, uint8_t base, int size,
 
 void
 i2c_removehandler(void *bus_handle, uint8_t base, int size,
-	  uint8_t (*start)(void *bus, uint8_t addr, uint8_t read, priv_t priv),
-	  uint8_t (*read)(void *bus, uint8_t addr, priv_t priv),
-	  uint8_t (*write)(void *bus, uint8_t addr, uint8_t data, priv_t priv),
-	  void (*stop)(void *bus, uint8_t addr, priv_t priv),
+	  uint8_t (*start)(void *, uint8_t, int8_t, priv_t),
+	  uint8_t (*read)(void *, uint8_t, priv_t),
+	  uint8_t (*write)(void *, uint8_t, uint8_t, priv_t),
+	  void (*stop)(void *, uint8_t, priv_t),
 	  priv_t priv)
 {
     i2c_bus_t *bus = (i2c_bus_t *) bus_handle;
@@ -222,10 +224,10 @@ i2c_removehandler(void *bus_handle, uint8_t base, int size,
 
 void
 i2c_handler(int set, void *bus_handle, uint8_t base, int size,
-    uint8_t (*start)(void *bus, uint8_t addr, uint8_t read, priv_t priv),
-    uint8_t (*read)(void *bus, uint8_t addr, priv_t priv),
-    uint8_t (*write)(void *bus, uint8_t addr, uint8_t data, priv_t priv),
-    void (*stop)(void *bus, uint8_t addr, priv_t priv),
+    uint8_t (*start)(void *, uint8_t, int8_t, priv_t),
+    uint8_t (*read)(void *, uint8_t, priv_t),
+    uint8_t (*write)(void *, uint8_t, uint8_t, priv_t),
+    void (*stop)(void *, uint8_t, priv_t),
     priv_t priv)
 {
     if (set)
@@ -238,9 +240,9 @@ i2c_handler(int set, void *bus_handle, uint8_t base, int size,
 uint8_t
 i2c_has_device(void *bus_handle, uint8_t addr)
 {
-    i2c_bus_t *bus = (i2c_bus_t *) bus_handle;
+    i2c_bus_t *bus = (i2c_bus_t *)bus_handle;
 
-    if (!bus)
+    if (bus == NULL)
 	return 0;
 
     DEBUG("I2C: has_device(%s, %02X) = %d\n",
@@ -251,13 +253,13 @@ i2c_has_device(void *bus_handle, uint8_t addr)
 
 
 uint8_t
-i2c_start(void *bus_handle, uint8_t addr, uint8_t read)
+i2c_start(void *bus_handle, uint8_t addr, int8_t read)
 {
-    uint8_t ret = 0;
     i2c_bus_t *bus = (i2c_bus_t *) bus_handle;
+    uint8_t ret = 0;
     i2c_t *p;
 
-    if (!bus)
+    if (bus == NULL)
 	return(ret);
 
     p = bus->devices[addr];
@@ -279,11 +281,11 @@ i2c_start(void *bus_handle, uint8_t addr, uint8_t read)
 uint8_t
 i2c_read(void *bus_handle, uint8_t addr)
 {
+    i2c_bus_t *bus = (i2c_bus_t *)bus_handle;
     uint8_t ret = 0;
-    i2c_bus_t *bus = (i2c_bus_t *) bus_handle;
     i2c_t *p;
 
-    if (!bus)
+    if (bus == NULL)
 	return(ret);
 
     p = bus->devices[addr];
@@ -306,11 +308,11 @@ i2c_read(void *bus_handle, uint8_t addr)
 uint8_t
 i2c_write(void *bus_handle, uint8_t addr, uint8_t data)
 {
+    i2c_bus_t *bus = (i2c_bus_t *)bus_handle;
     uint8_t ret = 0;
     i2c_t *p;
-    i2c_bus_t *bus = (i2c_bus_t *) bus_handle;
 
-    if (!bus)
+    if (bus == NULL)
 	return(ret);
 
     p = bus->devices[addr];
@@ -332,10 +334,10 @@ i2c_write(void *bus_handle, uint8_t addr, uint8_t data)
 void
 i2c_stop(void *bus_handle, uint8_t addr)
 {
-    i2c_bus_t *bus = (i2c_bus_t *) bus_handle;
+    i2c_bus_t *bus = (i2c_bus_t *)bus_handle;
     i2c_t *p;
 
-    if (!bus)
+    if (bus == NULL)
 	return;
 
     p = bus->devices[addr];

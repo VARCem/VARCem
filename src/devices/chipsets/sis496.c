@@ -8,13 +8,13 @@
  *
  *		Implementation of the SiS 85C496/497 chipset.
  *
- * Version:	@(#)sis49x.c	1.0.13	2020/01/29
+ * Version:	@(#)sis49x.c	1.0.14	2021/03/18
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2020 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -272,7 +272,7 @@ recalc_mapping(sis49x_t *dev)
 
 
 static void
-sis496_write(int func, int addr, uint8_t val, priv_t priv)
+sis496_write(UNUSED(int func), int addr, uint8_t val, priv_t priv)
 {
     sis49x_t *dev = (sis49x_t *)priv;
 
@@ -336,7 +336,7 @@ sis496_write(int func, int addr, uint8_t val, priv_t priv)
 
 
 static uint8_t
-sis496_read(int func, int addr, priv_t priv)
+sis496_read(UNUSED(int func), int addr, priv_t priv)
 {
     sis49x_t *dev = (sis49x_t *)priv;
 
@@ -369,7 +369,7 @@ sis496_close(priv_t priv)
 
 
 static priv_t
-sis496_init(const device_t *info, UNUSED(void *parent))
+sis496_init(UNUSED(const device_t *info), UNUSED(void *parent))
 {
     sis49x_t *dev = (sis49x_t *)mem_alloc(sizeof(sis49x_t));
     memset(dev, 0x00, sizeof(sis49x_t));

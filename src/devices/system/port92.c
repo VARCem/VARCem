@@ -8,7 +8,7 @@
  *
  *		Implementation of the "port 92" pseudo-device.
  *
- * Version:	@(#)port92.c	1.0.3	2021/04/16
+ * Version:	@(#)port92.c	1.0.3	2021/03/18
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -65,7 +65,7 @@ p92_reset(priv_t priv)
 
 
 static uint8_t
-p92_in(uint16_t port, priv_t priv)
+p92_in(UNUSED(uint16_t port), priv_t priv)
 {
     port92_t *dev = (port92_t *)priv;
 
@@ -74,7 +74,7 @@ p92_in(uint16_t port, priv_t priv)
 
 
 static void
-p92_out(uint16_t port, uint8_t val, priv_t priv)
+p92_out(UNUSED(uint16_t port), uint8_t val, priv_t priv)
 {
     port92_t *dev = (port92_t *)priv;
 

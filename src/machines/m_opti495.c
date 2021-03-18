@@ -8,13 +8,13 @@
  *
  *		Implementation of the Opti 82C495 based machines.
  *
- * Version:	@(#)m_opti495.c	1.0.13	2019/05/17
+ * Version:	@(#)m_opti495.c	1.0.14	2021/03/18
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -96,7 +96,7 @@ const device_t m_opti495_386sx_ami = {
     "Opti495 386SX (AMI)",
     DEVICE_ROOT,
     0,
-    L"opti495/ami",
+    L"opti/opti495/ami",
     common_init, NULL, NULL,
     NULL, NULL, NULL,
     &o386sx_ami_info,
@@ -115,7 +115,7 @@ const device_t m_opti495_386sx_award = {
     "Opti495 386SX (Award)",
     DEVICE_ROOT,
     1,
-    L"opti495/award",
+    L"opti/opti495/award",
     common_init, NULL, NULL,
     NULL, NULL, NULL,
     &o386sx_award_info,
@@ -134,7 +134,7 @@ const device_t m_opti495_386sx_mr = {
     "Opti495 386SX (MR)",
     DEVICE_ROOT,
     2,
-    L"opti495/mr",
+    L"opti/opti495/mr",
     common_init, NULL, NULL,
     NULL, NULL, NULL,
     &o386sx_mr_info,
@@ -153,7 +153,7 @@ const device_t m_opti495_386dx_ami = {
     "Opti495 386DX (AMI)",
     DEVICE_ROOT,
     0,
-    L"opti495/ami",
+    L"opti/opti495/ami",
     common_init, NULL, NULL,
     NULL, NULL, NULL,
     &o386dx_ami_info,
@@ -172,7 +172,7 @@ const device_t m_opti495_386dx_award = {
     "Opti495 386DX (Award)",
     DEVICE_ROOT,
     1,
-    L"opti495/award",
+    L"opti/opti495/award",
     common_init, NULL, NULL,
     NULL, NULL, NULL,
     &o386dx_award_info,
@@ -191,7 +191,7 @@ const device_t m_opti495_386dx_mr = {
     "Opti495 386DX (MR)",
     DEVICE_ROOT,
     2,
-    L"opti495/mr",
+    L"opti/opti495/mr",
     common_init, NULL, NULL,
     NULL, NULL, NULL,
     &o386dx_mr_info,
@@ -210,7 +210,7 @@ const device_t m_opti495_486_ami = {
     "Opti495 486 (AMI)",
     DEVICE_ROOT,
     0,
-    L"opti495/ami",
+    L"opti/opti495/ami",
     common_init, NULL, NULL,
     NULL, NULL, NULL,
     &o486_ami_info,
@@ -229,7 +229,7 @@ const device_t m_opti495_486_award = {
     "Opti495 486 (Award)",
     DEVICE_ROOT,
     1,
-    L"opti495/award",
+    L"opti/opti495/award",
     common_init, NULL, NULL,
     NULL, NULL, NULL,
     &o486_award_info,
@@ -248,7 +248,7 @@ const device_t m_opti495_486_mr = {
     "Opti495 486 (MR)",
     DEVICE_ROOT,
     2,
-    L"opti495/mr",
+    L"opti/opti495/mr",
     common_init, NULL, NULL,
     NULL, NULL, NULL,
     &o486_mr_info,

@@ -8,7 +8,7 @@
  *
  *		Main emulator module where most things are controlled.
  *
- * Version:	@(#)pc.c	1.0.83	2021/03/16
+ * Version:	@(#)pc.c	1.0.84	2021/03/18
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1030,7 +1030,7 @@ pc_reset(int hard)
 
 /* FIXME: this has to be reviewed! */
 void
-pc_reload(const wchar_t *fn)
+pc_reload(UNUSED(const wchar_t *fn))
 {
     config_write(cfg_path);
 

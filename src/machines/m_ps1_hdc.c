@@ -43,14 +43,14 @@
  *		Type table with the main code, so the user can only select
  *		items from that list...
  *
- * Version:	@(#)m_ps1_hdc.c	1.0.14	2018/05/17
+ * Version:	@(#)m_ps1_hdc.c	1.0.15	2021/03/18
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
  *		Based on my earlier HD20 driver for the EuroPC.
  *		Thanks to Marco Bortolin for the help and feedback !!
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -602,7 +602,7 @@ dump_ssb(ssb_t *ssb)
 
 
 static void
-dump_ccb(hdc_t *dev, ccb_t *ccb)
+dump_ccb(ccb_t *ccb)
 {
     char temp[1024];
     char *sp = temp;
@@ -844,7 +844,7 @@ hdc_callback(void *priv)
 
 	case CMD_READ_SECTORS:
 #if defined(ENABLE_HDC_LOG) && defined(_DEBUG)
-		if (dev->state == STATE_IDLE) dump_ccb(dev, ccb);
+		if (dev->state == STATE_IDLE) dump_ccb(ccb);
 #endif
 		if (! drive->present) {
 			dev->ssb.not_ready = 1;
@@ -974,7 +974,7 @@ do_send:
 	case CMD_READ_EXT:			/* READ_EXT */
 	case CMD_READ_ID:			/* READ_ID */
 #if defined(ENABLE_HDC_LOG) && defined(_DEBUG)
-		if (dev->state == STATE_IDLE) dump_ccb(dev, ccb);
+		if (dev->state == STATE_IDLE) dump_ccb(ccb);
 #endif
 		if (! drive->present) {
 			dev->ssb.not_ready = 1;
@@ -988,7 +988,7 @@ do_send:
 
 	case CMD_RECALIBRATE:			/* RECALIBRATE */
 #if defined(ENABLE_HDC_LOG) && defined(_DEBUG)
-		dump_ccb(dev, ccb);
+		dump_ccb(ccb);
 #endif
 #ifdef ENABLE_HDC_LOG
 		DEBUG("HDC: recalibrate(%d) ready=%d\n",
@@ -1010,7 +1010,7 @@ do_send:
 
 	case CMD_WRITE_SECTORS:
 #if defined(ENABLE_HDC_LOG) && defined(_DEBUG)
-		dump_ccb(dev, ccb);
+		dump_ccb(ccb);
 #endif
 		if (! drive->present) {
 			dev->ssb.not_ready = 1;
@@ -1140,14 +1140,14 @@ do_recv:
 	case CMD_FORMAT_DRIVE:
 	case CMD_FORMAT_TRACK:
 #if defined(ENABLE_HDC_LOG) && defined(_DEBUG)
-		if (dev->state == STATE_IDLE) dump_ccb(dev, ccb);
+		if (dev->state == STATE_IDLE) dump_ccb(ccb);
 #endif
 		do_format(dev, drive, ccb);
 		break;
 		
 	case CMD_SEEK:
 #if defined(ENABLE_HDC_LOG) && defined(_DEBUG)
-		dump_ccb(dev, ccb);
+		dump_ccb(ccb);
 #endif
 		if (! drive->present) {
 			dev->ssb.not_ready = 1;
@@ -1176,7 +1176,7 @@ do_recv:
 	default:
 		ERRLOG("HDC: unknown command - %02x\n", ccb->cmd);
 #if defined(ENABLE_HDC_LOG) && defined(_DEBUG)
-		dump_ccb(dev, ccb);
+		dump_ccb(ccb);
 #endif
 		dev->intstat |= ISR_INVALID_CMD;
 		do_finish(dev);
@@ -1405,7 +1405,7 @@ hdc_close(priv_t priv)
 
 
 static priv_t
-hdc_init_ps1(const device_t *info, void *parent)
+hdc_init_ps1(UNUSED(const device_t *info), void *parent)
 {
     drive_t *drive;
     hdc_t *dev;

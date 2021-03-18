@@ -21,13 +21,13 @@
  *		data at all, so there seems to not be a way to properly do
  *		that..  The chip's interrupt pin is not connected.
  *
- * Version:	@(#)m_olim24.c	1.0.22	2020/10/11
+ * Version:	@(#)m_olim24.c	1.0.23	2021/03/18
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2020 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -75,6 +75,7 @@
 #include "../devices/floppy/fdc.h"
 #include "../devices/sound/sound.h"
 #include "../devices/sound/snd_speaker.h"
+#include "../plat.h"
 #include "machine.h"
 #include "m_olim24.h"
 
@@ -318,7 +319,7 @@ kbd_reset(olim24_t *dev)
 
 
 static int
-mse_poll(int x, int y, int z, int b, priv_t priv)
+mse_poll(int x, int y, UNUSED(int z), int b, priv_t priv)
 {
     olim24_t *dev = (olim24_t *)priv;
 
@@ -599,7 +600,7 @@ rtc_read(uint16_t addr, priv_t priv)
 
 
 static uint8_t
-m24_read(uint16_t port, priv_t priv)
+m24_read(uint16_t port, UNUSED(priv_t priv))
 {
     switch (port) {
 	case 0x66:	/* System Configuration 1 (DIPSW-0) */
@@ -671,7 +672,7 @@ olim24_close(priv_t priv)
 
 
 static priv_t
-olim24_init(const device_t *info, void *arg)
+olim24_init(const device_t *info, UNUSED(void *arg))
 {
     olim24_t *dev;
 

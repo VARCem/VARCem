@@ -8,7 +8,7 @@
  *
  *		Implementation of standard IBM PC/XT class machine.
  *
- * Version:	@(#)m_xt.c	1.0.22	2021/03/16
+ * Version:	@(#)m_xt.c	1.0.22	2021/03/18
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -55,6 +55,7 @@
 #include "../devices/floppy/fdd.h"
 #include "../devices/floppy/fdc.h"
 #include "../devices/video/video.h"
+#include "../plat.h"
 #ifdef USE_CASSETTE
 # include <cassette.h>
 #endif
@@ -78,7 +79,7 @@ xt_close(priv_t priv)
 
 /* Generic PC/XT system board with just the basics. */
 static priv_t
-xt_common_init(const device_t *info, void *arg)
+xt_common_init(const device_t *info, UNUSED(void *arg))
 {
     pcxt_t *dev;
 
@@ -121,18 +122,6 @@ xt_common_init(const device_t *info, void *arg)
 			device_add(&keyboard_xt_device);
 		break;
 
-	case 106:	/* TO16 */
-		if (config.video_card == VID_INTERNAL) {
-			video_load_font(L"video/ibm/mda/mda.rom", 0);
-
-			/* Real chip is Paradise PVC-2 */
-			device_add(&colorplus_onboard_device);
-			cga_palette = 0;
-			video_palette_rebuild();
-		}
-		device_add(&keyboard_xt86_device);
-		break;
-
 	default:	/* clones */
 		device_add(&keyboard_xt86_device);
     }
@@ -141,7 +130,7 @@ xt_common_init(const device_t *info, void *arg)
     if (dev->floppy)
 	device_add(&fdc_xt_device);
 
-    return((priv_t)dev);
+    return(dev);
 }
 
 
@@ -366,25 +355,6 @@ const device_t m_xt_juko = {
     xt_common_init, xt_close, NULL,
     NULL, NULL, NULL,
     &juko_info,
-    xt_config
-};
-
-
-static const machine_t to16_info = {
-    MACHINE_ISA | MACHINE_VIDEO,
-    0,
-    512, 640, 128, 16, 0,
-    {{"Intel",cpus_8088}}
-};
-
-const device_t m_thom_to16 = {
-    "Thomson TO16",
-    DEVICE_ROOT,
-    106,
-    L"thomson/to16",
-    xt_common_init, xt_close, NULL,
-    NULL, NULL, NULL,
-    &to16_info,
     xt_config
 };
 

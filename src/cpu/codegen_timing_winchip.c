@@ -8,7 +8,7 @@
  *
  *		Code generation timing for IDT WinChip processors.
  *
- * Version:	@(#)codegen_timing_winchip.c	1.0.2	2018/12/24
+ * Version:	@(#)codegen_timing_winchip.c	1.0.3	2021/03/18
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -39,6 +39,7 @@
 #include <string.h>
 #include <wchar.h>
 #include "../emu.h"
+#include "../plat.h"
 #include "cpu.h"
 #include "x86.h"
 #include "x86_ops.h"
@@ -330,7 +331,7 @@ static void codegen_timing_winchip_start(void)
         last_prefix = 0;
 }
 
-static void codegen_timing_winchip_prefix(uint8_t prefix, uint32_t fetchdat)
+static void codegen_timing_winchip_prefix(uint8_t prefix, UNUSED(uint32_t fetchdat))
 {
         timing_count += COUNT(opcode_timings[prefix], 0);
         last_prefix = prefix;

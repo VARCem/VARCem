@@ -8,13 +8,13 @@
  *
  *		Implementation of the ACC 2168 chipset.
  *
- * Version:	@(#)acc2168.c	1.0.3	2019/05/15
+ * Version:	@(#)acc2168.c	1.0.4	2021/03/18
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2019 Fred N. van Kempen.
+ *		Copyright 2019-2021 Fred N. van Kempen.
  *		Copyright 2019 Miran Grca.
  *		Copyright 2019 Sarah Walker.
  *
@@ -153,7 +153,7 @@ acc2168_close(priv_t priv)
 
 
 static priv_t
-acc2168_init(const device_t *info, UNUSED(void *parent))
+acc2168_init(UNUSED(const device_t *info), UNUSED(void *parent))
 {
     acc2168_t *dev;
 

@@ -8,12 +8,12 @@
  *
  *		Emulation of the SiS 85c471 based machines.
  *
- * Version:	@(#)m_sis471.c	1.0.17	2020/06/05
+ * Version:	@(#)m_sis471.c	1.0.18	2021/03/18
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2017-2020 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -82,7 +82,7 @@ const device_t m_sis471_ami = {
     "EPOX 486 (SiS 471)",
     DEVICE_ROOT,
     0,
-    L"sis471/ami",
+    L"sis/sis471/ami",
     common_init, NULL, NULL,
     NULL, NULL, NULL,
     &ami_info,

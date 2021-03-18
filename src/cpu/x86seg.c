@@ -8,13 +8,13 @@
  *
  *		x86 CPU segment emulation.
  *
- * Version:	@(#)x86seg.c	1.0.11	2020/12/12
+ * Version:	@(#)x86seg.c	1.0.12	2020/12/18
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <http://pcem-emulator.co.uk/>
  *
- *		Copyright 2018,2020 Fred N. van Kempen.
+ *		Copyright 2018-2021 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -47,6 +47,7 @@
 #include "../timer.h"
 #include "../mem.h"
 #include "../nvr.h"
+#include "../plat.h"
 #include "cpu.h"
 #include "x86.h"
 #include "386.h"
@@ -191,22 +192,22 @@ void x86_doabrt(int x86_abrt)
                 }
         }
 }
-void x86gpf(char *s, uint16_t error)
+void x86gpf(UNUSED(char *s), uint16_t error)
 {
         cpu_state.abrt = ABRT_GPF;
         abrt_error = error;
 }
-void x86ss(char *s, uint16_t error)
+void x86ss(UNUSED(char *s), uint16_t error)
 {
         cpu_state.abrt = ABRT_SS;
         abrt_error = error;
 }
-void x86ts(char *s, uint16_t error)
+void x86ts(UNUSED(char *s), uint16_t error)
 {
         cpu_state.abrt = ABRT_TS;
         abrt_error = error;
 }
-void x86np(char *s, uint16_t error)
+void x86np(UNUSED(char *s), uint16_t error)
 {
         cpu_state.abrt = ABRT_NP;
         abrt_error = error;

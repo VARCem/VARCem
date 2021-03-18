@@ -8,7 +8,7 @@
  *
  *		Implementation of the SiS 85C496/497 based machines.
  *
- * Version:	@(#)m_sis49x.c	1.0.17	2021/03/16
+ * Version:	@(#)m_sis49x.c	1.0.18	2021/03/18
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -65,7 +65,6 @@ common_init(const device_t *info, void *arg)
 
     switch (info->local) {
 	case 0:		/* Lucky Star LS-486E */
-//////////
 		pci_init(PCI_CONFIG_TYPE_1);
 		pci_register_slot(0x05, PCI_CARD_SPECIAL, 0, 0, 0, 0);
 		pci_register_slot(0x0B, PCI_CARD_NORMAL, 1, 2, 3, 4);
@@ -79,7 +78,6 @@ common_init(const device_t *info, void *arg)
 		pci_set_irq_routing(PCI_INTD, PCI_IRQ_DISABLED);
 
 		device_add(&memregs_device);
-/////////
 		device_add(&sis_85c496_device);
 		m_at_common_ide_init();
 		device_add(&keyboard_at_ami_device);
@@ -124,7 +122,7 @@ const device_t m_sis496_ami = {
     "Lucky Star LS-486E (SiS 496)",
     DEVICE_ROOT,
     0,
-    L"sis496/ami",
+    L"sis/sis496/ami",
     common_init, NULL, NULL,
     NULL, NULL, NULL,
     &ami_info,

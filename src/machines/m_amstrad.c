@@ -15,7 +15,7 @@
  *		80 columns. To be fixed...
  *		Also, the DDM bits stuff needs to be verified.
  *
- * Version:	@(#)m_amstrad.c	1.0.31	2021/03/16
+ * Version:	@(#)m_amstrad.c	1.0.32	2021/03/18
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -138,7 +138,7 @@ static int	key_queue_start = 0,
 
 
 static void
-mse_write(uint16_t port, uint8_t val, priv_t priv)
+mse_write(uint16_t port, UNUSED(uint8_t val), priv_t priv)
 {
     amstrad_t *dev = (amstrad_t *)priv;
 
@@ -168,7 +168,7 @@ mse_read(uint16_t port, priv_t priv)
 
 
 static int
-mse_poll(int x, int y, int z, int b, priv_t priv)
+mse_poll(int x, int y, UNUSED(int z), int b, priv_t priv)
 {
     amstrad_t *dev = (amstrad_t *)priv;
 

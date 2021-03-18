@@ -8,13 +8,13 @@
  *
  *		Handling of ROM image files.
  *
- * Version:	@(#)rom.c	1.0.21	2019/05/10
+ * Version:	@(#)rom.c	1.0.22	2021/03/18
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -58,7 +58,7 @@ int		shadowbios = 0,
 
 /* Read one byte from the BIOS ROM area. */
 uint8_t
-rom_bios_read(uint32_t addr, void *priv)
+rom_bios_read(uint32_t addr, UNUSED(priv_t priv))
 {
     return bios[addr & biosmask];
 }
@@ -66,7 +66,7 @@ rom_bios_read(uint32_t addr, void *priv)
 
 /* Read one word from the BIOS ROM area. */
 uint16_t
-rom_bios_readw(uint32_t addr, void *priv)
+rom_bios_readw(uint32_t addr, UNUSED(priv_t priv))
 {
     return *(uint16_t *)&bios[addr & biosmask];
 }
@@ -74,7 +74,7 @@ rom_bios_readw(uint32_t addr, void *priv)
 
 /* Read one doubleword from the BIOS ROM area. */
 uint32_t
-rom_bios_readl(uint32_t addr, void *priv)
+rom_bios_readl(uint32_t addr, UNUSED(priv_t priv))
 {
     return *(uint32_t *)&bios[addr & biosmask];
 }
@@ -82,7 +82,7 @@ rom_bios_readl(uint32_t addr, void *priv)
 
 /* Read a byte from some area in ROM. */
 uint8_t
-rom_read(uint32_t addr, void *priv)
+rom_read(uint32_t addr, priv_t priv)
 {
     rom_t *ptr = (rom_t *)priv;
 
@@ -103,7 +103,7 @@ rom_read(uint32_t addr, void *priv)
 
 /* Read a word from some area in ROM. */
 uint16_t
-rom_readw(uint32_t addr, void *priv)
+rom_readw(uint32_t addr, priv_t priv)
 {
     rom_t *ptr = (rom_t *)priv;
 
@@ -124,7 +124,7 @@ rom_readw(uint32_t addr, void *priv)
 
 /* Read a double-word from some area in ROM. */
 uint32_t
-rom_readl(uint32_t addr, void *priv)
+rom_readl(uint32_t addr, priv_t priv)
 {
     rom_t *ptr = (rom_t *)priv;
 

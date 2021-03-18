@@ -25,13 +25,13 @@
  *		 by the ROS.
  *  PPC:	MDA Monitor results in half-screen, half-cell-height display??
  *
- * Version:	@(#)m_amstrad_vid.c	1.0.7	2020/02/06
+ * Version:	@(#)m_amstrad_vid.c	1.0.8	2021/03/18
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		John Elliott, <jce@seasip.info>
  *
- *		Copyright 2017-2020 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2017-2019 John Elliott.
  *
@@ -1594,7 +1594,7 @@ static const device_t ida_video_device = {
 
 /* Initialize the PC200/PPC display controller, return the correct DDM bits. */
 priv_t
-m_amstrad_ida_init(int type, const wchar_t *fn, int cp, int em, int dt)
+m_amstrad_ida_init(int type, const wchar_t *fn, int cp, int em, UNUSED(int dt))
 {
     vid_t *dev;
     FILE *fp;

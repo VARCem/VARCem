@@ -50,6 +50,7 @@
 #include "x86_ops.h"
 #include "../mem.h"
 #include "../devices/system/pci.h"
+#include "../plat.h"
 #ifdef USE_DYNAREC
 # include "codegen.h"
 #endif
@@ -221,7 +222,7 @@ static int	cyrix_addr;
 
 
 static void
-cyrix_write(uint16_t addr, uint8_t val, priv_t priv)
+cyrix_write(uint16_t addr, uint8_t val, UNUSED(priv_t priv))
 {
     if (addr & 1) switch (cyrix_addr) {
 	case 0xc0: /*CCR0*/
@@ -267,7 +268,7 @@ cyrix_write(uint16_t addr, uint8_t val, priv_t priv)
 
 
 static uint8_t
-cyrix_read(uint16_t addr, priv_t priv)
+cyrix_read(uint16_t addr, UNUSED(priv_t priv))
 {
     if (addr & 1) {
 	switch (cyrix_addr) {

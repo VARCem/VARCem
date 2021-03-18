@@ -22,7 +22,7 @@
  *		The reserved 384K is remapped to the top of extended memory.
  *		If this is not done then you get an error on startup.
  *
- * Version:	@(#)m_ps1.c	1.0.32	2021/03/16
+ * Version:	@(#)m_ps1.c	1.0.33	2021/03/18
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -263,7 +263,7 @@ snd_close(priv_t priv)
 
 
 static priv_t
-snd_init(const device_t *info, UNUSED(void *parent))
+snd_init(UNUSED(const device_t *info), UNUSED(void *parent))
 {
     ps1snd_t *snd;
 
@@ -488,7 +488,7 @@ ps1_close(priv_t priv)
 
 
 static priv_t
-ps1_init(const device_t *info, void *arg)
+ps1_init(const device_t *info, UNUSED(void *arg))
 {
 //    romdef_t *bios = (romdef_t *)arg;
     ps1_t *dev;
@@ -658,7 +658,7 @@ const device_t m_ps1_2011 = {
     "IBM PS/1 2011",
     DEVICE_ROOT,
     2011,
-    L"ibm/ps1_2011",
+    L"ibm/ps1/m2011",
     ps1_init, ps1_close, NULL,
     NULL, NULL, NULL,
     &m2011_info,
@@ -677,7 +677,7 @@ const device_t m_ps1_2121 = {
     "IBM PS/1 2121",
     DEVICE_ROOT,
     2121,
-    L"ibm/ps1_2121",
+    L"ibm/ps1/m2121",
     ps1_init, ps1_close, NULL,
     NULL, NULL, NULL,
     &m2121_info,
@@ -696,7 +696,7 @@ const device_t m_ps1_2133 = {
     "IBM PS/1 2133",
     DEVICE_ROOT,
     2133,
-    L"ibm/ps1_2133",
+    L"ibm/ps1/m2133",
     ps1_init, ps1_close, NULL,
     NULL, NULL, NULL,
     &m2133_info,

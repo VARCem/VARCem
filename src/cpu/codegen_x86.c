@@ -8,13 +8,13 @@
  *
  *		Dynamic Recompiler for Intel 32-bit systems.
  *
- * Version:	@(#)codegen_x86.c	1.0.8	2020/12/11
+ * Version:	@(#)codegen_x86.c	1.0.9	2021/03/18
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2018,2020 Fred N. van Kempen.
+ *		Copyright 2018-2021 Fred N. van Kempen.
  *		Copyright 2008-2018 Sarah Walker.
  *		Copyright 2016-2020 Miran Grca.
  *
@@ -45,6 +45,7 @@
 #include <wchar.h>
 #include "../emu.h"
 #include "cpu.h"
+#include "../plat.h"
 #include "../mem.h"
 #include "x86.h"
 #include "x86_flags.h"
@@ -1315,7 +1316,7 @@ static void add_to_block_list(codeblock_t *block)
         }
 }
 
-static void remove_from_block_list(codeblock_t *block, uint32_t pc)
+static void remove_from_block_list(codeblock_t *block, UNUSED(uint32_t pc))
 {
         if (!block->page_mask)
                 return;

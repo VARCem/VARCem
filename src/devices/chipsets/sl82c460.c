@@ -8,7 +8,7 @@
  *
  *		Implementation of the Symphony 'Haydn II' chipset (SL82C460).
  *
- * Version:	@(#)sl82c460.c	1.0.3	2021/03/16
+ * Version:	@(#)sl82c460.c	1.0.3	2021/03/18
  *
  * Authors:	Altheos, <altheos@varcem.com>
  *
@@ -169,7 +169,7 @@ sl82c460_close(priv_t priv)
 
 
 static priv_t
-sl82c460_init(const device_t *info, UNUSED(void *parent))
+sl82c460_init(UNUSED(const device_t *info), UNUSED(void *parent))
 {
     sl82c460_t *dev;
 

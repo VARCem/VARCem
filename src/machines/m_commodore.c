@@ -8,7 +8,7 @@
  *
  *		Implementation of various Commodore systems.
  *
- * Version:	@(#)m_commodore.c	1.0.18	2021/03/16
+ * Version:	@(#)m_commodore.c	1.0.19	2021/03/18
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Altheos, <altheos@varcem.com>
@@ -62,6 +62,7 @@
 #include "../devices/disk/hdc.h"
 #include "../devices/disk/hdc_ide.h"
 #include "../devices/video/video.h"
+#include "../plat.h"
 #include "machine.h"
 
 
@@ -71,7 +72,7 @@ typedef struct {
 
 
 static void
-pc30_write(uint16_t port, uint8_t val, priv_t priv)
+pc30_write(UNUSED(uint16_t port), uint8_t val, UNUSED(priv_t priv))
 {
     switch (val & 0x03) {
 	case 1:
@@ -79,7 +80,7 @@ pc30_write(uint16_t port, uint8_t val, priv_t priv)
 		break;
 
 	case 2:
-       	parallel_setup(0, 0x0378);
+		parallel_setup(0, 0x0378);
 		break;
 
 	case 3:
