@@ -247,9 +247,7 @@ extern const device_t	m_j656vxd;
 extern const device_t	m_p55t2s;
 
 /* HP machines. */
-#if defined(DEV_BRANCH)
 extern const device_t	m_hpv486;
-#endif
 
 /* Packard Bell machines. */
 extern const device_t	m_pb300;
