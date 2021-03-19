@@ -43,7 +43,6 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <windowsx.h>
-#include <hidclass.h>
 #include <hidusage.h>
 #include <hidsdi.h>
 #include <stdio.h>
