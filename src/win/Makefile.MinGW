@@ -162,21 +162,21 @@ ifeq ($(CROSS), y)
 
  # Cross-compiling (under Linux), select proper version.
  ifeq ($(X64), y)
-  MINGW		:= x86_64-w64-mingw32
+  MINGW		:= x86_64-w64-mingw32-
  else
-  MINGW		:= i686-w64-mingw32
+  MINGW		:= i686-w64-mingw32-
  endif
 
  ifeq ($(X64), y)
-  CPP		:= $(CROSS_PATH)$(MINGW)-g++ -m64
-  CC		:= $(CROSS_PATH)$(MINGW)-gcc -m64
+  CPP		:= $(CROSS_PATH)$(MINGW)g++ -m64
+  CC		:= $(CROSS_PATH)$(MINGW)gcc -m64
  else
-  CPP		:= $(CROSS_PATH)$(MINGW)-g++ -m32
-  CC		:= $(CROSS_PATH)$(MINGW)-gcc -m32
+  CPP		:= $(CROSS_PATH)$(MINGW)g++ -m32
+  CC		:= $(CROSS_PATH)$(MINGW)gcc -m32
  endif
- PREPROC	:= $(CROSS_PATH)$(MINGW)-cpp -P
- WINDRES	:= $(CROSS_PATH)$(MINGW)-windres
- STRIP		:= $(CROSS_PATH)$(MINGW)-strip
+ PREPROC	:= $(CROSS_PATH)$(MINGW)cpp -P
+ WINDRES	:= $(CROSS_PATH)$(MINGW)windres
+ STRIP		:= $(CROSS_PATH)$(MINGW)strip
  ifndef CAT
   CAT		:= cat
  endif
@@ -316,7 +316,8 @@ else
  VCG		:= vid_voodoo_codegen_x86.h
 endif
 LIBS		:= -mwindows \
-		   -lddraw -ldxguid -ld3d9 -lversion -lcomctl32 -lwinmm
+		   -lddraw -ldxguid -ld3d9 \
+		   -lhid -lversion -lcomctl32 -lwinmm
 
 
 # Optional modules.
@@ -543,20 +544,6 @@ ifneq ($(SDL), n)
  SDLOBJ		:= win_sdl.o
 endif
 
-# DINPUT and XInput (always hard-linked)
-ifndef DINPUT
- DINPUT		:= y
- ifeq ($(ARM), y)
-  DINPUT	:= n
- endif
-endif
-ifeq ($(DINPUT), y)
- OPTS		+= -DUSE_DINPUT
- LIBS		+= -ldinput8
-else
- LIBS		+= -lxinput
-endif
-
 # VNC: N=no, Y=yes,linked, D=yes,dynamic, S=yes,static
 ifndef VNC
  VNC		:= n
@@ -666,7 +653,7 @@ ifneq ($(MINIVHD), n)
  ifeq ($(MINIVHD), y)
   LIBS		+= -lminivhd.dll
  endif
- ifeq ($(PNG), s)
+ ifeq ($(MINIVHD), s)
   LIBS		+= -lminivhd
  endif
 endif
@@ -844,15 +831,15 @@ CXXFLAGS	:= $(WX_FLAGS) $(OPTS) $(DFLAGS) $(COPTIM) $(AOPTIM) \
 
 RESDLL		:= VARCem-$(LANG)
 
-MAINOBJ		:= pc.o config.o misc.o random.o timer.o io.o mem.o \
-		   rom.o rom_load.o device.o nvr.o
+MAINOBJ		:= pc.o config.o timer.o io.o mem.o rom.o rom_load.o \
+		   device.o nvr.o misc.o random.o
 
 UIOBJ		+= ui_main.o ui_lang.o ui_stbar.o ui_vidapi.o \
 		   ui_cdrom.o ui_new_image.o ui_misc.o
 
 CPUOBJ		:= cpu.o cpu_table.o \
-		    808x.o 386.o x86seg.o x87.o \
-		    386_dynarec.o $(DYNARECOBJ)
+		   808x.o 386.o x86seg.o x87.o \
+		   386_dynarec.o $(DYNARECOBJ)
 
 SYSOBJ		:= apm.o clk.o dma.o nmi.o pic.o pit.o ppi.o pci.o \
 		   mca.o mcr.o memregs.o nvr_at.o nvr_ps2.o port92.o
@@ -924,8 +911,8 @@ HDDOBJ		:= hdd.o \
 		    hdc_ide_ata.o hdc_ide_xta.o hdc_xtide.o
 
 CDROMOBJ	:= cdrom.o \
-		    cdrom_speed.o \
-		    cdrom_dosbox.o cdrom_image.o
+		   cdrom_speed.o \
+		   cdrom_dosbox.o cdrom_image.o
 
 ZIPOBJ		:= zip.o
 
@@ -934,38 +921,38 @@ USBOBJ		:= usb.o
 endif
 
 SCSIOBJ		:= scsi.o \
-		    scsi_device.o scsi_disk.o scsi_cdrom.o \
+		   scsi_device.o scsi_disk.o scsi_cdrom.o \
 		    scsi_x54x.o scsi_aha154x.o scsi_buslogic.o \
 		    scsi_ncr5380.o scsi_ncr53c810.o
 
 NETOBJ		:= network.o \
-		    network_dev.o \
+		   network_dev.o \
 		    net_pcap.o net_slirp.o \
 		    net_dp8390.o \
 		    net_ne2000.o net_wd80x3.o net_3c503.o
 
 SNDOBJ		:= sound.o \
 		    openal.o \
-		    midi.o \
+		   midi.o \
 		     midi_system.o midi_mt32.o midi_fluidsynth.o \
-		    sound_dev.o \
-		     snd_opl.o snd_opl_nuked.o \
-		     snd_speaker.o \
-		     snd_lpt_dac.o snd_lpt_dss.o \
-		     snd_adlib.o snd_adlibgold.o \
-		     snd_ad1848.o \
-		     snd_audiopci.o \
-		     snd_cms.o \
-		     snd_gus.o \
-		     snd_sb.o snd_sb_dsp.o \
-		     snd_emu8k.o \
-		     snd_mpu401.o \
-		     snd_sn76489.o \
-		     snd_wss.o \
-		     snd_ym7128.o
+		   sound_dev.o \
+		    snd_opl.o snd_opl_nuked.o \
+		    snd_speaker.o \
+		    snd_lpt_dac.o snd_lpt_dss.o \
+		    snd_adlib.o snd_adlibgold.o \
+		    snd_ad1848.o \
+		    snd_audiopci.o \
+		    snd_cms.o \
+		    snd_gus.o \
+		    snd_sb.o snd_sb_dsp.o \
+		    snd_emu8k.o \
+		    snd_mpu401.o \
+		    snd_sn76489.o \
+		    snd_wss.o \
+		    snd_ym7128.o
 
 VIDOBJ		:= video.o \
-		    video_dev.o \
+		   video_dev.o \
 		    vid_cga.o vid_cga_comp.o \
 		    vid_mda.o \
 		    vid_hercules.o vid_herculesplus.o vid_incolor.o \
@@ -998,9 +985,9 @@ VIDOBJ		:= video.o \
 		    vid_voodoo.o
 
 PLATOBJ		:= win.o \
-		    win_lang.o win_dynld.o win_opendir.o win_thread.o \
-		    win_cdrom.o win_keyboard.o win_serial.o win_midi.o \
-		    win_mouse.o win_joystick.o
+		   win_lang.o win_dynld.o win_opendir.o win_thread.o \
+		   win_cdrom.o win_keyboard.o win_serial.o win_midi.o \
+		   win_mouse.o win_joystick.o
 
 
 OBJ		:= $(MAINOBJ) $(CPUOBJ) $(MCHOBJ) $(SYSOBJ) $(CHIPOBJ) \

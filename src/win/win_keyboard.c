@@ -8,12 +8,12 @@
  *
  *		Windows raw keyboard input handler.
  *
- * Version:	@(#)win_keyboard.c	1.0.9	2019/05/03
+ * Version:	@(#)win_keyboard.c	1.0.10	2021/03/18
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -131,39 +131,15 @@ keyboard_getkeymap(void)
 
 
 void
-keyboard_handle(LPARAM lParam, int focus)
+keyboard_handle(RAWINPUT *raw)
 {
     static int recv_lalt = 0, recv_ralt = 0, recv_tab = 0;
-    uint32_t ri_size;
     RAWKEYBOARD rawKB;
-    UINT size = 0;
-    RAWINPUT *raw;
     USHORT code;
 
-    if (! focus) return;
-
-    /* See how much data the RI has for us, and allocate a buffer. */
-    GetRawInputData((HRAWINPUT)lParam, RID_INPUT, NULL,
-		    &size, sizeof(RAWINPUTHEADER));
-    raw = (RAWINPUT *)mem_alloc(size);
-    if (raw == NULL) {
-	ERRLOG("KBD: out of memory for Raw Input buffer!\n");
-	return;
-    }
-
-    /* Read the event buffer from RI. */
-    ri_size = GetRawInputData((HRAWINPUT)(lParam), RID_INPUT,
-			      raw, &size, sizeof(RAWINPUTHEADER));
-    if (ri_size != size) {
-	ERRLOG("KBD: bad event buffer %d/%d\n", size, ri_size);
-	return;
-    }
-
     /* We only process keyboard events. */
-    if (raw->header.dwType != RIM_TYPEKEYBOARD) {
-	free(raw);
+    if (raw->header.dwType != RIM_TYPEKEYBOARD)
 	return;
-    }
 
     rawKB = raw->data.keyboard;
     code = rawKB.MakeCode;

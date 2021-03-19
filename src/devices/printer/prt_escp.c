@@ -8,7 +8,7 @@
  *
  *		Implementation of the Generic ESC/P Dot-Matrix printer.
  *
- * Version:	@(#)prt_escp.c	1.0.11	2021/03/18
+ * Version:	@(#)prt_escp.c	1.0.12	2021/03/18
  *
  * Authors:	Michael Drüing, <michael@drueing.de>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
@@ -64,7 +64,6 @@
 #include "../../ui/ui.h"
 #include "../../misc/png.h"
 #include "../ports/parallel_dev.h"
-#include "../video/video.h"
 #include "printer.h"
 
 
@@ -285,7 +284,7 @@ typedef struct {
 
     double	defined_unit;		/* internal unit for some ESC/P
 					 * commands. -1 = use default */
-    PALETTE	palcol;
+    RGB_PAL	palcol;
 
     /* Port data */
     int8_t	ack,

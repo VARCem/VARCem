@@ -10,12 +10,12 @@
  *		only things used globally within the Windows platform; the
  *		generic platform defintions are in the plat.h file.
  *
- * Version:	@(#)win.h	1.0.25	2019/05/17
+ * Version:	@(#)win.h	1.0.26	2021/03/18
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *		Copyright 2016-2019 Miran Grca.
  *
  *		Redistribution and  use  in source  and binary forms, with
@@ -69,14 +69,14 @@
 #define WM_HARD_RESET	WM_USER+5
 #define WM_SHUTDOWN	WM_USER+6
 #define WM_CTRLALTDEL	WM_USER+7
-#define WM_SEND_HWND	WM_USER+8	/* send main window handle */
-#define WM_SEND_STATUS	WM_USER+9	/* pause/resume status in WPARAM */
-#define WM_SEND_SSTATUS	WM_USER+10	/* settings status: WPARAM 1=open */
+#define WM_SEND_HWND	WM_USER+8	// send main window handle
+#define WM_SEND_STATUS	WM_USER+9	// pause/resume status in WPARAM
+#define WM_SEND_SSTATUS	WM_USER+10	// settings status: WPARAM 1=open
 
 
 /* Status bar definitions. */
-#define SB_HEIGHT	16			/* for 16x16 icons */
-#define SB_PADDING	1			/* 1px of padding */
+#define SB_HEIGHT	16		// for 16x16 icons
+#define SB_PADDING	1		// 1px of padding
 
 
 #ifdef __cplusplus
@@ -105,10 +105,11 @@ extern const vidapi_t	d3d_vidapi;
 /* Internal platform support functions. */
 extern HICON	LoadIconEx(PCTSTR name);
 extern void	keyboard_getkeymap(void);
-extern void	keyboard_handle(LPARAM lParam, int focus);
-extern void     win_mouse_init(void);
-extern void     win_mouse_close(void);
-extern void	mouse_handle(LPARAM lParam, int focus);
+extern void	keyboard_handle(RAWINPUT *raw);
+extern void	mouse_handle(RAWINPUT *raw);
+extern int	win_mouse_init(void);
+extern void	win_mouse_close(void);
+extern void	joystick_handle(RAWINPUT *raw);
 
 /* Internal dialog functions. */
 extern void	dialog_center(HWND hdlg);

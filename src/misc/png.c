@@ -54,7 +54,7 @@
 #include "../config.h"
 #include "../plat.h"
 #include "../ui/ui.h"
-#include "../devices/video/video.h"
+#include "../devices/video/video.h"	// for color_transform()
 #include "./png.h"
 
 
@@ -489,7 +489,7 @@ error:
 
 /* Write the given BITMAP-format image as an 8-bit color palette file. */
 int
-png_write_pal(const wchar_t *fn, uint8_t *pix, int16_t w, int16_t h, uint16_t pitch, PALETTE pal)
+png_write_pal(const wchar_t *fn, uint8_t *pix, int16_t w, int16_t h, uint16_t pitch, RGB_PAL pal)
 {
     png_color palette[256];
     png_structp png = NULL;

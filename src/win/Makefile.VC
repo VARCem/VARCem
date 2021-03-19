@@ -65,8 +65,6 @@ endif
 ifeq ($(DEV_BUILD), y)
  DEV_BRANCH	:= y
  AMD_K		:= y
- SIS471		:= y
- SIS496		:= y
  COMPAQ		:= y
  SANYO		:= n
  MICRAL		:= y
@@ -81,7 +79,7 @@ endif
 
 # What is the location of our external dependencies?
 ifeq ($(EXT_PATH), )
- EXT_PATH	:= external
+ EXT_PATH	:= ../external
 endif
 
 
@@ -130,9 +128,7 @@ VPATH		:= $(EXPATH) . cpu \
 		    devices/floppy devices/floppy/lzf \
 		    devices/disk devices/cdrom devices/scsi \
 		    devices/sound devices/video \
-		    minivhd \
-		    ../external/libchdr ../external/libchdr/FLAC ../external/libchdr/LZMA \
-		   machines ui win
+		   machines misc ui win
 
 
 #
@@ -214,9 +210,6 @@ endif
 ifdef COMMIT
  OPTS		+= -DCOMMIT=0x$(COMMIT)
 endif
-ifdef UPSTREAM
- OPTS		+= -DUPSTREAM=0x$(UPSTREAM)
-endif
 ifdef EXFLAGS
  OPTS		+= $(EXFLAGS)
 endif
@@ -262,8 +255,9 @@ else
  CGOPS		:= codegen_ops_x86.h
  VCG		:= vid_voodoo_codegen_x86.h
 endif
-LIBS		:= ddraw.lib dxguid.lib d3d9.lib version.lib winmm.lib \
-		   comctl32.lib comdlg32.lib advapi32.lib gdi32.lib \
+LIBS		:= ddraw.lib dxguid.lib d3d9.lib \
+		   hid.lib version.lib comctl32.lib winmm.lib \
+		   comdlg32.lib advapi32.lib gdi32.lib \
 		   shell32.lib user32.lib
 
 
@@ -288,7 +282,8 @@ ifeq ($(DYNAREC), y)
 		    codegen_ops.obj \
 		    codegen_timing_common.obj codegen_timing_486.obj \
 		    codegen_timing_686.obj codegen_timing_pentium.obj \
-		    codegen_timing_winchip.obj $(PLATCG)
+		    codegen_timing_winchip.obj codegen_timing_winchip2.obj \
+		    $(PLATCG)
 endif
 
 # SLiRP: N=no, Y=yes,linked, D=yes,dynamic, S=yes,static (always dynamic)
@@ -373,20 +368,43 @@ ifneq ($(VNS), n)
  MISCOBJ	+= net_vns.obj
 endif
 
+# FreeType (always dynamic)
+ifndef FREETYPE
+ FREETYPE	:= d
+endif
+ifneq ($(FREETYPE), n)
+ ifeq ($(FREETYPE_PATH), )
+  FREETYPE_PATH	:= $(EXT_PATH)/freetype
+ endif
+ OPTS		+= -DUSE_FREETYPE -I$(FREETYPE_PATH)/include
+ ifeq ($(FREETYPE), d)
+ endif
+endif
+
 # OpenAL (always dynamic)
 ifndef OPENAL
  OPENAL		:= d
 endif
-ifeq ($(OPENAL), d)
- OPTS		+= -DUSE_OPENAL -I$(EXT_PATH)/openal/include
+ifneq ($(OPENAL), n)
+ ifeq ($(OPENAL_PATH), )
+  OPENAL_PATH	:= $(EXT_PATH)/openal
+ endif
+ OPTS		+= -DUSE_OPENAL -I$(OPENAL_PATH)/include
+ ifeq ($(OPENAL), d)
+ endif
 endif
 
 # FluidSynth (always dynamic)
 ifndef FLUIDSYNTH
  FLUIDSYNTH	:= d
 endif
-ifeq ($(FLUIDSYNTH), d)
- OPTS		+= -DUSE_FLUIDSYNTH -I$(EXT_PATH)/fluidsynth/include
+ifneq ($(FLUIDSYNTH), n)
+ ifeq ($(FLUIDSYNTH_PATH), )
+  FLUIDSYNTH_PATH	:= $(EXT_PATH)/fluidsynth
+ endif
+ ifeq ($(FLUIDSYNTH), d)
+ endif
+ OPTS		+= -DUSE_FLUIDSYNTH -I$(FLUIDSYNTH_PATH)/include
 endif
 
 # MunT: N=no, Y=yes,linked, D=yes,dynamic, S=yes,static
@@ -402,7 +420,7 @@ ifneq ($(MUNT), n)
  ifeq ($(MUNT_PATH), )
   MUNT_PATH	:= $(EXT_PATH)/munt
  endif
- OPTS		+= -I$(MUNT_PATH)
+ OPTS		+= -I$(MUNT_PATH)/include
  ifeq ($(X64), y)
   LIBS		+= -LIBPATH:$(MUNT_PATH)/lib/x64
  else
@@ -429,7 +447,7 @@ ifneq ($(RESID), n)
  ifeq ($(RESID_PATH), )
   RESID_PATH	:= $(EXT_PATH)/resid
  endif
- OPTS		+= -I$(EXT_PATH)
+ OPTS		+= -I$(RESID_PATH)/include
  ifeq ($(X64), y)
   LIBS		+= -LIBPATH:$(RESID_PATH)/lib/x64
  else
@@ -465,20 +483,6 @@ ifneq ($(SDL), n)
   LIBS		+= sdl2_static.lib
  endif
  SDLOBJ		:= win_sdl.obj
-endif
-
-# DINPUT and XInput (always hard-linked)
-ifndef DINPUT
- DINPUT		:= y
- ifeq ($(ARM), y)
-  DINPUT	:= n
- endif
-endif
-ifeq ($(DINPUT), y)
- OPTS		+= -DUSE_DINPUT
- LIBS		+= dinput8.lib
-else
- LIBS		+= xinput.lib
 endif
 
 # VNC: N=no, Y=yes,linked, D=yes,dynamic, S=yes,static
@@ -580,16 +584,15 @@ ifneq ($(MINIVHD), n)
  endif
  OPTS		+= -I$(MINIVHD_PATH)/include
  ifeq ($(X64), y)
-  LIBS		+= -L$(MINIVHD_PATH)/lib/x64
+  LIBS		+= -LIBPATH:$(MINIVHD_PATH)/lib/x64
  else
-  LIBS		+= -L$(MINIVHD_PATH)/lib/x86
+  LIBS		+= -LIBPATH:$(MINIVHD_PATH)/lib/x86
  endif
  ifeq ($(MINIVHD), y)
-  # FIXME: should be -lpng.dll
-  LIBS		+= -lminivhd.dll
+  LIBS		+= minivhd.lib
  endif
- ifeq ($(PNG), s)
-  LIBS		+= -lminivhd
+ ifeq ($(MINIVHD), s)
+  LIBS		+= -lminivhd_s.lib
  endif
 endif
 
@@ -609,18 +612,9 @@ endif
 # Options for the DEV branch.
 ifeq ($(DEV_BRANCH), y)
  OPTS		+= -DDEV_BRANCH
- DEVBROBJ	:= m_hp.obj
 
  ifeq ($(AMD_K), y)
   OPTS		+= -DUSE_AMD_K
- endif
-
- ifeq ($(SIS471), y)
-  OPTS		+= -DUSE_SIS471
- endif
-
- ifeq ($(SIS496), y)
-  OPTS		+= -DUSE_SIS496
  endif
 
  ifeq ($(COMPAQ), y)
@@ -641,6 +635,11 @@ ifeq ($(DEV_BRANCH), y)
  ifeq ($(SUPERSPORT), y)
   OPTS		+= -DUSE_SUPERSPORT
   DEVBROBJ	+= m_zenith.obj m_zenith_vid.obj
+ endif
+
+ ifeq ($(SYMPHONY), y)
+  OPTS		+= -DUSE_SL
+  DEVBROBJ	+= m_sl82c460.o
  endif
 
  ifeq ($(PAS16), y)
@@ -690,11 +689,6 @@ ifeq ($(DEV_BRANCH), y)
   DEVBROBJ	+= net_arti2m.obj
  endif
 
- ifeq ($(SYMPHONY), y)
-  OPTS		+= -DUSE_SL
-  DEVBROBJ	+= m_sl82c460.obj
- endif
-
 endif
 
 
@@ -706,7 +700,7 @@ endif
 
 
 # Final versions of the toolchain flags.
-LDFLAGS		:= $(LOPTS)
+LFLAGS		:= $(LOPTS)
 CFLAGS		:= $(WX_FLAGS) $(OPTS) $(COPTS) $(COPTIM) $(DOPTS) $(AFLAGS)
 CXXFLAGS	:= $(WX_FLAGS) $(OPTS) $(CXXOPTS) $(COPTS) $(COPTIM) $(DOPTS) $(AFLAGS)
 
@@ -717,30 +711,35 @@ CXXFLAGS	:= $(WX_FLAGS) $(OPTS) $(CXXOPTS) $(COPTS) $(COPTIM) $(DOPTS) $(AFLAGS)
 
 RESDLL		:= VARCem-$(LANG)
 
-MAINOBJ		:= pc.obj config.obj misc.obj random.obj timer.obj io.obj \
-		   mem.obj rom.obj rom_load.obj device.obj nvr.obj
+MAINOBJ		:= pc.obj config.obj timer.obj io.obj mem.obj rom.obj \
+		   rom_load.obj device.obj nvr.obj misc.obj random.obj
 
 UIOBJ		+= ui_main.obj ui_lang.obj ui_stbar.obj ui_vidapi.obj \
 		   ui_cdrom.obj ui_new_image.obj ui_misc.obj
 
 CPUOBJ		:= cpu.obj cpu_table.obj \
-		    808x.obj 386.obj x86seg.obj x87.obj \
-		    386_dynarec.obj $(DYNARECOBJ)
+		   808x.obj 386.obj x86seg.obj x87.obj \
+		   386_dynarec.obj $(DYNARECOBJ)
 
-SYSOBJ		:= clk.obj dma.obj nmi.obj pic.obj pit.obj ppi.obj pci.obj \
-		   mca.obj mcr.obj memregs.obj nvr_at.obj nvr_ps2.obj \
+SYSOBJ		:= apm.obj clk.obj dma.obj nmi.obj pic.obj pit.obj ppi.obj \
+		   pci.obj mca.obj mcr.obj memregs.obj nvr_at.obj nvr_ps2.obj \
 		   port92.obj
 
-CHIPOBJ		:= neat.obj scat.obj headland.obj \
-		    acc2036.obj acc2168.obj ali1429.obj \
-			opti495.obj opti895.obj sis471.obj sis496.obj \
-		    wd76c10.obj intel4x0.obj \
-			scamp.obj sl82c460.obj vl82c480.obj
+CHIPOBJ		:= neat.obj scat.obj scamp.obj \
+		   headland.obj \
+		   acc2036.obj acc2168.obj \
+		   cs82c100.obj \
+		   sl82c460.obj vl82c480.obj \
+		   ali1429.obj \
+		   opti495.obj opti895.obj \
+		   sis471.obj sis496.obj \
+		   wd76c10.obj \
+		   intel4x0.obj
 
 MCHOBJ		:= machine.obj machine_table.obj \
 		    m_xt.obj \
 		    m_amstrad.obj m_amstrad_vid.obj \
-		    m_europc.obj m_laserxt.obj \
+		    m_europc.obj m_laserxt.obj m_thomson.obj \
 		    m_olim24.obj m_olim24_vid.obj \
 		    m_tandy1000.obj m_tandy1000_vid.obj \
 		    m_tosh1x00.obj m_tosh1x00_vid.obj \
@@ -750,10 +749,12 @@ MCHOBJ		:= machine.obj machine_table.obj \
 		    m_ps2_isa.obj m_ps2_mca.obj \
 		    m_at.obj \
 		    m_neat.obj m_headland.obj m_scat.obj \
-		    m_commodore.obj m_pbell.obj \
-		    m_tosh3100e.obj m_tosh3100e_vid.obj \
-		    m_ali.obj m_opti495.obj m_opti895.obj m_sis471.obj m_sis496.obj \
+		    m_ali.obj \
+		    m_opti495.obj m_opti895.obj \
+		    m_sis471.obj m_sis496.obj \
 		    m_wd76c10.obj m_intel4x0.obj \
+		    m_commodore.obj m_hp.obj m_pbell.obj \
+		    m_tosh3100e.obj m_tosh3100e_vid.obj \
 		    m_acer.obj m_aopen.obj m_asus.obj m_tyan.obj \
 		    m_misc.obj
 
@@ -764,8 +765,10 @@ DEVOBJ		:= bugger.obj \
 		   parallel.obj parallel_dev.obj \
 		    prt_text.obj prt_cpmap.obj prt_escp.obj \
 		   serial.obj \
-		   sio_acc3221.obj sio_fdc37c66x.obj sio_fdc37c669.obj \
-		   sio_fdc37c93x.obj sio_pc87306.obj sio_pc87332.obj \
+		   i2c.obj i2c_eeprom.obj i2c_gpio.obj \
+		   sio_acc3221.obj sio_f82c710.obj sio_fdc37c66x.obj \
+		   sio_fdc37c669.obj sio_fdc37c93x.obj \
+		   sio_pc87306.obj sio_pc87332.obj \
 		   sio_w83877f.obj sio_um8669f.obj sio_detect.obj \
 		   intel_flash.obj intel_sio.obj intel_piix.obj \
 		   keyboard.obj \
@@ -792,8 +795,8 @@ HDDOBJ		:= hdd.obj \
 		    hdc_ide_ata.obj hdc_ide_xta.obj hdc_xtide.obj
 
 CDROMOBJ	:= cdrom.obj \
-		    cdrom_speed.obj \
-		    cdrom_dosbox.obj cdrom_image.obj
+		   cdrom_speed.obj \
+		   cdrom_dosbox.obj cdrom_image.obj
 
 ZIPOBJ		:= zip.obj
 
@@ -802,23 +805,23 @@ USBOBJ		:= usb.obj
 endif
 
 SCSIOBJ		:= scsi.obj \
-		    scsi_device.obj scsi_disk.obj scsi_cdrom.obj \
+		   scsi_device.obj scsi_disk.obj scsi_cdrom.obj \
 		    scsi_x54x.obj scsi_aha154x.obj scsi_buslogic.obj \
 		    scsi_ncr5380.obj scsi_ncr53c810.obj
 
 NETOBJ		:= network.obj \
-		    network_dev.obj \
+		   network_dev.obj \
 		    net_pcap.obj \
 		    net_slirp.obj \
 		    net_dp8390.obj \
 		    net_ne2000.obj net_wd80x3.obj net_3c503.obj
 
 SNDOBJ		:= sound.obj \
-		    sound_dev.obj \
 		    openal.obj \
+		   midi.obj \
+		    midi_system.obj midi_mt32.obj midi_fluidsynth.obj \
+		   sound_dev.obj \
 		    snd_opl.obj snd_opl_nuked.obj \
-		    midi.obj \
-		     midi_system.obj midi_mt32.obj midi_fluidsynth.obj \
 		    snd_speaker.obj \
 		    snd_lpt_dac.obj snd_lpt_dss.obj \
 		    snd_adlib.obj snd_adlibgold.obj \
@@ -835,7 +838,7 @@ SNDOBJ		:= sound.obj \
 		    snd_ym7128.obj
 
 VIDOBJ		:= video.obj \
-		    video_dev.obj \
+		   video_dev.obj \
 		    vid_cga.obj vid_cga_comp.obj \
 		    vid_mda.obj \
 		    vid_hercules.obj vid_herculesplus.obj vid_incolor.obj \
@@ -846,12 +849,12 @@ VIDOBJ		:= video.obj \
 		    vid_wy700.obj \
 		    vid_ega.obj vid_ega_render.obj \
 		    vid_svga.obj vid_svga_render.obj \
-		    vid_vga.obj \
+		    vid_vga.obj vid_ddc.obj \
 		    vid_ati_eeprom.obj \
 		    vid_ati18800.obj vid_ati28800.obj \
 		    vid_ati_mach64.obj vid_ati68860_ramdac.obj \
 		    vid_att20c49x_ramdac.obj vid_bt48x_ramdac.obj \
-			vid_sc1148x_ramdac.obj \
+		    vid_sc1148x_ramdac.obj \
 		    vid_av9194.obj vid_icd2061.obj vid_ics2595.obj \
 		    vid_cl54xx.obj \
 		    vid_et4000.obj vid_sc1502x_ramdac.obj \
@@ -867,10 +870,9 @@ VIDOBJ		:= video.obj \
 		    vid_voodoo.obj
 
 PLATOBJ		:= win.obj \
-		    win_lang.obj win_opendir.obj win_dynld.obj win_thread.obj \
-		    win_cdrom.obj win_keyboard.obj win_mouse.obj \
-		    win_joystick.obj win_midi.obj
-
+		   win_lang.obj win_dynld.obj win_opendir.obj win_thread.obj \
+		   win_cdrom.obj win_keyboard.obj win_mouse.obj \
+		   win_joystick.obj win_midi.obj
 
 OBJ		:= $(MAINOBJ) $(CPUOBJ) $(MCHOBJ) $(SYSOBJ) $(CHIPOBJ) \
 		   $(DEVOBJ) $(FDDOBJ) $(CDROMOBJ) $(ZIPOBJ) $(HDDOBJ) \
@@ -942,7 +944,7 @@ $(RESDLL).res:	$(RESDLL).rc VARCem-common.rc
 
 $(RESDLL).dll:	$(RESDLL).res
 		@echo Linking $(RESDLL).dll ..
-		@$(LINK) /DLL /NOENTRY $(LDFLAGS) -OUT:$@ $(RESDLL).res
+		@$(LINK) /DLL /NOENTRY $(LFLAGS) -OUT:$@ $(RESDLL).res
 		@-del $(RESDLL).rc
 
 VARCem.res:	VARCem.rc win/VARCem.mpp
@@ -952,7 +954,7 @@ VARCem.res:	VARCem.rc win/VARCem.mpp
 
 $(PROG).exe:	$(OBJ) VARCem.res
 		@echo Linking $(PROG).exe ..
-		@$(LINK) $(LDFLAGS) $(LOPTS_W) -OUT:$(PROG).exe \
+		@$(LINK) $(LFLAGS) $(LOPTS_W) -OUT:$(PROG).exe \
 			$(OBJ) VARCem.res $(LIBS)
 
 pcap_if.res:	pcap_if.rc
@@ -961,7 +963,7 @@ pcap_if.res:	pcap_if.rc
 
 $(NETIF).exe:	pcap_if.obj win_dynld.obj pcap_if.res
 		@echo Linking $(NETIF).exe ..
-		@$(LINK) $(LDFLAGS) $(LOPTS_C) -OUT:$@ \
+		@$(LINK) $(LFLAGS) $(LOPTS_C) -OUT:$@ \
 			pcap_if.obj win_dynld.obj pcap_if.res
 
 clean:

@@ -10,17 +10,14 @@
  *		convienient, we also have the Configuration Dialog in this
  *		file.
  *
- * NOTE:	Hacks currently needed to compile with MSVC; DX needs to
- *		be updated to 11 or 12 or so.  --FvK
- *
- * Version:	@(#)win_joystick.cpp	1.0.22	2019/05/17
+ * Version:	@(#)win_joystick.c	1.0.23	2021/03/18
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *              GH Cao, <driver1998.ms@outlook.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *		Copyright 2019 GH Cao.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
@@ -45,18 +42,10 @@
  */
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
-#ifdef USE_DINPUT
-# define DIRECTINPUT_VERSION 0x0800
-# include <dinput.h>
-# ifndef DIDEVTYPE_JOYSTICK
-  /* TODO: This is a crude hack to fix compilation on MSVC ...
-   * it needs a rework at some point
-   */
-#  define DIDEVTYPE_JOYSTICK 4
-# endif
-#else
-# include <Xinput.h>
-#endif
+#include <windowsx.h>
+#include <hidclass.h>
+#include <hidusage.h>
+#include <hidsdi.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -76,29 +65,6 @@
 
 #define MAX_PLAT_JOYSTICKS	8
 #define STR_FONTNAME		"Segoe UI"
-
-#ifndef USE_DINPUT
-# define XINPUT_MAX_JOYSTICKS	4
-# define XINPUT_NAME		"Xinput compatible controller"
-# define XINPUT_NAME_LX		"Left Stick X"
-# define XINPUT_NAME_LY		"Left Stick Y"
-# define XINPUT_NAME_RX		"Right Stick X"
-# define XINPUT_NAME_RY		"Right Stick Y"
-# define XINPUT_NAME_DPAD_X	"D-pad X"
-# define XINPUT_NAME_DPAD_Y	"D-pad Y"
-# define XINPUT_NAME_LB		"LB"
-# define XINPUT_NAME_RB		"RB"
-# define XINPUT_NAME_LT		"LT"
-# define XINPUT_NAME_RT		"RT"
-# define XINPUT_NAME_A		"A"
-# define XINPUT_NAME_B		"B"
-# define XINPUT_NAME_X		"X"
-# define XINPUT_NAME_Y		"Y"
-# define XINPUT_NAME_BACK	"Back/View"
-# define XINPUT_NAME_START	"Start/Menu"
-# define XINPUT_NAME_LS		"Left Stick"
-# define XINPUT_NAME_RS		"Right Stick"
-#endif
 
 
 typedef struct {
@@ -125,102 +91,252 @@ typedef struct {
 } plat_joystick_t;
 
 
+typedef struct {
+    HANDLE	hdevice;
+    PHIDP_PREPARSED_DATA data;
+
+    USAGE	usage_button[128];
+
+    struct raw_axis_t {
+	USAGE	usage;
+	USHORT	link;
+	USHORT	bitsize;
+	LONG	max;
+	LONG	min;
+    }		axis[8];
+
+    struct raw_pov_t {
+	USAGE  usage;
+	USHORT link;
+	LONG   max;
+	LONG   min;
+    }		pov[4];
+} raw_joystick_t;
+
+
 static plat_joystick_t	plat_joystick_state[MAX_PLAT_JOYSTICKS];
-#ifdef USE_DINPUT
-static LPDIRECTINPUTDEVICE8 lpdi_joystick[2] = {NULL, NULL};
-static GUID		joystick_guids[MAX_JOYSTICKS];
-static LPDIRECTINPUT8	lpdi;
-#else
-static XINPUT_STATE	controllers[XINPUT_MAX_JOYSTICKS];
-#endif
+static raw_joystick_t	raw_joystick_state[MAX_PLAT_JOYSTICKS];
 
 
-#ifdef USE_DINPUT
-/* Callback for DirectInput. */
-static BOOL CALLBACK
-enum_callback(LPCDIDEVICEINSTANCE lpddi, UNUSED(LPVOID data))
+/* We only use the first 32 buttons reported, from Usage ID 1-128 */
+static void
+add_button(raw_joystick_t *raw, plat_joystick_t *joy, USAGE usage)
 {
-    INFO("JOYSTICK: found game device%i: %s\n",
-	 joysticks_present, lpddi->tszProductName);
+    if (joy->nr_buttons >= 32)
+	return;
 
-    /* If we got too many, ignore it. */
-    if (joysticks_present >= MAX_JOYSTICKS) return(DIENUM_STOP);
+    if (usage < 1 || usage > 128) return;
 
-    /* Add to the list of devices found. */
-    joystick_guids[joysticks_present++] = lpddi->guidInstance;
-
-    /* Continue scanning. */
-    return(DIENUM_CONTINUE);
+    raw->usage_button[usage] = joy->nr_buttons;
+    sprintf(joy->button[joy->nr_buttons].name, "Button %i", usage);
+    joy->nr_buttons++;
 }
 
 
-/* Callback for DirectInput. */
-static BOOL CALLBACK
-obj_callback(LPCDIDEVICEOBJECTINSTANCE lpddoi, LPVOID pvRef)
+static void
+add_axis(raw_joystick_t *raw, plat_joystick_t *joy, PHIDP_VALUE_CAPS prop)
 {
-    plat_joystick_t *state = (plat_joystick_t *)pvRef;
-	
-    if (lpddoi->guidType == GUID_XAxis || lpddoi->guidType == GUID_YAxis ||
-	lpddoi->guidType == GUID_ZAxis || lpddoi->guidType == GUID_RxAxis ||
-	lpddoi->guidType == GUID_RyAxis || lpddoi->guidType == GUID_RzAxis ||
-	lpddoi->guidType == GUID_Slider) {
-	strncpy(state->axis[state->nr_axes].name,
-		lpddoi->tszName, sizeof(state->axis[state->nr_axes].name));
+    if (joy->nr_axes >= 8)
+	return;
 
-	DEBUG("Axis%i: %s  %x %x\n",
-		state->nr_axes, state->axis[state->nr_axes].name,
-		lpddoi->dwOfs, lpddoi->dwType);
+    switch (prop->Range.UsageMin) {
+	case HID_USAGE_GENERIC_X:
+		sprintf(joy->axis[joy->nr_axes].name, "X");
+		break;
 
-	if (lpddoi->guidType == GUID_XAxis)
-		state->axis[state->nr_axes].id = 0;
-	  else if (lpddoi->guidType == GUID_YAxis)
-		state->axis[state->nr_axes].id = 1;
-	  else if (lpddoi->guidType == GUID_ZAxis)
-		state->axis[state->nr_axes].id = 2;
-	  else if (lpddoi->guidType == GUID_RxAxis)
-		state->axis[state->nr_axes].id = 3;
-	  else if (lpddoi->guidType == GUID_RyAxis)
-		state->axis[state->nr_axes].id = 4;
-	  else if (lpddoi->guidType == GUID_RzAxis)
-		state->axis[state->nr_axes].id = 5;
+	case HID_USAGE_GENERIC_Y:
+		sprintf(joy->axis[joy->nr_axes].name, "Y");
+		break;
 
-	state->nr_axes++;
-    } else if (lpddoi->guidType == GUID_Button) {
-	strncpy(state->button[state->nr_buttons].name,
-		lpddoi->tszName, sizeof(state->button[state->nr_buttons].name));
-	DEBUG("Button%i: %s  %x %x\n",
-		state->nr_buttons, state->button[state->nr_buttons].name,
-		lpddoi->dwOfs, lpddoi->dwType);
+	case HID_USAGE_GENERIC_Z:
+		sprintf(joy->axis[joy->nr_axes].name, "Z");
+		break;
 
-	state->nr_buttons++;
-    } else if (lpddoi->guidType == GUID_POV) {
-	strncpy(state->pov[state->nr_povs].name, lpddoi->tszName,
-		sizeof(state->pov[state->nr_povs].name));
-	DEBUG("POV%i: %s  %x %x\n",
-		state->nr_povs, state->pov[state->nr_povs].name,
-		lpddoi->dwOfs, lpddoi->dwType);
+	case HID_USAGE_GENERIC_RX:
+		sprintf(joy->axis[joy->nr_axes].name, "RX");
+		break;
 
-	state->nr_povs++;
-    }	
-	
-    return(DIENUM_CONTINUE);
+	case HID_USAGE_GENERIC_RY:
+		sprintf(joy->axis[joy->nr_axes].name, "RY");
+		break;
+
+	case HID_USAGE_GENERIC_RZ:
+		sprintf(joy->axis[joy->nr_axes].name, "RZ");
+		break;
+
+	default:
+		return;
+    }
+
+    joy->axis[joy->nr_axes].id = joy->nr_axes;
+    raw->axis[joy->nr_axes].usage = prop->Range.UsageMin;
+    raw->axis[joy->nr_axes].link = prop->LinkCollection;
+    raw->axis[joy->nr_axes].bitsize = prop->BitSize;
+
+    /* Assume unsigned when min >= 0. */
+    if (prop->LogicalMin < 0) {
+	raw->axis[joy->nr_axes].max = prop->LogicalMax;
+    } else {
+	/*
+	 * Some joysticks will send -1 in LogicalMax, like Xbox Controllers
+	 * so we need to mask that to appropriate value (instead of 0xFFFFFFFF) 
+	 */
+	raw->axis[joy->nr_axes].max = prop->LogicalMax & ((1 << prop->BitSize) - 1);
+    }
+    raw->axis[joy->nr_axes].min = prop->LogicalMin;
+
+    joy->nr_axes++;
 }
-#endif
+
+
+static void
+add_pov(raw_joystick_t *raw, plat_joystick_t *joy, PHIDP_VALUE_CAPS prop)
+{
+    if (joy->nr_povs >= 4)
+	return;
+
+    sprintf(joy->pov[joy->nr_povs].name, "POV %i", joy->nr_povs+1);
+    raw->pov[joy->nr_povs].usage = prop->Range.UsageMin;
+    raw->pov[joy->nr_povs].link  = prop->LinkCollection;
+    raw->pov[joy->nr_povs].min   = prop->LogicalMin;
+    raw->pov[joy->nr_povs].max   = prop->LogicalMax;
+
+    joy->nr_povs++;
+}
+
+
+static void
+get_capabilities(raw_joystick_t *raw, plat_joystick_t *joy)
+{
+    PHIDP_BUTTON_CAPS btn_caps = NULL;
+    PHIDP_VALUE_CAPS  val_caps = NULL;
+    HIDP_CAPS caps;
+    UINT size = 0;
+    int b, c, count;
+
+    /* Get preparsed data (HID data format) */
+    GetRawInputDeviceInfoW(raw->hdevice, RIDI_PREPARSEDDATA, NULL, &size);
+    raw->data = mem_alloc(size);
+    if (GetRawInputDeviceInfoW(raw->hdevice, RIDI_PREPARSEDDATA, raw->data, &size) <= 0)
+	fatal("joystick_get_capabilities: Failed to get preparsed data.\n");
+
+    HidP_GetCaps(raw->data, &caps);
+
+    /* Buttons. */
+    if (caps.NumberInputButtonCaps > 0) {
+	btn_caps = calloc(caps.NumberInputButtonCaps, sizeof(HIDP_BUTTON_CAPS));
+	if (HidP_GetButtonCaps(HidP_Input, btn_caps, &caps.NumberInputButtonCaps, raw->data) != HIDP_STATUS_SUCCESS) {
+		ERRLOG("joystick_get_capabilities: Failed to query input buttons.\n");
+		goto end;
+	}
+
+	/* We only detect generic stuff. */
+	for (c = 0; c < caps.NumberInputButtonCaps; c++) {
+		if (btn_caps[c].UsagePage != HID_USAGE_PAGE_BUTTON)
+			continue;
+
+		count = btn_caps[c].Range.UsageMax - btn_caps[c].Range.UsageMin + 1;
+		for (b = 0; b < count; b++)
+			add_button(raw, joy, b + btn_caps[c].Range.UsageMin);
+	}
+    }
+
+    /* Values (axes and povs) */
+    if (caps.NumberInputValueCaps > 0) {
+	val_caps = calloc(caps.NumberInputValueCaps, sizeof(HIDP_VALUE_CAPS));
+	if (HidP_GetValueCaps(HidP_Input, val_caps, &caps.NumberInputValueCaps, raw->data) != HIDP_STATUS_SUCCESS) {
+		ERRLOG("joystick_get_capabilities: Failed to query axes and povs.\n");
+		goto end;
+	}
+
+ 	/* We only detect generic stuff */
+	for (c = 0; c < caps.NumberInputValueCaps; c++) {
+		if (val_caps[c].UsagePage != HID_USAGE_PAGE_GENERIC)
+			continue;
+
+		if (val_caps[c].Range.UsageMin == HID_USAGE_GENERIC_HATSWITCH)
+			add_pov(raw, joy, &val_caps[c]);
+		else
+			add_axis(raw, joy, &val_caps[c]);
+	}
+    }
+
+end:
+    free(btn_caps);
+    free(val_caps);
+}
+
+
+static void
+get_device_name(raw_joystick_t *raw, plat_joystick_t *joy, PRID_DEVICE_INFO info) {
+    WCHAR dev_desc[200] = { 0 };
+    char *dev_name = NULL;
+    HANDLE hDevObj;
+    UINT size = 0;
+    int c;
+
+    /* Hrrm. Why do we use ANSI here, and then convert to Unicode later? */
+    GetRawInputDeviceInfoA(raw->hdevice, RIDI_DEVICENAME, dev_name, &size);
+    dev_name = calloc(size, sizeof(char));
+    if (GetRawInputDeviceInfoA(raw->hdevice, RIDI_DEVICENAME, dev_name, &size) <= 0)
+	fatal("joystick_get_capabilities: Failed to get device name.\n");
+
+    hDevObj = CreateFile(dev_name, GENERIC_READ | GENERIC_WRITE, 
+				   FILE_SHARE_READ | FILE_SHARE_WRITE,
+				   NULL, OPEN_EXISTING, 0, NULL);
+    if (hDevObj) {
+	HidD_GetProductString(hDevObj, dev_desc, sizeof_w(dev_desc));
+	CloseHandle(hDevObj);
+    }
+    free(dev_name);
+
+    c = WideCharToMultiByte(CP_ACP, 0, dev_desc, sizeof_w(dev_desc),
+			    joy->name, sizeof(joy->name), NULL, NULL);
+    if (c == 0 || strlen(joy->name) == 0) {
+	/* That failed, so we do it manually. */
+	sprintf(joy->name, 
+		"RawInput %s, VID:%04lX PID:%04lX",  
+		info->hid.usUsage == HID_USAGE_GENERIC_JOYSTICK ? "Joystick"
+								: "Gamepad",
+		info->hid.dwVendorId, info->hid.dwProductId);
+    }
+}
+
+
+void
+joystick_close(void)
+{
+    RAWINPUTDEVICE ridev[2];
+
+    ridev[0].dwFlags     = RIDEV_REMOVE;
+    ridev[0].hwndTarget  = NULL;
+    ridev[0].usUsagePage = HID_USAGE_PAGE_GENERIC;
+    ridev[0].usUsage     = HID_USAGE_GENERIC_JOYSTICK;
+
+    ridev[1].dwFlags     = RIDEV_REMOVE;
+    ridev[1].hwndTarget  = NULL;
+    ridev[1].usUsagePage = HID_USAGE_PAGE_GENERIC;
+    ridev[1].usUsage     = HID_USAGE_GENERIC_GAMEPAD;
+
+    (void)RegisterRawInputDevices(ridev, 2, sizeof(RAWINPUTDEVICE));
+}
 
 
 void
 joystick_init(void)
 {
-    plat_joystick_t *js;
-#ifdef USE_DINPUT
-    LPDIRECTINPUTDEVICE8 temp;
-    DIPROPRANGE joy_axis_range;
-    DIDEVICEINSTANCE instance;
-    DIDEVCAPS devcaps;
-#else
-    int val;
-#endif
-    int c;
+    RAWINPUTDEVICELIST *deviceList;
+    RAWINPUTDEVICE ridev[2];
+    RID_DEVICE_INFO *info;
+    plat_joystick_t *joy;
+    raw_joystick_t *raw;
+    UINT raw_devices = 0;
+    UINT size = 0;
+    int i;
+
+    /* Clear out any leftovers. */
+    joysticks_present = 0;
+    memset(raw_joystick_state, 0x00, sizeof(raw_joystick_state));
 
     /* Only initialize if the game port is enabled. */
     if (! config.game_enabled) return;
@@ -229,258 +345,206 @@ joystick_init(void)
 
     atexit(joystick_close);
 
-    joysticks_present = 0;
+    /* Get a list of raw input devices from Windows. */
+    GetRawInputDeviceList(NULL, &raw_devices, sizeof(RAWINPUTDEVICELIST));
+    deviceList = calloc(raw_devices, sizeof(RAWINPUTDEVICELIST));
+    GetRawInputDeviceList(deviceList, &raw_devices, sizeof(RAWINPUTDEVICELIST));
 
-#ifdef USE_DINPUT
-    if (FAILED(DirectInput8Create(hInstance,
-	       DIRECTINPUT_VERSION, IID_IDirectInput8A, (void **)&lpdi, NULL)))
-	fatal("joystick_init : DirectInputCreate failed\n"); 
+    for (i = 0; i < raw_devices; i++) {
+	if (joysticks_present >= MAX_PLAT_JOYSTICKS)
+		break;
 
-    if (FAILED(lpdi->EnumDevices(DIDEVTYPE_JOYSTICK,
-	       enum_callback, NULL, DIEDFL_ATTACHEDONLY)))
-	fatal("joystick_init : EnumDevices failed\n");
+	if (deviceList[i].dwType != RIM_TYPEHID)
+		continue; 
 
-    for (c = 0; c < joysticks_present; c++) {		
-	js = &plat_joystick_state[c];
+	/* Get device info: hardware IDs and usage IDs. */
+	GetRawInputDeviceInfoA(deviceList[i].hDevice, RIDI_DEVICEINFO, NULL, &size);
+	info = (RID_DEVICE_INFO *)mem_alloc(size);
+	info->cbSize = sizeof(RID_DEVICE_INFO);
+	if (GetRawInputDeviceInfoA(deviceList[i].hDevice,
+				   RIDI_DEVICEINFO, info, &size) <= 0)
+		goto end_loop;
 
-	temp = NULL;
+	/* If this is not a joystick/gamepad, skip. */
+	if (info->hid.usUsagePage != HID_USAGE_PAGE_GENERIC) goto end_loop;
+	if (info->hid.usUsage != HID_USAGE_GENERIC_JOYSTICK && 
+		info->hid.usUsage != HID_USAGE_GENERIC_GAMEPAD) goto end_loop;
 
-	if (FAILED(lpdi->CreateDevice(joystick_guids[c], &temp, NULL)))
-		fatal("joystick_init : CreateDevice failed\n");
-	if (FAILED(temp->QueryInterface(IID_IDirectInputDevice8,
-		   (void **)&lpdi_joystick[c])))
-		fatal("joystick_init : CreateDevice failed\n");
-	temp->Release();
+	joy = &plat_joystick_state[joysticks_present];
+	raw = &raw_joystick_state[joysticks_present];
+	raw->hdevice = deviceList[i].hDevice;
 
-	memset(&instance, 0x00, sizeof(instance));
-	instance.dwSize = sizeof(instance);
-	if (FAILED(lpdi_joystick[c]->GetDeviceInfo(&instance)))
-		fatal("joystick_init : GetDeviceInfo failed\n");
+	get_capabilities(raw, joy);
+	get_device_name(raw, joy, info);
 
-	DEBUG("Joystick%i:\n", c);
-	DEBUG(" Name        = %s\n", instance.tszInstanceName);
-	DEBUG(" ProductName = %s\n", instance.tszProductName);
-	strncpy(js->name, instance.tszInstanceName, 64);
-
-	memset(&devcaps, 0, sizeof(devcaps));
-	devcaps.dwSize = sizeof(devcaps);
-	if (FAILED(lpdi_joystick[c]->GetCapabilities(&devcaps)))
-		fatal("joystick_init : GetCapabilities failed\n");
-	DEBUG(" Axes        = %i\n", devcaps.dwAxes);
-	DEBUG(" Buttons     = %i\n", devcaps.dwButtons);
-	DEBUG(" POVs        = %i\n", devcaps.dwPOVs);
-
-	lpdi_joystick[c]->EnumObjects(obj_callback, js, DIDFT_ALL); 
-	if (FAILED(lpdi_joystick[c]->SetCooperativeLevel(hwndMain,
-				DISCL_BACKGROUND | DISCL_NONEXCLUSIVE)))
-		fatal("joystick_init : SetCooperativeLevel failed\n");
-	if (FAILED(lpdi_joystick[c]->SetDataFormat(&c_dfDIJoystick)))
-		fatal("joystick_init : SetDataFormat failed\n");
-
-	joy_axis_range.lMin = -32768;
-	joy_axis_range.lMax =  32767;
-	joy_axis_range.diph.dwSize = sizeof(DIPROPRANGE);
-	joy_axis_range.diph.dwHeaderSize = sizeof(DIPROPHEADER);
-	joy_axis_range.diph.dwHow = DIPH_BYOFFSET;
-	joy_axis_range.diph.dwObj = DIJOFS_X;
-	lpdi_joystick[c]->SetProperty(DIPROP_RANGE, &joy_axis_range.diph);
-	joy_axis_range.diph.dwObj = DIJOFS_Y;
-	lpdi_joystick[c]->SetProperty(DIPROP_RANGE, &joy_axis_range.diph);
-	joy_axis_range.diph.dwObj = DIJOFS_Z;
-	lpdi_joystick[c]->SetProperty(DIPROP_RANGE, &joy_axis_range.diph);
-	joy_axis_range.diph.dwObj = DIJOFS_RX;
-	lpdi_joystick[c]->SetProperty(DIPROP_RANGE, &joy_axis_range.diph);
-	joy_axis_range.diph.dwObj = DIJOFS_RY;
-	lpdi_joystick[c]->SetProperty(DIPROP_RANGE, &joy_axis_range.diph);
-	joy_axis_range.diph.dwObj = DIJOFS_RZ;
-	lpdi_joystick[c]->SetProperty(DIPROP_RANGE, &joy_axis_range.diph);
-
-	if (FAILED(lpdi_joystick[c]->Acquire()))
-		fatal("joystick_init : Acquire failed\n");
-    }
-#else
-    memset(controllers, 0x00, sizeof(controllers));
-
-    for (c = 0; c < XINPUT_MAX_JOYSTICKS; c++) {
-	js = &plat_joystick_state[c];
-
-	val = XInputGetState(c, &controllers[c]);
-	if (val != ERROR_SUCCESS) continue;
-
-	strcpy(js->name, XINPUT_NAME);
-	js->nr_axes = 8;
-
-	/* analog stick */
-	strcpy(js->axis[0].name, XINPUT_NAME_LX);
-	js->axis[0].id = 0;  /* X axis */
-	strcpy(js->axis[1].name, XINPUT_NAME_LY);
-	js->axis[1].id = 1;  /* Y axis */
-	strcpy(js->axis[2].name, XINPUT_NAME_RX);
-	js->axis[2].id = 3;  /* RX axis */
-	strcpy(js->axis[3].name, XINPUT_NAME_RY);
-	js->axis[3].id = 4;  /* RY axis */
-
-	/* d-pad, assigned to Z and RZ */
-	strcpy(js->axis[4].name, XINPUT_NAME_DPAD_X);
-	js->axis[4].id = 2;
-	strcpy(js->name, XINPUT_NAME_DPAD_Y);
-	js->axis[5].id = 5;
-
-	/* Analog trigger */
-	strcpy(js->axis[6].name, XINPUT_NAME_LT);
-	js->axis[6].id = 6;
-	strcpy(js->axis[7].name, XINPUT_NAME_RT);
-	js->axis[7].id = 7;
-
-	js->nr_buttons = 12;
-	strcpy(js->button[0].name, XINPUT_NAME_A);
-	strcpy(js->button[1].name, XINPUT_NAME_B);
-	strcpy(js->button[2].name, XINPUT_NAME_X);
-	strcpy(js->button[3].name, XINPUT_NAME_Y);
-	strcpy(js->button[4].name, XINPUT_NAME_LB);
-	strcpy(js->button[5].name, XINPUT_NAME_RB);
-	strcpy(js->button[6].name, XINPUT_NAME_LT);
-	strcpy(js->button[7].name, XINPUT_NAME_RT);
-	strcpy(js->button[8].name, XINPUT_NAME_BACK);
-	strcpy(js->button[9].name, XINPUT_NAME_START);
-	strcpy(js->button[10].name, XINPUT_NAME_LS);
-	strcpy(js->button[11].name, XINPUT_NAME_RS);
-
-	js->nr_povs = 0;
+	INFO("GAME: Joystick %i: %s - %i buttons, %i axes, %i POVs\n", 
+		joysticks_present,
+		joy->name, joy->nr_buttons, joy->nr_axes, joy->nr_povs);
 
 	joysticks_present++;
-    }
-#endif
 
+end_loop:
+	free(info);
+    }
     INFO("JOYSTICK: %i game device(s) found.\n", joysticks_present);
+
+    /* Initialize the RawInput (joystick and gamepad) module. */
+    ridev[0].dwFlags     = 0;
+    ridev[0].hwndTarget  = NULL;
+    ridev[0].usUsagePage = HID_USAGE_PAGE_GENERIC;
+    ridev[0].usUsage     = HID_USAGE_GENERIC_JOYSTICK;
+
+    ridev[1].dwFlags     = 0;
+    ridev[1].hwndTarget  = NULL;
+    ridev[1].usUsagePage = HID_USAGE_PAGE_GENERIC;
+    ridev[1].usUsage     = HID_USAGE_GENERIC_GAMEPAD;
+
+    if (! RegisterRawInputDevices(ridev, 2, sizeof(RAWINPUTDEVICE)))
+	fatal("plat_joystick_init: RegisterRawInputDevices failed\n"); 
 }
 
 
 void
-joystick_close(void)
+joystick_handle(RAWINPUT *raw)
 {
-#ifdef USE_DINPUT
-    if (lpdi_joystick[1]) {
-	lpdi_joystick[1]->Release();
-	lpdi_joystick[1] = NULL;
+    USAGE usage_list[128] = { 0 };
+    ULONG usage_length, uvalue, mask;
+    LONG value, center;
+    struct raw_axis_t *axis;
+    struct raw_pov_t *pov;
+    HRESULT r;
+    int i, j, x;
+
+    /* If the input is not from a known device, we ignore it */
+    j = -1;
+    for (i = 0; i < joysticks_present; i++) {
+	if (raw_joystick_state[i].hdevice == raw->header.hDevice) {
+		j = i;
+		break;
+	}
+    }
+    if (j == -1)
+	return;
+
+    /* Read buttons. */
+    usage_length = plat_joystick_state[j].nr_buttons;
+    memset(plat_joystick_state[j].b, 0x00, 32 * sizeof(int));
+
+    r = HidP_GetUsages(HidP_Input, HID_USAGE_PAGE_BUTTON,
+		       0, usage_list, &usage_length,
+		       raw_joystick_state[j].data,
+		       (PCHAR)raw->data.hid.bRawData, raw->data.hid.dwSizeHid);
+    if (r == HIDP_STATUS_SUCCESS) {
+	for (i = 0; i < usage_length; i++) {
+		x = raw_joystick_state[j].usage_button[usage_list[i]];
+		plat_joystick_state[j].b[x] = 128;
+	}
     }
 
-    if (lpdi_joystick[0]) {
-	lpdi_joystick[0]->Release();
-	lpdi_joystick[0] = NULL;
+    /* Read axes. */
+    for (x = 0; x < plat_joystick_state[j].nr_axes; x++) {
+	axis = &raw_joystick_state[j].axis[x];
+	uvalue = 0;
+	value  = 0;
+	center = (axis->max - axis->min + 1) / 2;
+
+	r = HidP_GetUsageValue(HidP_Input, HID_USAGE_PAGE_GENERIC,
+			       axis->link, axis->usage, &uvalue, 
+			       raw_joystick_state[j].data,
+			       (PCHAR)raw->data.hid.bRawData,
+			       raw->data.hid.dwSizeHid);
+	if (r == HIDP_STATUS_SUCCESS) {
+		if (axis->min < 0) {
+			/* Extend signed uvalue to LONG. */
+			if (uvalue & (1 << (axis->bitsize-1))) {
+				mask = (1 << axis->bitsize) - 1;
+				value = -1U ^ mask;
+				value |= uvalue;
+			} else
+				value = uvalue;
+		} else {
+			/*
+			 * Assume unsigned when min >= 0,
+			 * convert to a signed value.
+			 */
+			value = (LONG)uvalue - center;
+		}
+
+		if (abs(value) == 1)
+			value = 0;
+		value = value * 32768 / center;
+	}
+
+	plat_joystick_state[j].a[x] = value;
     }
-#endif
+
+    /* Read POVs. */
+    for (x = 0; x < plat_joystick_state[j].nr_povs; x++) {
+	pov = &raw_joystick_state[j].pov[x];
+	uvalue = 0;
+	value = -1;
+
+	r = HidP_GetUsageValue(HidP_Input, HID_USAGE_PAGE_GENERIC,
+			       pov->link, pov->usage, &uvalue, 
+			       raw_joystick_state[j].data,
+			       (PCHAR)raw->data.hid.bRawData,
+			       raw->data.hid.dwSizeHid);
+	if (r == HIDP_STATUS_SUCCESS && (uvalue >= pov->min && uvalue <= pov->max)) {
+		value  = (uvalue - pov->min) * 36000;
+		value /= (pov->max - pov->min + 1);
+		value %= 36000;
+	}
+
+	plat_joystick_state[j].p[x] = value;
+    }
 }
 
 
 static int
-get_axis(int joystick_nr, int mapping)
+get_axis(int nr, int mapping)
 {
-    int pov = plat_joystick_state[joystick_nr].p[mapping & 3];
-
-    if (LOWORD(pov) == 0xFFFF)
-	return 0;
+    int pov;
 
     if (mapping & POV_X) {
-	return (int)sin((2*M_PI * (double)pov) / 36000.0) * 32767;
+	pov = plat_joystick_state[nr].p[mapping & 3];
+	if (LOWORD(pov) == 0xFFFF)
+		return 0;
+	else 
+		return sin((2*M_PI * (double)pov) / 36000.0) * 32767;
     } else if (mapping & POV_Y) {
-	return (int)-cos((2*M_PI * (double)pov) / 36000.0) * 32767;
+	pov = plat_joystick_state[nr].p[mapping & 3];
+		
+	if (LOWORD(pov) == 0xFFFF)
+		return 0;
+	else
+		return -cos((2*M_PI * (double)pov) / 36000.0) * 32767;
     }
 
-    return plat_joystick_state[joystick_nr].a[plat_joystick_state[joystick_nr].axis[mapping].id];
+    return plat_joystick_state[nr].a[plat_joystick_state[nr].axis[mapping].id];
 }
 
 
 void
 joystick_process(void)
 {
-    plat_joystick_t *js;
-#ifdef USE_DINPUT
-    DIJOYSTATE joystate;
-#endif
-    int c, d;
+    double angle, magnitude;
+    int c, d, x, y, type;
 
-    if (config.joystick_type == JOYSTICK_NONE) return;
+    if ((type = config.joystick_type) == JOYSTICK_NONE)
+	return;
 
-    for (c = 0; c < joysticks_present; c++) {		
-	js = &plat_joystick_state[c];
-
-#ifdef USE_DINPUT
-	if (FAILED(lpdi_joystick[c]->Poll())) {
-		lpdi_joystick[c]->Acquire();
-		lpdi_joystick[c]->Poll();
-	} if (FAILED(lpdi_joystick[c]->GetDeviceState(sizeof(DIJOYSTATE), (LPVOID)&joystate))) {
-		lpdi_joystick[c]->Acquire();
-		lpdi_joystick[c]->Poll();
-		lpdi_joystick[c]->GetDeviceState(sizeof(DIJOYSTATE), (LPVOID)&joystate);
-	}
-
-	js->a[0] = joystate.lX;
-	js->a[1] = joystate.lY;
-	js->a[2] = joystate.lZ;
-	js->a[3] = joystate.lRx;
-	js->a[4] = joystate.lRy;
-	js->a[5] = joystate.lRz;
-
-	for (d = 0; d < 16; d++)
-		js->b[d] = joystate.rgbButtons[d] & 0x80;
-
-	for (d = 0; d < 4; d++)
-		js->p[d] = joystate.rgdwPOV[d];
-#else
-	d = XInputGetState(c, &controllers[c]);
-	if (d != ERROR_SUCCESS) continue;
-
-	js->a[0] = controllers[c].Gamepad.sThumbLX;
-	js->a[1] = controllers[c].Gamepad.sThumbLY;
-	js->a[3] = controllers[c].Gamepad.sThumbRX;
-	js->a[4] = controllers[c].Gamepad.sThumbRY;
-	js->a[6] = controllers[c].Gamepad.bLeftTrigger << 7;
-	js->a[7] = controllers[c].Gamepad.bLeftTrigger << 7;
-
-	js->b[0] = (controllers[c].Gamepad.wButtons & XINPUT_GAMEPAD_A) ? 128 : 0;
-	js->b[1] = (controllers[c].Gamepad.wButtons & XINPUT_GAMEPAD_B) ? 128 : 0;
-	js->b[2] = (controllers[c].Gamepad.wButtons & XINPUT_GAMEPAD_X) ? 128 : 0;
-	js->b[3] = (controllers[c].Gamepad.wButtons & XINPUT_GAMEPAD_Y) ? 128 : 0;
-	js->b[4] = (controllers[c].Gamepad.wButtons & XINPUT_GAMEPAD_LEFT_SHOULDER) ? 128 : 0;
-	js->b[5] = (controllers[c].Gamepad.wButtons & XINPUT_GAMEPAD_RIGHT_SHOULDER) ? 128 : 0;
-	js->b[6] = (controllers[c].Gamepad.bLeftTrigger > 127) ? 128 : 0;
-	js->b[7] = (controllers[c].Gamepad.bRightTrigger > 127) ? 128 : 0;
-	js->b[8] = (controllers[c].Gamepad.wButtons & XINPUT_GAMEPAD_BACK) ? 128 : 0;
-	js->b[9] = (controllers[c].Gamepad.wButtons & XINPUT_GAMEPAD_START) ? 128 : 0;
-	js->b[10] = (controllers[c].Gamepad.wButtons & XINPUT_GAMEPAD_LEFT_THUMB) ? 128 : 0;
-	js->b[11] = (controllers[c].Gamepad.wButtons & XINPUT_GAMEPAD_RIGHT_THUMB) ? 128 : 0;
-
-	int dpad_x = 0, dpad_y = 0;
-	if (controllers[c].Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_UP)
-		dpad_y += 32767;
-	if (controllers[c].Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_DOWN)
-		dpad_y -= 32767;
-	if (controllers[c].Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_RIGHT)
-		dpad_x += 32767;
-	if (controllers[c].Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_LEFT)
-		dpad_x -= 32767;
-
-	js->a[2] = dpad_x;
-	js->a[5] = dpad_y;
-#endif
-    }
-
-    for (c = 0; c < gamedev_get_max_joysticks(config.joystick_type); c++) {
+    for (c = 0; c < gamedev_get_max_joysticks(type); c++) {
 	if (joystick_state[c].plat_joystick_nr) {
-		int joystick_nr = joystick_state[c].plat_joystick_nr - 1;
+		int nr = joystick_state[c].plat_joystick_nr - 1;
 
-		for (d = 0; d < gamedev_get_axis_count(config.joystick_type); d++)
-			joystick_state[c].axis[d] = get_axis(joystick_nr, joystick_state[c].axis_mapping[d]);
-		for (d = 0; d < gamedev_get_button_count(config.joystick_type); d++)
-			joystick_state[c].button[d] = plat_joystick_state[joystick_nr].b[joystick_state[c].button_mapping[d]];
+		for (d = 0; d < gamedev_get_axis_count(type); d++)
+			joystick_state[c].axis[d] = get_axis(nr, joystick_state[c].axis_mapping[d]);
+		for (d = 0; d < gamedev_get_button_count(type); d++)
+			joystick_state[c].button[d] = plat_joystick_state[nr].b[joystick_state[c].button_mapping[d]];
 
-		for (d = 0; d < gamedev_get_pov_count(config.joystick_type); d++) {
-			int x, y;
-			double angle, magnitude;
-
-			x = get_axis(joystick_nr, joystick_state[c].pov_mapping[d][0]);
-			y = get_axis(joystick_nr, joystick_state[c].pov_mapping[d][1]);
+		for (d = 0; d < gamedev_get_pov_count(type); d++) {
+			x = get_axis(nr, joystick_state[c].pov_mapping[d][0]);
+			y = get_axis(nr, joystick_state[c].pov_mapping[d][1]);
 
 			angle = (atan2((double)y, (double)x) * 360.0) / (2*M_PI);
 			magnitude = sqrt((double)x*(double)x + (double)y*(double)y);
@@ -491,11 +555,11 @@ joystick_process(void)
 				joystick_state[c].pov[d] = ((int)angle + 90 + 360) % 360;
 		}
 	} else {
-		for (d = 0; d < gamedev_get_axis_count(config.joystick_type); d++)
+		for (d = 0; d < gamedev_get_axis_count(type); d++)
 			joystick_state[c].axis[d] = 0;
-		for (d = 0; d < gamedev_get_button_count(config.joystick_type); d++)
+		for (d = 0; d < gamedev_get_button_count(type); d++)
 			joystick_state[c].button[d] = 0;
-		for (d = 0; d < gamedev_get_pov_count(config.joystick_type); d++)
+		for (d = 0; d < gamedev_get_pov_count(type); d++)
 			joystick_state[c].pov[d] = -1;
 	}
     }
@@ -596,7 +660,7 @@ rebuild_selections(HWND hdlg)
 
 
 static int
-get_axis(HWND hdlg, int id)
+dlg_get_axis(HWND hdlg, int id)
 {
     HWND h = GetDlgItem(hdlg, id);
     int axis_sel = (int)SendMessage(h, CB_GETCURSEL, 0, 0);
@@ -614,7 +678,7 @@ get_axis(HWND hdlg, int id)
 
 
 static int
-get_pov(HWND hdlg, int id)
+dlg_get_pov(HWND hdlg, int id)
 {
     HWND h = GetDlgItem(hdlg, id);
     int axis_sel = (int)SendMessage(h, CB_GETCURSEL, 0, 0);
@@ -728,7 +792,7 @@ dlg_proc(HWND hdlg, UINT message, WPARAM wParam, UNUSED(LPARAM lParam))
 				
 				if (joystick_state[joystick_nr].plat_joystick_nr) {
 					for (c = 0; c < gamedev_get_axis_count(joystick_config_type); c++) {
-						joystick_state[joystick_nr].axis_mapping[c] = get_axis(hdlg, id);
+						joystick_state[joystick_nr].axis_mapping[c] = dlg_get_axis(hdlg, id);
 						id += 2;
 					}			       
 					for (c = 0; c < gamedev_get_button_count(joystick_config_type); c++) {
@@ -738,10 +802,10 @@ dlg_proc(HWND hdlg, UINT message, WPARAM wParam, UNUSED(LPARAM lParam))
 					}
 					for (c = 0; c < gamedev_get_button_count(joystick_config_type); c++) {
 						h = GetDlgItem(hdlg, id);
-						joystick_state[joystick_nr].pov_mapping[c][0] = get_pov(hdlg, id);
+						joystick_state[joystick_nr].pov_mapping[c][0] = dlg_get_pov(hdlg, id);
 						id += 2;
 						h = GetDlgItem(hdlg, id);
-						joystick_state[joystick_nr].pov_mapping[c][1] = get_pov(hdlg, id);
+						joystick_state[joystick_nr].pov_mapping[c][1] = dlg_get_pov(hdlg, id);
 						id += 2;
 					}
 				}

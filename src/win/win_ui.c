@@ -8,7 +8,7 @@
  *
  *		Implement the User Interface module for Win32 API.
  *
- * Version:	@(#)win_ui.c	1.0.41	2021/02/18
+ * Version:	@(#)win_ui.c	1.0.42	2021/03/18
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -586,12 +586,35 @@ SubWindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 static WIN_RESULT CALLBACK
 input_proc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+    RAWINPUT *raw = NULL;
+    UINT size = 0;
+
     switch (message) {
 	case WM_INPUT:
-		keyboard_handle(lParam, infocus);
-#ifndef USE_DINPUT
-		mouse_handle(lParam, infocus);
-#endif
+		if (! infocus)
+			break;
+
+		/* Grab (all) the available Raw Input data. */
+		GetRawInputData((HRAWINPUT)lParam, RID_INPUT, NULL,
+				&size, sizeof(RAWINPUTHEADER));
+		raw = (PRAWINPUT)mem_alloc(size);
+		if (GetRawInputData((HRAWINPUT)lParam, RID_INPUT, raw,
+				&size, sizeof(RAWINPUTHEADER)) == size) {
+			switch (raw->header.dwType) {
+				case RIM_TYPEKEYBOARD:
+					keyboard_handle(raw);
+					break;
+
+				case RIM_TYPEMOUSE:
+					mouse_handle(raw);
+					break;
+
+				case RIM_TYPEHID:
+					joystick_handle(raw);
+					break;
+			}
+		}
+		free(raw);
 		break;
 
 	case WM_SETFOCUS:
@@ -872,7 +895,9 @@ again:
 	ui_fullscreen(1);
 
     /* Initialize the mouse module. */
-    win_mouse_init();
+    if (! win_mouse_init()) {
+	/* FIXME: maybe let the user know with a MsgBox ? */
+    }
 
     /* Fire up the machine. */
     pc_reset_hard_init();
