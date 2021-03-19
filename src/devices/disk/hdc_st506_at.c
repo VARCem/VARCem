@@ -43,7 +43,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <wchar.h>
-#define dbglog hdc_log
+//#define dbglog hdc_log
 #include "../../emu.h"
 #include "../../timer.h"
 #include "../../cpu/cpu.h"
