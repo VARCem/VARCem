@@ -8,13 +8,13 @@
  *
  *		Interface to the OpenAL sound processing library.
  *
- * Version:	@(#)openal.c	1.0.21	2020/07/17
+ * Version:	@(#)openal.c	1.0.22	2021/03/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2020 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -80,7 +80,7 @@ static int		nbuffers,
 static void		*openal_handle = NULL;	/* handle to (open) DLL */
 
 /* Pointers to the real functions. */
-static ALC_API const ALchar* (ALC_APIENTRY *f_alGetString)(ALenum param);
+static ALC_API ALchar* const (ALC_APIENTRY *f_alGetString)(ALenum param);
 static ALC_API ALenum (ALC_APIENTRY *f_alGetError)(void);
 static ALC_API ALCdevice* (ALC_APIENTRY *f_alcOpenDevice)(const ALCchar *devicename);
 static ALC_API ALCboolean (ALC_APIENTRY *f_alcCloseDevice)(ALCdevice *device);
@@ -103,7 +103,7 @@ static AL_API void (AL_APIENTRY *f_alGenSources)(ALsizei n, ALuint *sources);
 static AL_API void (AL_APIENTRY *f_alDeleteSources)(ALsizei n, const ALuint *sources);
 static AL_API void (AL_APIENTRY *f_alDeleteBuffers)(ALsizei n, const ALuint *buffers);
 
-static dllimp_t imports[] = {
+static const dllimp_t imports[] = {
   { "alGetString",		&f_alGetString			},
   { "alGetError",		&f_alGetError			},
   { "alcOpenDevice",		&f_alcOpenDevice		},

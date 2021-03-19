@@ -542,7 +542,7 @@ write_mem_w(uint32_t addr, uint16_t val)
     addr &= rammask;
 
     if (addr & 1) {
-	write_mem_b(addr, val);
+	write_mem_b(addr, (uint8_t)val);
 	write_mem_b(addr + 1, val >> 8);
     } else {
 	map = write_mapping[addr >> MEM_GRANULARITY_BITS];
@@ -550,7 +550,7 @@ write_mem_w(uint32_t addr, uint16_t val)
 		if (map->write_w)
 			map->write_w(addr, val, map->p);
 		else if (map->write_b) {
-			map->write_b(addr, val, map->p);
+			map->write_b(addr, (uint8_t)val, map->p);
 			map->write_b(addr + 1, val >> 8, map->p);
 		}
 	}

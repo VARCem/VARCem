@@ -27,14 +27,14 @@
  *		in that order. The OPL2, however, is mono. What should
  *		we generate for that?
  *
- * Version:	@(#)snd_opl_nuked.c	1.0.5	2020/07/16
+ * Version:	@(#)snd_opl_nuked.c	1.0.6	2021/03/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Alexey Khokholov (Nuke.YKT)
  *
- *		Copyright 2017-2020 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *		Copyright 2016-2020 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *		Copyright 2013-2018 Alexey Khokholov (Nuke.YKT)
@@ -1310,7 +1310,7 @@ nuked_generate(priv_t priv, int32_t *bufp)
 
     dev->eg_state ^= 1;
 
-    while (dev->wrbuf[dev->wrbuf_cur].time <= dev->wrbuf_samplecnt) {
+    while (dev->wrbuf[dev->wrbuf_cur].time <= (tmrval_t)dev->wrbuf_samplecnt) {
 	if (! (dev->wrbuf[dev->wrbuf_cur].reg & 0x200))
 	    break;
 

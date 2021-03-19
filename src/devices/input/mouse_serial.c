@@ -10,7 +10,7 @@
  *
  * TODO:	Add the Genius Serial Mouse.
  *
- * Version:	@(#)mouse_serial.c	1.0.18 2021/03/16
+ * Version:	@(#)mouse_serial.c	1.0.19 2021/03/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -305,8 +305,8 @@ ser_report(mouse_t *dev, int x, int y, int z, int b)
 }
 
 
-static double
-ser_transmit_period(mouse_t *dev, int bps, int rps)
+static tmrval_t
+transmit_period(mouse_t *dev, int bps, int rps)
 {
     double dbps = (double) bps;
     double temp = 0.0;
@@ -368,7 +368,7 @@ ser_transmit_period(mouse_t *dev, int bps, int rps)
     }
     temp = (1000000.0 / dbps) * temp;
 
-    return(temp);
+    return((tmrval_t)temp);
 }
 
 
@@ -536,19 +536,19 @@ ltser_write(void *serial, priv_t priv, uint8_t data)
 
 		switch (data) {
 			case 0x6e:
-				dev->period = ser_transmit_period(dev, 1200, -1); /*1200 bps */
+				dev->period = transmit_period(dev, 1200, -1); /*1200 bps */
 				break;
 
 			case 0x6f:
-				dev->period = ser_transmit_period(dev, 2400, -1);	/* 2400 bps */
+				dev->period = transmit_period(dev, 2400, -1);	/* 2400 bps */
 				break;
 
 			case 0x70:
-				dev->period = ser_transmit_period(dev, 4800, -1);	/* 4800 bps */
+				dev->period = transmit_period(dev, 4800, -1);	/* 4800 bps */
 				break;
 
 			case 0x71:
-				dev->period = ser_transmit_period(dev, 9600, -1);	/* 9600 bps */
+				dev->period = transmit_period(dev, 9600, -1);	/* 9600 bps */
 				break;
 
 			default:
@@ -704,7 +704,7 @@ ser_init(const device_t *info, UNUSED(void *parent))
 	}
     }
 
-    dev->period = ser_transmit_period(dev, 1200, -1);
+    dev->period = transmit_period(dev, 1200, -1);
 
     /* Attach a serial port to the mouse. */
     dev->serial = serial_attach(dev->port, &ops, dev);

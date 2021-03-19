@@ -8,7 +8,7 @@
  *
  *		AMD 3DNow! CPU Instructions.
  *
- * Version:	@(#)x86_ops_3dnow.h	1.0.1	2020/12/15
+ * Version:	@(#)x86_ops_3dnow.h	1.0.2	2021/03/19
  *
  * Author:	Sarah Walker, <tommowalker@tommowalker.co.uk>,
  * 		Altheos
@@ -207,7 +207,7 @@ static int opPFRCP(uint32_t fetchdat)
             CLOCK_CYCLES(2);
         }
 
-        cpu_state.MM[cpu_reg].f[0] = 1.0/src.f;
+        cpu_state.MM[cpu_reg].f[0] = (float)1.0/src.f;
         cpu_state.MM[cpu_reg].f[1] = cpu_state.MM[cpu_reg].f[0];
 
         return 0;
@@ -253,7 +253,7 @@ static int opPFRSQRT(uint32_t fetchdat)
            CLOCK_CYCLES(2);
         }
 
-        cpu_state.MM[cpu_reg].f[0] = 1.0/sqrt(src.f);
+        cpu_state.MM[cpu_reg].f[0] = (float)(1.0 / sqrt(src.f));
         cpu_state.MM[cpu_reg].f[1] = cpu_state.MM[cpu_reg].f[0];
 
         return 0;

@@ -8,7 +8,7 @@
  *
  *		Emulation of Cirrus Logic cards.
  *
- * Version:	@(#)vid_cl54xx.c	1.0.40	2021/02/03
+ * Version:	@(#)vid_cl54xx.c	1.0.41	2021/03/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1983,7 +1983,7 @@ gd54xx_writew(uint32_t addr, uint16_t val, priv_t priv)
 	
      if (dev->countminusone && !dev->blt.ms_is_dest &&
 	!(dev->blt.status & CIRRUS_BLT_PAUSED)) {
-        gd54xx_write(addr, val, dev);
+        gd54xx_write(addr, (uint8_t)val, dev);
 	gd54xx_write(addr + 1, val >> 8, dev);
 	return;
     }
@@ -1998,7 +1998,7 @@ gd54xx_writew(uint32_t addr, uint16_t val, priv_t priv)
     if (svga->writemode < 4)	
     	svga_writew_linear(addr, val, svga);
     else {
-	svga_write_linear(addr, val, svga);
+	svga_write_linear(addr, (uint8_t)val, svga);
 	svga_write_linear(addr + 1, val >> 8, svga);
     }
 }
@@ -2348,7 +2348,7 @@ gd5436_aperture2_writew(uint32_t addr, uint16_t val, priv_t priv)
 
     if (dev->countminusone && !dev->blt.ms_is_dest
 	&& gd54xx_aperture2_enabled(dev) && !(dev->blt.status & CIRRUS_BLT_PAUSED)) {
-	gd5436_aperture2_writeb(addr, val, dev);
+	gd5436_aperture2_writeb(addr, (uint8_t)val, dev);
 	gd5436_aperture2_writeb(addr + 1, val >> 8, dev);
     }
 }
@@ -2445,7 +2445,7 @@ gd54xx_writew_linear(uint32_t addr, uint16_t val, priv_t priv)
     /* Do mem sys src writes here if the blitter is neither paused, nor there is a second aperture. */
     if (dev->countminusone && !dev->blt.ms_is_dest &&
 	!gd54xx_aperture2_enabled(dev) && !(dev->blt.status & CIRRUS_BLT_PAUSED)) {
-	gd54xx_writeb_linear(addr, val, dev);
+	gd54xx_writeb_linear(addr, (uint8_t)val, dev);
 	gd54xx_writeb_linear(addr + 1, val >> 8, dev);
 	return;
     }
@@ -2878,7 +2878,7 @@ gd543x_mmio_writew(uint32_t addr, uint16_t val, priv_t priv)
 		gd543x_mmio_write(addr, val & 0xff, dev);
 		gd543x_mmio_write(addr + 1, val >> 8, dev);
 	} else {
-		gd54xx_write(addr, val, dev);
+		gd54xx_write(addr, (uint8_t)val, dev);
 		gd54xx_write(addr + 1, val >> 8, dev);
 	}
     }
@@ -3350,7 +3350,7 @@ gd54xx_pattern_copy(gd54xx_t *dev)
 			else
 				bitmask = svga->vram[srca2 & svga->vram_mask] & (0x80 >> pixel);
 		}
-		for (xx = 0; xx < dev->blt.pixel_width; xx++) {
+		for (xx = 0; xx < (uint32_t)dev->blt.pixel_width; xx++) {
 			if (dev->blt.mode & CIRRUS_BLTMODE_COLOREXPAND)
 				src = gd54xx_color_expand(dev, bitmask, xx);
 			else {
@@ -3361,7 +3361,7 @@ gd54xx_pattern_copy(gd54xx_t *dev)
 			target = *dst;
 			gd54xx_rop(dev, &target, &target, &src);
 			if (dev->blt.pixel_width == 3)
-				gd54xx_blit(dev, bitmask, dst, target, ((x + xx) < dev->blt.pattern_x));
+				gd54xx_blit(dev, bitmask, dst, target, ((x + xx) < (unsigned)dev->blt.pattern_x));
 			else
 				gd54xx_blit(dev, bitmask, dst, target, (x < dev->blt.pattern_x));
 		}

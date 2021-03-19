@@ -349,7 +349,7 @@ joystick_init(void)
     deviceList = calloc(raw_devices, sizeof(RAWINPUTDEVICELIST));
     GetRawInputDeviceList(deviceList, &raw_devices, sizeof(RAWINPUTDEVICELIST));
 
-    for (i = 0; i < raw_devices; i++) {
+    for (i = 0; i < (int)raw_devices; i++) {
 	if (joysticks_present >= MAX_PLAT_JOYSTICKS)
 		break;
 
@@ -434,7 +434,7 @@ joystick_handle(RAWINPUT *raw)
 		       raw_joystick_state[j].data,
 		       (PCHAR)raw->data.hid.bRawData, raw->data.hid.dwSizeHid);
     if (r == HIDP_STATUS_SUCCESS) {
-	for (i = 0; i < usage_length; i++) {
+	for (i = 0; i < (int)usage_length; i++) {
 		x = raw_joystick_state[j].usage_button[usage_list[i]];
 		plat_joystick_state[j].b[x] = 128;
 	}
@@ -457,7 +457,7 @@ joystick_handle(RAWINPUT *raw)
 			/* Extend signed uvalue to LONG. */
 			if (uvalue & (1 << (axis->bitsize-1))) {
 				mask = (1 << axis->bitsize) - 1;
-				value = -1U ^ mask;
+				value = -1 ^ mask;
 				value |= uvalue;
 			} else
 				value = uvalue;
@@ -488,7 +488,7 @@ joystick_handle(RAWINPUT *raw)
 			       raw_joystick_state[j].data,
 			       (PCHAR)raw->data.hid.bRawData,
 			       raw->data.hid.dwSizeHid);
-	if (r == HIDP_STATUS_SUCCESS && (uvalue >= pov->min && uvalue <= pov->max)) {
+	if (r == HIDP_STATUS_SUCCESS && (uvalue >= (ULONG)pov->min && uvalue <= (ULONG)pov->max)) {
 		value  = (uvalue - pov->min) * 36000;
 		value /= (pov->max - pov->min + 1);
 		value %= 36000;
@@ -507,16 +507,16 @@ get_axis(int nr, int mapping)
     if (mapping & POV_X) {
 	pov = plat_joystick_state[nr].p[mapping & 3];
 	if (LOWORD(pov) == 0xFFFF)
-		return 0;
+		return(0);
 	else 
-		return sin((2*M_PI * (double)pov) / 36000.0) * 32767;
+		return((int)sin((2*M_PI * (double)pov) / 36000.0) * 32767);
     } else if (mapping & POV_Y) {
 	pov = plat_joystick_state[nr].p[mapping & 3];
 		
 	if (LOWORD(pov) == 0xFFFF)
-		return 0;
+		return(0);
 	else
-		return -cos((2*M_PI * (double)pov) / 36000.0) * 32767;
+		return((int)-cos((2*M_PI * (double)pov) / 36000.0) * 32767);
     }
 
     return plat_joystick_state[nr].a[plat_joystick_state[nr].axis[mapping].id];

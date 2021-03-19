@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings_disk.h	1.0.22	2021/03/16
+ * Version:	@(#)win_settings_disk.h	1.0.22	2021/03/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -57,7 +57,7 @@ static int	no_update = 0;
 static int	existing = 0;
 static int	selection = 0;
 static int	spt, hpc, tracks;
-static int64_t	size;
+static uint64_t	size;
 static int	chs_enabled = 0;
 static int	ignore_change = 0;
 static int	hdc_id_to_listview_index[HDD_NUM];
@@ -332,11 +332,11 @@ adjust_geometry_for_vhd(MVHDGeom *geom, MVHDGeom *vhd_geom)
     if (remainder > 0)
 	desired += (85680 - remainder);
 
-    geom->cyl = desired / (16 * 63);
+    geom->cyl = (uint16_t)(desired / (16 * 63));
     geom->heads = 16;
     geom->spt = 63;
 
-    vhd_geom->cyl = desired / (16 * 255);
+    vhd_geom->cyl = (uint16_t)(desired / (16 * 255));
     vhd_geom->heads = 16;
     vhd_geom->spt = 255;
 }
@@ -360,7 +360,7 @@ adjust_vhd_geometry(MVHDGeom *vhd_geom)
     if (remainder > 0)
 	desired -= remainder;
 
-    vhd_geom->cyl = desired / (16 * 63);
+    vhd_geom->cyl = (uint16_t)(desired / (16 * 63));
     vhd_geom->heads = 16;
     vhd_geom->spt = 63;
 }
@@ -1558,14 +1558,14 @@ hdd_add_file_open_error:
 									if (i == 5)
 										i++;
 								}
-								hpc = i;
+								hpc = (int)i;
 							}
 						} else {
 							spt = 63;
 							hpc = 16;
 						}
 
-						tracks = ((size >> 9) / hpc) / spt;
+						tracks = (int)((size >> 9) / hpc) / spt;
 					}
 
 					if ((spt > max_spt) || (hpc > max_hpc) || (tracks > max_tracks)) {
@@ -1622,7 +1622,7 @@ hdd_add_file_open_error:
 				no_update = 1;
 				get_edit_box_contents(hdlg, IDC_EDIT_HD_CYL, &temp);
 				if (temp != tracks) {
-					tracks = temp;
+					tracks = (int)temp;
 					size = ((uint64_t) tracks * (uint64_t) hpc * (uint64_t) spt) << 9LL;
 					set_edit_box_contents(hdlg, IDC_EDIT_HD_SIZE, size >> 20);
 					disk_recalc_selection(hdlg);
@@ -1646,7 +1646,7 @@ hdd_add_file_open_error:
 				no_update = 1;
 				get_edit_box_contents(hdlg, IDC_EDIT_HD_HPC, &temp);
 				if (hpc != temp) {
-					hpc = temp;
+					hpc = (int)temp;
 					size = ((uint64_t)tracks * (uint64_t)hpc * (uint64_t)spt) << 9LL;
 					set_edit_box_contents(hdlg, IDC_EDIT_HD_SIZE, size >> 20);
 					disk_recalc_selection(hdlg);
@@ -1670,7 +1670,7 @@ hdd_add_file_open_error:
 				no_update = 1;
 				get_edit_box_contents(hdlg, IDC_EDIT_HD_SPT, &temp);
 				if (spt != temp) {
-					spt = temp;
+					spt = (int)temp;
 					size = ((uint64_t)tracks * (uint64_t)hpc * (uint64_t)spt) << 9LL;
 					set_edit_box_contents(hdlg, IDC_EDIT_HD_SIZE, size >> 20);
 					disk_recalc_selection(hdlg);
@@ -1695,7 +1695,7 @@ hdd_add_file_open_error:
 				get_edit_box_contents(hdlg, IDC_EDIT_HD_SIZE, &temp);
 				if (temp != (size >> 20)) {
 					size = temp << 20;
-					tracks = ((size >> 9) / hpc) / spt;
+					tracks = (int)((size >> 9) / hpc) / spt;
 					set_edit_box_contents(hdlg, IDC_EDIT_HD_CYL, tracks);
 					disk_recalc_selection(hdlg);
 				}
@@ -1722,8 +1722,8 @@ hdd_add_file_open_error:
 							;
 
 				get_combo_box_selection(hdlg, IDC_COMBO_HD_TYPE, &temp);
-				if ((temp != selection) && (temp != (k - 1)) && (temp != k)) {
-					selection = temp;
+				if (((int)temp != selection) && ((int)temp != (k - 1)) && ((int)temp != k)) {
+					selection = (int)temp;
 					tracks = hdd_table[selection].cyls;
 					hpc = hdd_table[selection].head;
 					spt = hdd_table[selection].sect;
@@ -1733,9 +1733,9 @@ hdd_add_file_open_error:
 					set_edit_box_contents(hdlg, IDC_EDIT_HD_SPT, spt);
 					set_edit_box_contents(hdlg, IDC_EDIT_HD_SIZE, size >> 20);
 				} else if ((temp != selection) && (temp == (k - 1))) {
-					selection = temp;
+					selection = (int)temp;
 				} else if ((temp != selection) && (temp == k)) {
-					selection = temp;
+					selection = (int)temp;
 					hpc = 16;
 					spt = 63;
 					size = (tracks * hpc * spt) << 9;

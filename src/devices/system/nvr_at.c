@@ -189,7 +189,7 @@
  *		including the later update (DS12887A) which implemented a
  *		"century" register to be compatible with Y2K.
  *
- * Version:	@(#)nvr_at.c	1.0.25	2021/03/16
+ * Version:	@(#)nvr_at.c	1.0.25	2021/03/19
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -573,7 +573,7 @@ timer_tick(nvr_t *nvr)
     dev->stat = REGA_UIP;
 
     /* Schedule the actual update. */
-    dev->ecount = (TIMER_USEC * 244.0);
+    dev->ecount = (tmrval_t)(TIMER_USEC * 244.0);
     dev->utimer = dev->ecount;
 }
 

@@ -8,7 +8,7 @@
  *
  *		Code generation timing for IDT WinChip processors.
  *
- * Version:	@(#)codegen_timing_winchip2.c	1.0.1	2021/03/18
+ * Version:	@(#)codegen_timing_winchip2.c	1.0.2	2021/03/19
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
@@ -560,14 +560,14 @@ static void codegen_instruction(uint32_t *timings, uint64_t *deps, uint8_t opcod
         }
 }
 
-static void codegen_timing_winchip2_block_start()
+static void codegen_timing_winchip2_block_start(void)
 {
         regmask_modified = 0;
         decode_delay = decode_delay_offset = 0;
         u_pipe_full = 0;
 }
 
-static void codegen_timing_winchip2_start()
+static void codegen_timing_winchip2_start(void)
 {
         timing_count = 0;
         last_prefix = 0;
@@ -731,7 +731,7 @@ static void codegen_timing_winchip2_opcode(uint8_t opcode, uint32_t fetchdat, in
         regmask_modified = get_dstdep_mask(deps[opcode], fetchdat, bit8);
 }
 
-static void codegen_timing_winchip2_block_end()
+static void codegen_timing_winchip2_block_end(void)
 {
         if (u_pipe_full) {
             int agi_stall = 0;

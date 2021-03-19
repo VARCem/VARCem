@@ -8,7 +8,7 @@
  *
  *		DDC monitor emulation.
  *
- * Version:	@(#)vid_ddc.c	1.0.2	2021/03/16
+ * Version:	@(#)vid_ddc.c	1.0.2	2021/03/19
  *
  * Author:	RichardG, <richardg867@gmail.com>
  *
@@ -148,7 +148,7 @@ ddc_init(void *i2c)
     edid->edid_rev = 0x04; /* EDID 1.4 */
 
     edid->input_params = 0x0e; /* analog input; separate sync; composite sync; sync on green */
-    edid->horiz_size = ((4.0 / 3.0) * 100) - 99; /* landscape 4:3 */
+    edid->horiz_size = (uint8_t) (((4.0 / 3.0) * 100) - 99); /* landscape 4:3 */
     edid->features = 0x09; /* RGB color; GTF/CVT */
 
     edid->red_green_lsb = 0x81;
