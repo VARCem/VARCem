@@ -8,7 +8,7 @@
  *
  *		Implementation of the 3Com Etherlink II 3c503 (ISA 8-bit).
  *
- * Version:	@(#)net_3c503.c	1.0.9	2019/05/13
+ * Version:	@(#)net_3c503.c	1.0.10	2021/03/18
  *
  * Based on	@(#)3c503.cpp Carl (MAME)
  *
@@ -17,9 +17,9 @@
  *		Miran Grca, <mgrca8@gmail.com>
  *		Carl, <unknown e-mail address>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *		Copyright 2018 Miran Grca.
- *		Portions Copyright (C) 2018  MAME Project
+ *		Portions Copyright 2018 MAME Project.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -49,10 +49,10 @@
 #include "../../emu.h"
 #include "../../io.h"
 #include "../../mem.h"
-#include "../../random.h"
 #include "../../device.h"
 #include "../../ui/ui.h"
 #include "../../plat.h"
+#include "../../misc/random.h"
 #include "../system/dma.h"
 #include "../system/pic.h"
 #include "network.h"

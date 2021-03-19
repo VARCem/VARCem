@@ -16,7 +16,7 @@
  *
  * FIXME:	move statbar calls to upper layer
  *
- * Version:	@(#)net_ne2000.c	1.0.22	2021/03/16
+ * Version:	@(#)net_ne2000.c	1.0.22	2021/03/18
  *
  * Based on	@(#)ne2k.cc v1.56.2.1 2004/02/02 22:37:22 cbothamy
  *
@@ -58,10 +58,10 @@
 #include "../../io.h"
 #include "../../mem.h"
 #include "../../rom.h"
-#include "../../random.h"
 #include "../../device.h"
 #include "../../ui/ui.h"
 #include "../../plat.h"
+#include "../../misc/random.h"
 #include "../system/mca.h"
 #include "../system/pci.h"
 #include "../system/pic.h"

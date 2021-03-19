@@ -17,11 +17,11 @@
  *		or to use a generic handler, and then pass it a pointer
  *		to a command table. For now, we don't.
  *
- * Version:	@(#)rom_load.c	1.0.16	2019/05/05
+ * Version:	@(#)rom_load.c	1.0.17	2021/03/18
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
- *		Copyright 2018,2019 Fred N. van Kempen.
+ *		Copyright 2018-2021 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -341,13 +341,90 @@ parser(FILE *fp, romdef_t *r, const wchar_t *path)
 }
 
 
+/*
+ * If a ROM file could not be found, try to find its path
+ * in the 'relocation' database, in case it was moved to
+ * a different path.
+ */
+static FILE *
+check_moved(wchar_t *wanted)
+{
+    char buff[1024], temp[1024];
+    wchar_t path[1024];
+    char *cp, *p = NULL;
+    int blen;
+    FILE *fp;
+
+    /* Open the database. */
+    swprintf(path, sizeof_w(path), L"%ls/%ls", MOVED_PATH, MOVED_FILE);
+    if ((fp = rom_fopen(path, L"r")) == NULL) {
+	/* Redirection also failed, give up. */
+	ERRLOG("ROM: relocation database '%ls not found, giving up!\n", path);
+	return(NULL);
+    }
+
+    /* Get a copy of the wanted filename, and trim it. */
+    wcstombs(temp, wanted, sizeof(temp));
+    if ((cp = strrchr(temp, '/')) != NULL)
+	*cp++ = '\0';
+
+    /* Now read through it, ignoring comments and blank lines. */
+    memset(buff, 0x00, sizeof(buff));
+    for (;;) {
+	/* Read one line and clean it. */
+	if (fgets(buff, sizeof(buff), fp) == NULL)
+		break;
+	if ((p = strchr(buff, '\r')) != NULL)
+		*p = '\0';
+	if ((p = strchr(buff, '\n')) != NULL)
+		*p = '\0';
+	if (buff[0] == '#' || buff[0] == '\0')
+		continue;
+
+	/* Get the first part of the line. */
+	p = buff;
+	while (*p && *p != ' ' && *p != '\t')
+		p++;
+	*p++ = '\0';
+	blen = strlen(buff);
+
+	/* Now skip more whitespace, up to the second part of the line. */
+	while (*p == ' ' || *p == '\t')
+		p++;
+
+	/* If this does not match what we need, try next line. */
+	if (strncmp(buff, temp, blen) == 0) {
+		/* Close the database file. */
+		(void)fclose(fp);
+
+		/* Create new pathname. */
+		swprintf(path, sizeof_w(path), L"%s/%ls", p, &wanted[blen+1]);
+		if ((fp = rom_fopen(path, L"r")) == NULL) {
+			ERRLOG("ROM: error opening relocated script '%ls'\n",
+									path);
+			return(NULL);
+		}
+
+		/* All good, update caller's path! */
+		wcscpy(wanted, path);
+
+		return(fp);
+	}
+    }
+
+    /* Close the database file. */
+    (void)fclose(fp);
+
+    return(NULL);
+}
+
+
 /* Load a BIOS ROM image into memory. */
 int
 rom_load_bios(romdef_t *r, const wchar_t *fn, int test_only)
 {
-    wchar_t path[1024];
-    wchar_t temp[1024];
-    wchar_t script[1024];
+    wchar_t path[1024], temp[1024];
+    wchar_t script[1024], *sp;
     FILE *fp;
     int c, i;
 
@@ -367,10 +444,23 @@ rom_load_bios(romdef_t *r, const wchar_t *fn, int test_only)
 	INFO("ROM: loading script '%ls'\n", script);
 
     /* Open the script file. */
-    if ((fp = rom_fopen(script, L"rb")) == NULL) {
-	ERRLOG("ROM: unable to open '%ls'\n", script);
-	return(0);
+    if ((fp = rom_fopen(script, L"r")) == NULL) {
+	/* Check for a redirection, in case it was moved. */
+	if ((fp = check_moved(script)) == NULL) {
+		/* Redirection also failed, give up. */
+		ERRLOG("ROM: unable to open '%ls'\n", script);
+		return(0);
+	} else {
+		if (! test_only)
+			INFO("ROM: loading relocated script '%ls'\n", script);
+
+	}
     }
+
+    /* Re-generate the BIOS pathname. */
+    if ((sp = wcsrchr(script, L'/')) != NULL)
+	*sp = L'\0';
+    wcscpy(path, script);
 
     /* Parse and process the file. */
     i = parser(fp, r, path);

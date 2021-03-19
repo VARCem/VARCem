@@ -9,12 +9,12 @@
  *		A better random number generation, used for floppy weak bits
  *		and network MAC address generation.
  *
- * Version:	@(#)random.c	1.0.3	2019/03/21
+ * Version:	@(#)random.c	1.0.4	2021/03/18
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2018,2019 Fred N. van Kempen.
+ *		Copyright 2018-2021 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -38,7 +38,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include "plat.h"
+#include "../plat.h"
 #include "random.h"
 
 

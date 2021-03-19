@@ -14,7 +14,7 @@
  *
  *		as well as a number of compatibles.
  *
- * Version:	@(#)net_wd80x3.c	1.0.10	2021/03/16
+ * Version:	@(#)net_wd80x3.c	1.0.10	2021/03/18
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		TheCollector1995, <mariogplayer@gmail.com>
@@ -52,10 +52,10 @@
 #include "../../io.h"
 #include "../../mem.h"
 #include "../../rom.h"
-#include "../../random.h"
 #include "../../device.h"
 #include "../../ui/ui.h"
 #include "../../plat.h"
+#include "../../misc/random.h"
 #include "../system/mca.h"
 #include "../system/pci.h"
 #include "../system/pic.h"

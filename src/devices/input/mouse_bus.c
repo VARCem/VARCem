@@ -55,12 +55,12 @@
  *		  Microsoft Windows 98 SE
  *		  Linux kernel 1.2.13-ELF
  *
- * Version:	@(#)mouse_bus.c	1.1.11	2019/05/13
+ * Version:	@(#)mouse_bus.c	1.1.12	2021/03/18
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *		Copyright 2017,2019 Miran Grca.
  *		Copyright 200?-2018 Bochs.
  *
@@ -104,9 +104,9 @@
 #include "../../io.h"
 #include "../../timer.h"
 #include "../../device.h"
-#include "../../random.h"
-#include "../system/pic.h"
+#include "../../misc/random.h"
 #include "../../plat.h"
+#include "../system/pic.h"
 #include "mouse.h"
 
 

@@ -8,11 +8,11 @@
  *
  *		Provide centralized access to the PNG image handler.
  *
- * Version:	@(#)png.c	1.0.8	2020/07/27
+ * Version:	@(#)png.c	1.0.9	2021/03/18
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
- *		Copyright 2018-2020 Fred N. van Kempen.
+ *		Copyright 2018-2021 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -50,29 +50,32 @@
 #include <stdlib.h>
 #include <wchar.h>
 #include <errno.h>
-#define PNG_DEBUG 0
-#include <png.h>
+#include "../emu.h"
+#include "../config.h"
+#include "../plat.h"
+#include "../ui/ui.h"
+#include "../devices/video/video.h"
 #include "./png.h"
-#include "emu.h"
-#include "config.h"
-#include "plat.h"
-#include "ui/ui.h"
-#include "devices/video/video.h"
 
 
-#ifdef _WIN32
-# define PATH_PNG_DLL		"libpng16.dll"
-#else
-# define PATH_PNG_DLL		"libpng16.so"
-#endif
-#define USE_CUSTOM_IO		1
+#ifdef USE_LIBPNG
+# define PNG_DEBUG 0
+# include <png.h>
+
+
+# ifdef _WIN32
+#  define PATH_PNG_DLL		"libpng16.dll"
+# else
+#  define PATH_PNG_DLL		"libpng16.so"
+# endif
+# define USE_CUSTOM_IO		1
 
 
 static void			*png_handle = NULL;	/* handle to DLL */
-#if USE_LIBPNG == 1
-# define PNGFUNC(x)		png_ ## x
-#else
-# define PNGFUNC(x)		PNG_ ## x
+# if USE_LIBPNG == 1
+#  define PNGFUNC(x)		png_ ## x
+# else
+#  define PNGFUNC(x)		PNG_ ## x
 
 
 /* Pointers to the real functions. */
@@ -83,15 +86,15 @@ static png_structp	(*PNG_create_write_struct)(png_const_charp user_png_ver,
 static void		(*PNG_destroy_write_struct)(png_structpp png_ptr_ptr,
 					    png_infopp info_ptr_ptr);
 static png_infop	(*PNG_create_info_struct)(png_const_structrp png_ptr);
-# if USE_CUSTOM_IO
+#  if USE_CUSTOM_IO
 static void		(*PNG_set_write_fn)(png_structrp png_ptr,
 					    png_voidp io_ptr,
 					    png_rw_ptr write_data_fn,
 					    png_flush_ptr output_flush_fn);
 static png_voidp	(*PNG_get_io_ptr)(png_const_structrp png_ptr);
-# else
+#  else
 static void		(*PNG_init_io)(png_structrp png_ptr, png_FILE_p fp);
-# endif
+#  endif
 static void		(*PNG_set_IHDR)(png_const_structrp png_ptr,
 				     png_inforp info_ptr, png_uint_32 width,
 				     png_uint_32 height, int bit_depth,
@@ -139,12 +142,12 @@ static const dllimp_t png_imports[] = {
   { "png_create_write_struct",		&PNG_create_write_struct	},
   { "png_destroy_write_struct",		&PNG_destroy_write_struct	},
   { "png_create_info_struct",		&PNG_create_info_struct		},
-# if USE_CUSTOM_IO
+#  if USE_CUSTOM_IO
   { "png_set_write_fn",			&PNG_set_write_fn		},
   { "png_get_io_ptr",			&PNG_get_io_ptr			},
-# else
+#  else
   { "png_init_io",			&PNG_init_io			},
-# endif
+#  endif
   { "png_set_IHDR",			&PNG_set_IHDR			},
   { "png_set_PLTE",			&PNG_set_PLTE			},
   { "png_get_rowbytes",			&PNG_get_rowbytes		},
@@ -163,7 +166,7 @@ static const dllimp_t png_imports[] = {
   { "png_set_compression_buffer_size",	&PNG_set_compression_buffer_size},
   { NULL,				NULL				}
 };
-#endif
+# endif
 
 
 static void
@@ -180,7 +183,7 @@ warning_handler(png_structp arg, const char *str)
 }
 
 
-#if USE_CUSTOM_IO
+# if USE_CUSTOM_IO
 /* Use custom I/O Write function to avoid debug-dll issues. */
 static void
 write_handler(png_struct *png_ptr, png_byte *bufp, png_size_t len)
@@ -200,22 +203,22 @@ flush_handler(png_struct *png_ptr)
 
     fflush(fp);
 }
-#endif
+# endif
 
 
 /* Prepare for use, load DLL if needed. */
 int
 png_load(void)
 {
-#if USE_LIBPNG == 2
+# if USE_LIBPNG == 2
     wchar_t temp[512];
     const char *fn = PATH_PNG_DLL;
-#endif
+# endif
 
     /* If already loaded, good! */
     if (png_handle != NULL) return(1);
 
-#if USE_LIBPNG == 2
+# if USE_LIBPNG == 2
     /* Try loading the DLL. */
     png_handle = dynld_module(fn, png_imports);
     if (png_handle == NULL) {
@@ -226,9 +229,9 @@ png_load(void)
 	return(0);
     } else
 	INFO("PNG: module '%s' loaded.\n", fn);
-#else
+# else
     png_handle = (void *)1;	/* just to indicate always therse */
-#endif
+# endif
 
     return(1);
 }
@@ -238,11 +241,11 @@ png_load(void)
 void
 png_unload(void)
 {
-#if USE_LIBPNG == 2
+# if USE_LIBPNG == 2
     /* Unload the DLL if possible. */
     if (png_handle != NULL)
 	dynld_close(png_handle);
-#endif
+# endif
     png_handle = NULL;
 }
 
@@ -290,15 +293,15 @@ error:
 	goto error;
     }
 
-#if USE_LIBPNG == 1
+# if USE_LIBPNG == 1
     /* Set up error handling. */
     if (setjmp(png_jmpbuf(png))) {
 	/* If we get here, we had a problem writing the file */
 	goto error;
     }
-#endif
+# endif
 
-#if USE_CUSTOM_IO
+# if USE_CUSTOM_IO
     /*
      * We use our own I/O routines, because it seems that some of
      * the PNG DLL's out there are compiled in Debug mode, which
@@ -308,9 +311,9 @@ error:
      * Using custom I/O routines, we avoid this issue.
      */
     PNGFUNC(set_write_fn)(png, (void *)fp, write_handler, flush_handler);
-#else
+# else
     PNGFUNC(init_io)(png, fp);
-#endif
+# endif
     PNGFUNC(set_compression_level)(png, 9);
 
     /* Set other "zlib" parameters. */
@@ -398,7 +401,7 @@ error:
 	goto error;
     }
 
-#if USE_CUSTOM_IO
+# if USE_CUSTOM_IO
     /*
      * We use our own I/O routines, because it seems that some of
      * the PNG DLL's out there are compiled in Debug mode, which
@@ -408,9 +411,9 @@ error:
      * Using custom I/O routines, we avoid this issue.
      */
     PNGFUNC(set_write_fn)(png, (void *)fp, write_handler, flush_handler);
-#else
+# else
     PNGFUNC(init_io)(png, fp);
-#endif
+# endif
     PNGFUNC(set_compression_level)(png, 9);
 
     /* Set other "zlib" parameters. */
@@ -524,7 +527,7 @@ error:
 	goto error;
     }
 
-#if USE_CUSTOM_IO
+# if USE_CUSTOM_IO
     /*
      * We use our own I/O routines, because it seems that some of
      * the PNG DLL's out there are compiled in Debug mode, which
@@ -534,9 +537,9 @@ error:
      * Using custom I/O routines, we avoid this issue.
      */
     PNGFUNC(set_write_fn)(png, (void *)fp, write_handler, flush_handler);
-#else
+# else
     PNGFUNC(init_io)(png, fp);
-#endif
+# endif
     PNGFUNC(set_compression_level)(png, 9);
 
     /* Set other "zlib" parameters. */
@@ -581,3 +584,6 @@ error:
 
     return(1);
 }
+
+
+#endif	/*USE_PNG*/

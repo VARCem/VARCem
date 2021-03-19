@@ -14,7 +14,7 @@
  *		merged with hdd.c, since that is the scope of hdd.c. The
  *		actual format handlers can then be in hdd_format.c etc.
  *
- * Version:	@(#)hdd_image.c	1.0.15	2021/03/16
+ * Version:	@(#)hdd_image.c	1.0.15	2021/03/18
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -55,7 +55,7 @@
 #define dbglog hdd_image_log
 #include "../../emu.h"
 #include "../../plat.h"
-#include "../../random.h"
+#include "../../misc/random.h"
 #include "hdd.h"
 #ifdef USE_MINIVHD
 # include <minivhd.h>

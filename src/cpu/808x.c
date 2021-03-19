@@ -8,7 +8,7 @@
  *
  *		808x CPU emulation.
  *
- * Version:	@(#)808x.c	1.0.23	2021/03/18
+ * Version:	@(#)808x.c	1.0.24	2021/03/18
  *
  * Authors:	Miran Grca, <mgrca8@gmail.com>
  *		Andrew Jenner (reenigne), <andrew@reenigne.org>
@@ -947,7 +947,7 @@ do_jump_near(void)
 
 /* Performs a conditional do_jump. */
 static void
-do_jcc(uint8_t opcode, int cond)
+do_jcc(uint8_t op, int cond)
 {
     /* int8_t offset; */
 
@@ -955,7 +955,7 @@ do_jcc(uint8_t opcode, int cond)
     cpu_data = pfq_fetchb();
     cpu_wait(1, 0);
 
-    if ((! cond) == (opcode & 0x01))
+    if ((! cond) == (op & 0x01))
 	do_jump_short();
 }
 

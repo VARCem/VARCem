@@ -12,12 +12,12 @@
  *		format handlers, and re-integrated with that code. This is
  *		just the wrong place for it..
  *
- * Version:	@(#)ui_new_image.c	1.0.7	2019/05/17
+ * Version:	@(#)ui_new_image.c	1.0.8	2021/03/18
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2018,2019 Fred N. van Kempen.
+ *		Copyright 2018-2021 Fred N. van Kempen.
  *		Copyright 2018,2019 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -45,9 +45,9 @@
 #include <wchar.h>
 #include "../emu.h"
 #include "../timer.h"
-#include "../random.h"
-#include "../ui/ui.h"
 #include "../plat.h"
+#include "../ui/ui.h"
+#include "../misc/random.h"
 #include "../devices/scsi/scsi_device.h"
 #include "../devices/disk/zip.h"
 

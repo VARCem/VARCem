@@ -8,7 +8,7 @@
  *
  *		Main include file for the application.
  *
- * Version:	@(#)emu.h	1.0.37	2021/03/14
+ * Version:	@(#)emu.h	1.0.38	2021/03/18
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -62,6 +62,7 @@
 #define NVR_PATH	L"nvr"
 #define PLUGINS_PATH	L"plugins"
 #define ROMS_PATH	L"roms"
+# define MOVED_PATH	L".moved"
 # define MACHINES_PATH	L"machines"
 # define VIDEO_PATH	L"video"
 # define PRINTERS_PATH	L"printer"
@@ -72,6 +73,7 @@
 /* Pre-defined file names and extensions. */
 #define LANG_FILE	L"VARCem-"
 #define BIOS_FILE	L"bios.txt"
+#define MOVED_FILE	L"moved.txt"
 #define CONFIG_FILE	L"config.varc"
 #define CONFIG_FILE_EXT	L".varc"
 #define NVR_FILE_EXT	L".nvr"
@@ -96,20 +98,20 @@
  * option will lower this to LOG_ERROR level, meaning,
  * only real errors will be shown.
  */
-#define LOG_ALWAYS	0			/* this level always shows */
-#define LOG_ERR		LOG_ALWAYS		/* errors always logged */
-#define LOG_INFO	1			/* informational logging */
-#define LOG_DEBUG	2			/* debug-level info */
-#define LOG_DETAIL	3			/* more detailed info */
-#define LOG_LOWLEVEL	4			/* pretty verbose stuff */
+#define LOG_ALWAYS	0			// this level always shows
+#define LOG_ERR		LOG_ALWAYS		// errors always logged
+#define LOG_INFO	1			// informational logging
+#define LOG_DEBUG	2			// debug-level info
+#define LOG_DETAIL	3			// more detailed info
+#define LOG_LOWLEVEL	4			// pretty verbose stuff
 
 /*
  * Now define macros that can be used in the code,
  * and which always react the same way. These are
  * just shorthands to keep the code clean-ish.
  */
-#define ERRLOG(...)	pclog(LOG_ERR, __VA_ARGS__)	/* always logged */
-#define INFO(...)	pclog(LOG_INFO, __VA_ARGS__)	/* informational */
+#define ERRLOG(...)	pclog(LOG_ERR, __VA_ARGS__)	// always logged
+#define INFO(...)	pclog(LOG_INFO, __VA_ARGS__)	// informational
 
 /*
  * Most modules in the program will use the main
@@ -157,45 +159,44 @@ extern "C" {
 #endif
 
 /* Define global types. */
-typedef void *priv_t;				/* generic "handle" type */
-//typedef float *priv_t;				/* generic "handle" type */
+typedef void *priv_t;				// generic "handle" type
 
 
 /* Commandline option variables. */
-extern int	dump_on_exit;			/* (O) dump regs on exit*/
-extern int	do_dump_config;			/* (O) dump cfg after load */
-extern int	start_in_fullscreen;		/* (O) start in fullscreen */
+extern int	dump_on_exit;			// (O) dump regs on exit
+extern int	do_dump_config;			// (O) dump cfg after load
+extern int	start_in_fullscreen;		// (O) start in fullscreen
 #ifdef _WIN32
-extern int	force_debug;			/* (O) force debug output */
+extern int	force_debug;			// (O) force debug output
 #endif
 #ifdef USE_WX
-extern int	video_fps;			/* (O) render speed in fps */
+extern int	video_fps;			// (O) render speed in fps
 #endif
-extern int	config_ro;			/* (O) dont modify cfg file */
-extern int	config_keep_space;		/* (O) keep spaces in cfg */
-extern int	settings_only;			/* (O) only the settings dlg */
-extern int	log_level;			/* (O) global logging level */
-extern wchar_t	log_path[1024];			/* (O) full path of logfile */
+extern int	config_ro;			// (O) dont modify cfg file
+extern int	config_keep_space;		// (O) keep spaces in cfg
+extern int	settings_only;			// (O) only the settings dlg
+extern int	log_level;			// (O) global logging level
+extern wchar_t	log_path[1024];			// (O) full path of logfile
 
 /* Global variables. */
-extern char	emu_title[64];			/* full name of application */
-extern char	emu_version[32];		/* short version ID string */
-extern char	emu_fullversion[128];		/* full version ID string */
-extern wchar_t	exe_path[1024];			/* emu executable path */
-extern wchar_t	emu_path[1024];			/* emu installation path */
-extern wchar_t	usr_path[1024];			/* path (dir) of user data */
-extern wchar_t  cfg_path[1024];			/* full path of config file */
-extern int	mem_size;			/* configured memory size */
-extern int	emu_lang_id;			/* current language ID */
-extern int	scrnsz_x,			/* current screen size, X */
-		scrnsz_y;			/* current screen size, Y */
-extern int	config_changed,			/* config has changed */
-		dopause,			/* system is paused */
-		doresize,			/* screen resize requested */
-		mouse_capture;			/* mouse is captured in app */
-extern int	AT,				/* machine is AT class */
-		MCA,				/* machine has MCA bus */
-		PCI;				/* machine has PCI bus */
+extern char	emu_title[64];			// full name of application
+extern char	emu_version[32];		// short version ID string
+extern char	emu_fullversion[128];		// full version ID string
+extern wchar_t	exe_path[1024];			// emu executable path
+extern wchar_t	emu_path[1024];			// emu installation path
+extern wchar_t	usr_path[1024];			// path (dir) of user data
+extern wchar_t  cfg_path[1024];			// full path of config file
+extern int	mem_size;			// configured memory size
+extern int	emu_lang_id;			// current language ID
+extern int	scrnsz_x,			// current screen size, X
+		scrnsz_y;			// current screen size, Y
+extern int	config_changed,			// config has changed
+		dopause,			// system is paused
+		doresize,			// screen resize requested
+		mouse_capture;			// mouse is captured in app
+extern int	AT,				// machine is AT class
+		MCA,				// machine has MCA bus
+		PCI;				// machine has PCI bus
 
 #ifdef _LOGGING
 extern int	pci_do_log;

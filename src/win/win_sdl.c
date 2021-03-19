@@ -12,12 +12,12 @@
  *		we will not use that, but, instead, use a new window which
  *		coverrs the entire desktop.
  *
- * Version:	@(#)win_sdl.c  	1.0.12	2019/05/17
+ * Version:	@(#)win_sdl.c  	1.0.13	2021/03/18
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Michael Drüing, <michael@drueing.de>
  *
- *		Copyright 2018,2019 Fred N. van Kempen.
+ *		Copyright 2018-2021 Fred N. van Kempen.
  *		Copyright 2018 Michael Drüing.
  *
  *		Redistribution and  use  in source  and binary forms, with
@@ -67,7 +67,7 @@
 #include "../ui/ui.h"
 #include "../plat.h"
 #if USE_LIBPNG
-# include "../png.h"
+# include "../misc/png.h"
 #endif
 #include "../devices/video/video.h"
 #include "win.h"

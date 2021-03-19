@@ -10,7 +10,7 @@
  *
  * TODO:	Implement screenshots, and Audio Redirection.
  *
- * Version:	@(#)ui_vnc.c	1.0.14	2021/02/18
+ * Version:	@(#)ui_vnc.c	1.0.15	2021/03/18
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Based on raw code by RichardG, <richardg867@gmail.com>
@@ -56,19 +56,19 @@
 #include "../emu.h"
 #include "../config.h"
 #include "../device.h"
+#include "../plat.h"
+#include "../ui/ui.h"
+#if USE_LIBPNG
+# include "../misc/png.h"
+#endif
 #include "../devices/video/video.h"
 #include "../devices/input/keyboard.h"
 #include "../devices/input/mouse.h"
-#include "../ui/ui.h"
-#include "../plat.h"
 
 
 #ifdef USE_VNC
 //#define LIBVNCSERVER_HAVE_LIBPTHREAD
 # include <rfb/rfb.h>
-# if USE_LIBPNG
-#  include "../png.h"
-# endif
 # include "ui_vnc.h"
 
 

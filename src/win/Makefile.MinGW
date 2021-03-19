@@ -127,7 +127,7 @@ VPATH		:= $(EXPATH) . cpu \
 		    devices/floppy devices/floppy/lzf \
 		    devices/disk devices/cdrom devices/scsi \
 		    devices/sound devices/video \
-		   machines ui win
+		   machines misc ui win
 
 #
 # Name of the executable.
@@ -826,7 +826,7 @@ CFLAGS		:= $(WX_FLAGS) $(OPTS) $(DFLAGS) $(COPTIM) $(AOPTIM) \
 		   $(AFLAGS) -fomit-frame-pointer -mstackrealign \
 		   -fno-strict-aliasing \
 		   -Wall
-ifdef WALTJE
+ifdef xWALTJE
 CFLAGS		+= -Wundef -Wunused-parameter -Wshadow -Wmissing-declarations
 endif
 

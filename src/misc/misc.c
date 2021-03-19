@@ -8,11 +8,11 @@
  *
  *		Misc functions that do not fit anywhere else.
  *
- * Version:	@(#)misc.c	1.0.3	2018/10/05
+ * Version:	@(#)misc.c	1.0.4	2021/03/18
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
- *		Copyright 2018 Fred N. van Kempen.
+ *		Copyright 2018-2021 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -49,10 +49,10 @@
 #include <string.h>
 #include <stdlib.h>
 #include <wchar.h>
-#include "emu.h"
+#include "../emu.h"
 #undef malloc
-#include "plat.h"
-#include "ui/ui.h"
+#include "../plat.h"
+#include "../ui/ui.h"
 
 
 /* Grab the value from a string. */

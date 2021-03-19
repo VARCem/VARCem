@@ -8,14 +8,14 @@
  *
  *		Implementation of the Generic ESC/P Dot-Matrix printer.
  *
- * Version:	@(#)prt_escp.c	1.0.10	2020/07/24
+ * Version:	@(#)prt_escp.c	1.0.11	2021/03/18
  *
  * Authors:	Michael Drüing, <michael@drueing.de>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
  *
  *		Based on code by Frederic Weymann (originally for DosBox.)
  *
- *		Copyright 2018-2020 Fred N. van Kempen.
+ *		Copyright 2018-2021 Fred N. van Kempen.
  *		Copyright 2018 Michael Drüing.
  *
  *		Redistribution and  use  in source  and binary forms, with
@@ -62,9 +62,9 @@
 #include "../../rom.h" 
 #include "../../plat.h" 
 #include "../../ui/ui.h"
+#include "../../misc/png.h"
 #include "../ports/parallel_dev.h"
 #include "../video/video.h"
-#include "../../png.h"
 #include "printer.h"
 
 

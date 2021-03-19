@@ -8,13 +8,13 @@
  *
  *		Rendering module for Microsoft Direct3D 9.
  *
- * Version:	@(#)win_d3d.cpp	1.0.20	2019/05/19
+ * Version:	@(#)win_d3d.cpp	1.0.21	2021/03/18
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -48,7 +48,7 @@
 #include "../plat.h"
 #include "../ui/ui.h"
 #if USE_LIBPNG
-# include "../png.h"
+# include "../misc/png.h"
 #endif
 #ifdef _MSC_VER
 # pragma warning(disable: 4200)
