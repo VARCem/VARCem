@@ -76,7 +76,7 @@
 /* Read out the configuration port. */
 //FIXME: bit5 makes it sound an alarm of some kind!
 static uint8_t 
-port78_read(uint16_t addr, UNUSED(priv_t priv))
+port78_read(UNUSED(uint16_t addr), UNUSED(priv_t priv))
 {
     uint8_t ret = 0x00;
 

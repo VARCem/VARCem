@@ -825,8 +825,10 @@ LIBS		+= -static -lstdc++ -lgcc
 CFLAGS		:= $(WX_FLAGS) $(OPTS) $(DFLAGS) $(COPTIM) $(AOPTIM) \
 		   $(AFLAGS) -fomit-frame-pointer -mstackrealign \
 		   -fno-strict-aliasing \
-		   -Wall -Wundef -Wunused-parameter
-#-Wshadow -Wmissing-declarations
+		   -Wall
+ifdef WALTJE
+CFLAGS		+= -Wundef -Wunused-parameter -Wshadow -Wmissing-declarations
+endif
 
 CXXFLAGS	:= $(WX_FLAGS) $(OPTS) $(DFLAGS) $(COPTIM) $(AOPTIM) \
 		   $(AFLAGS) -fomit-frame-pointer -mstackrealign \
