@@ -8,7 +8,7 @@
  *
  *		String definitions for "Czech (Czech Republic)" language.
  *
- * Version:	@(#)VARCem-CZ.str	1.0.7	2021/03/13
+ * Version:	@(#)VARCem-CZ.str	1.0.7	2021/03/19
  *
  * Authors:	David Hrdlička, <hrdlickadavid@outlook.com>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
@@ -127,6 +127,9 @@
 #define STR_OPEN_WRITE	"Nebylo možné otevřít soubor pro zápis"
 #define STR_DEVCONF_1	"Konfigurace"
 #define STR_DEVCONF_2	"Zařízení:"
+#define STR_VHD_TYPE	"VHD Type:"
+#define STR_PARENT_NAME	"VHD Parent:"
+#define STR_BLK_SIZE    "Block size:"
 
 
 /* UI dialog: About (3200.) */
@@ -256,6 +259,13 @@
 #define  STR_3517	"IDE"
 #define  STR_3518	"SCSI"
 #define  STR_3519	"USB"
+#define  STR_3520	"Fixed"
+#define  STR_3521	"Sparse"
+#define  STR_3522	"Differencing"
+#define  STR_3523	"Parent and child disk timestamps do not match : fix it ?"
+#define  STR_3524	"Could not fix VHD timestamp"
+#define  STR_3540	"Small blocks (512 KB)"
+#define  STR_3541	"Large blocks (2 MB)"
 
 /* UI dialog: Settings (Add Hard Disk, 3525.) */
 #define  STR_3525	"Přidat pevný disk"
@@ -271,6 +281,7 @@
 #define  STR_3535	"HDI nebo HDX obrazy s velikostí sektoru jinou než 512 nejsou podporovány."
 #define  STR_3536	"Obrazy pevného disku\0*.hd?;*.im?;*.vhd\0Všechny soubory\0*.*\0"
 #define  STR_3537	"Nezapomeňte nový disk rozdělit a naformátovat."
+#define  STR_3538	"Obrazy pevného disku\0*.vhd\0"
 
 /* UI dialog: Settings (Floppy Drives, 3550.) */
 #define  STR_3550	"Disketové jednotky:"
@@ -310,8 +321,9 @@
 
 #define STR_3920	"CD-ROM %i (%ls): %ls"
 #define STR_3921	"Hostitelská jednotka CD/DVD (%c:)"
-#define STR_3922	"Obrazy CD-ROM\0*.iso;*.cue\0Všechny soubory (*.*)\0*.*\0"
+#define STR_3922	"Obrazy CD-ROM\0*.iso;*.cue\0Všechny soubory(*.*)\0*.*\0"
 #define STR_3923	"&Mute"
+#define STR_3924	"Obrazy CD-ROM\0*.iso;*.cue;*.chd\0Všechny soubory(*.*)\0*.*\0"
 
 #define STR_3930	"Pevný disk %i (%ls): %ls"
 

@@ -8,7 +8,7 @@
  *
  *		String definitions for "Belorussian (Belarus)" language.
  *
- * Version:	@(#)VARCem-BY.str	1.0.7	2021/03/13
+ * Version:	@(#)VARCem-BY.str	1.0.7	2021/03/19
  *
  * Authors:	paul_met, <paul_met@yandex.ru>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
@@ -125,6 +125,9 @@
 #define STR_OPEN_WRITE	"Немагчыма адкрыць файл для запісу"
 #define STR_DEVCONF_1	"Канфігурацыя"
 #define STR_DEVCONF_2	"Прылада:"
+#define STR_VHD_TYPE	"VHD Type:"
+#define STR_PARENT_NAME	"VHD Parent:"
+#define STR_BLK_SIZE    "Block size:"
 
 
 /* UI dialog: About (3200.) */
@@ -253,6 +256,13 @@
 #define  STR_3517	"IDE"
 #define  STR_3518	"SCSI"
 #define  STR_3519	"USB"
+#define  STR_3520	"Fixed"
+#define  STR_3521	"Sparse"
+#define  STR_3522	"Differencing"
+#define  STR_3523	"Parent and child disk timestamps do not match : fix it ?"
+#define  STR_3524	"Could not fix VHD timestamp"
+#define  STR_3540	"Small blocks (512 KB)"
+#define  STR_3541	"Large blocks (2 MB)"
 
 /* UI dialog: Settings (Add Hard Disk, 3525.) */
 #define  STR_3525	"Дадаць жорсткі дыск"
@@ -268,6 +278,7 @@
 #define  STR_3535	"Вобразы HDI або HDX з памерам сектара выдатным ад 512 байт не падтрымліваюцца"
 #define  STR_3536	"Вобразы жорсткіх дыскаў\0*.hd?;*.im?;*.vhd\0Усе файлы\0*.*\0"
 #define  STR_3537	"Не забудзьцеся стварыць раздзел(ы) на новым дыску і адфарматаваць яго"
+#define  STR_3538	"Вобразы жорсткіх дыскаў\0*.vhd\0"
 
 /* UI dialog: Settings (Floppy Drives, 3550.) */
 #define  STR_3550	"Дысководы Floppy:"
@@ -307,8 +318,9 @@
 
 #define STR_3920	"CD-ROM %i (%ls): %ls"
 #define STR_3921	"Хост-дыск с CD/DVD (%c:)"
-#define STR_3922	"Вобразы CD-ROM\0*.iso;*.cue\0Усе файлы (*.*)\0*.*\0"
+#define STR_3922	"Вобразы CD-ROM\0*.iso;*.cue\0Усе файлы(*.*)\0*.*\0"
 #define STR_3923	"Без гуку"
+#define STR_3924	"Вобразы CD-ROM\0*.iso;*.cue;*.chd\0Усе файлы(*.*)\0*.*\0"
 
 #define STR_3930	"Жорсткі дыск %i (%ls): %ls"
 

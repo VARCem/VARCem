@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows systems using the MinGW32 environment.
 #
-# Version:	@(#)Makefile.mingw	1.0.103	2021/03/18
+# Version:	@(#)Makefile.minGW	1.0.103	2021/03/20
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -1030,17 +1030,17 @@ endif
 all:		$(PREBUILD) $(PROG).exe $(NETIF).exe $(POSTBUILD)
 
 
-# This rule creates a script (command file) that figures out which
-# language we want to make (its argument is the 2-letter language
-# name, or none) by looking it up in the database of supported ones,
-# and then it calls the (this) Makefile back with the proper args
-# for that target.
+# Create a script (command file) that figures out which
+# language we want to make (its argument is the 2-letter
+# language name, or none) by looking it up in the database
+# of supported ones, and then it calls the (this) Makefile
+# back with the proper args for that target.
 win/Mklang.cmd:	win/Makefile.MinGW
-		@echo @SET PATH=$(PATH) >>win\Mklang.cmd
+		@echo @SET PATH=$(PATH) >win\Mklang.cmd
 		@echo @SETLOCAL >>win\Mklang.cmd
 		@echo @SET WANT=none >>win\Mklang.cmd
-		@echo @FOR /F "eol=# tokens=1,2,3,4* delims=, " %%%%i in (ui\lang\VARCem.lang) do @if "%%1"=="%%%%i" set WANT=LANG=%%%%i LANGID=%%%%j PRILANG=%%%%k SUBLANG=%%%%l >>win\Mklang.cmd
-		@echo @IF NOT "%%WANT%%"=="none" @$(MAKE) -fwin/Makefile.MinGW "RFLAGS=$(RFLAGS) $(EXTRAS)" %%WANT%% VARCem-%%1.dll >>win\Mklang.cmd
+		@echo @FOR /F "eol=# tokens=1,2,3,4,5* delims=, " %%%%i in (ui\lang\VARCem.lang) do @if "%%1"=="%%%%i" set WANT=LANG=%%%%i LANGID=%%%%j PRILANG=%%%%k SUBLANG=%%%%l >>win\Mklang.cmd
+		@echo @IF NOT "%%WANT%%"=="none" @$(MAKE) -fwin/Makefile.MinGW "RFLAGS=$(RFLAGS)" %%WANT%% VARCem-%%1.dll >>win\Mklang.cmd
 
 langs:		win/Mklang.cmd
 ifdef LANG
@@ -1050,33 +1050,33 @@ else
 		@echo Generating localizations..
 		@FOR /F "eol=# tokens=1 delims=, " %%i in (ui\lang\VARCem.lang) do @win\Mklang %%i
 endif
-		@-del win\Mklang.cmd
+		@-rm win\Mklang.cmd
 
 $(RESDLL).rc:	VARCem.rpp
+		@echo Generating $< ..
 		@win\preproc.cmd $< $@ $(PREPROC) "-DPREAMBLE=" "-DLANG=$(LANG)" "-DLANGID=$(LANGID)" "-DPRILANG=$(PRILANG)" "-DSUBLANG=$(SUBLANG)"
 
 $(RESDLL).res:	$(RESDLL).rc VARCem-common.rc
-		@echo Processing $(RESDLL).rc ..
-		@$(WINDRES) $(RFLAGS) $(EXTRAS) -i $< -o $@
+		@echo Processing $< ..
+		@$(WINDRES) $(RFLAGS) -i $< -o $@
 
 $(RESDLL).dll:	$(RESDLL).res
-		@echo Linking $(RESDLL).dll ..
-		@$(CC) $(LDFLAGS) -shared -o $@ $(RESDLL).res
+		@echo Linking $@ ..
+		$(CC) $(LDFLAGS) -shared -o $@ $<
 		@strip --strip-unneeded $@
-#		@-del $(RESDLL).rc
+		@-rm $(RESDLL).rc
 
 VARCem.res:	VARCem.rc VARCem.mpp
 		@echo Generating Manifest file..
 		@$(PREPROC) win/VARCem.mpp >VARCem.manifest
 		@echo Processing $<
-		@$(WINDRES) $(RFLAGS) $(EXTRAS) -i $< -o VARCem.res
+		@$(WINDRES) $(RFLAGS) -i $< -o VARCem.res
 
-$(PROG).exe:	$(OBJ) VARCem.res
-		@echo Linking $(PROG).exe ..
-		@$(CC) $(LDFLAGS) -o $@ \
-			$(OBJ) VARCem.res $(LIBS)
+$(PROG).exe:	VARCem.res $(OBJ)
+		@echo Linking $@ ..
+		@$(CC) $(LDFLAGS) -o $@ $(OBJ) $< $(LIBS)
 ifneq ($(DEBUG), y)
-		@$(STRIP) $(PROG).exe
+		@$(STRIP) $@
 endif
 
 pcap_if.res:	pcap_if.rc
@@ -1101,6 +1101,7 @@ clobber:	clean
 		@echo Cleaning executables..
 		@-rm -f *.d
 		@-rm -f *.exe
+		@-rm -f *.dll
 ifeq ($(PROFILER), y)
 		@-rm -f *.map
 endif
@@ -1131,4 +1132,4 @@ include $(wildcard $(DEPFILE))
 endif
 
 
-# End of Makefile.mingw.
+# End of Makefile.MinGW.

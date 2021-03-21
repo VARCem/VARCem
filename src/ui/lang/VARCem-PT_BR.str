@@ -8,7 +8,7 @@
  *
  *		String definitions for "Portuguese (Brazil)" language.
  *
- * Version:	@(#)VARCem-PT_BR.str	1.0.1	2021/03/13
+ * Version:	@(#)VARCem-PT_BR.str	1.0.1	2021/03/19
  *
  * Author:	Altieres Lima da Silva, <altieres.lima@gmail.com>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
@@ -127,6 +127,9 @@
 #define STR_OPEN_WRITE	"Não foi possível abrir o arquivo para escrita"
 #define STR_DEVCONF_1	"Configuração"
 #define STR_DEVCONF_2	"Dispositivo:"
+#define STR_VHD_TYPE	"VHD Type:"
+#define STR_PARENT_NAME	"VHD Parent:"
+#define STR_BLK_SIZE    "Block size:"
 
 
 /* UI dialog: About (3200.) */
@@ -256,6 +259,13 @@
 #define  STR_3517	"IDE"
 #define  STR_3518	"SCSI"
 #define  STR_3519	"USB"
+#define  STR_3520	"Fixed"
+#define  STR_3521	"Sparse"
+#define  STR_3522	"Differencing"
+#define  STR_3523	"Parent and child disk timestamps do not match : fix it ?"
+#define  STR_3524	"Could not fix VHD timestamp"
+#define  STR_3540	"Small blocks (512 KB)"
+#define  STR_3541	"Large blocks (2 MB)"
 
 /* UI dialog: Settings (Add Hard Disk, 3525.) */
 #define  STR_3525	"Adicionar disco rígido"
@@ -271,6 +281,7 @@
 #define  STR_3535	"Imagens HDI ou HDX com tamanho de setor diferente de 512 não são compatíveis"
 #define  STR_3536	"Imagens de disco rígido\0*.hd?;*.im?;*.vhd\0Todos os arquivos\0*.*\0"
 #define  STR_3537	"Lembre-se de particionar e formatar a nova unidade"
+#define  STR_3538	"Imagens de disco rígido\0*.vhd\0"
 
 /* UI dialog: Settings (Floppy Drives, 3550.) */
 #define  STR_3550	"Unidades de disquete:"
@@ -310,8 +321,9 @@
 
 #define STR_3920	"CD-ROM %i (%ls): %ls"
 #define STR_3921	"Unidade de CD/DVD do anfitrião (%c:)"
-#define STR_3922	"Imagens CD-ROM\0*.iso;*.cue\0Todos os arquivos (*.*)\0*.*\0"
+#define STR_3922	"Imagens CD-ROM\0*.iso;*.cue\0Todos os arquivos(*.*)\0*.*\0"
 #define STR_3923	"&Silenciar"
+#define STR_3924	"Imagens CD-ROM\0*.iso;*.cue;*.chd\0;Todos os arquivos(*.*)\0*.*\0"
 
 #define STR_3930	"Unidade %i (%ls): %ls"
 

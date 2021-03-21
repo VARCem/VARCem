@@ -84,8 +84,6 @@ PREAMBLE #include INCLUDE(LANG)
 PREAMBLE #include "win/VARCem-common.rc"
 
 
-#define foo(x) x
-
 PREAMBLE #pragma code_page(DEFAULT)
 VS_VERSION_INFO VERSIONINFO
  FILEVERSION	STR_VERSION,0

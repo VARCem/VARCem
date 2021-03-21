@@ -8,7 +8,7 @@
  *
  *		String definitions for "Dutch (Netherlands)" language.
  *
- * Version:	@(#)VARCem-DU.str	1.0.13	2021/03/13
+ * Version:	@(#)VARCem-DU.str	1.0.13	2021/03/19
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -125,6 +125,9 @@
 #define STR_OPEN_WRITE	"Kon bestand niet openen voor SCHRIJVEN"
 #define STR_DEVCONF_1	"Configuratie"
 #define STR_DEVCONF_2	"Apparaat:"
+#define STR_VHD_TYPE	"VHD type:"
+#define STR_PARENT_NAME	"VHD Parent:"
+#define STR_BLK_SIZE    "Blokgrootte:"
 
 
 /* UI dialog: About (3200.) */
@@ -254,6 +257,13 @@
 #define  STR_3517	"IDE"
 #define  STR_3518	"SCSI"
 #define  STR_3519	"USB"
+#define  STR_3520	"Fixed"
+#define  STR_3521	"Sparse"
+#define  STR_3522	"Verschilmodus"
+#define  STR_3523	"Parent and child disk timestamps do not match : fix it ?"
+#define  STR_3524	"Kon de VHD-timestamp niet zetten"
+#define  STR_3540	"Kleine blokkne (512 KB)"
+#define  STR_3541	"Grote blokken (2 MB)"
 
 /* UI dialog: Settings (Add Hard Disk, 3525.) */
 #define  STR_3525	"Voeg schijf toe"
@@ -269,6 +279,7 @@
 #define  STR_3535	"HDI of HDX bestand met een sectorgrootte anders dan 512 wordt niet ondersteund"
 #define  STR_3536	"Schijfbestanden\0*.hd?;*.im?;*.vhd\0Alle bestanden\0*.*\0"
 #define  STR_3537	"Vergeet niet om het nieuwe station te partitioneren en formatteren!"
+#define  STR_3538	"Schijfbestanden\0*.vhd\0"
 
 /* UI dialog: Settings (Floppy Drives, 3550.) */
 #define  STR_3550	"Diskettestations:"
@@ -308,8 +319,9 @@
 
 #define STR_3920	"CD-ROM %i (%ls): %ls"
 #define STR_3921	"PC CD/DVD station (%c:)"
-#define STR_3922	"CD-ROM bestanden\0*.iso;*.cue\0Alle bestanden (*.*)\0*.*\0"
+#define STR_3922	"CD-ROM bestanden\0*.iso;*.cue\0Alle bestanden(*.*)\0*.*\0"
 #define STR_3923	"&Stil"
+#define STR_3924	"CD-ROM bestanden\0*.iso;*.cue;*.chd\0Alle bestanden(*.*)\0*.*\0"
 
 #define STR_3930	"Vaste schijf %i (%ls): %ls"
 

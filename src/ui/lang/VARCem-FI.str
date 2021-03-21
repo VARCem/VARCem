@@ -8,7 +8,7 @@
  *
  *		String definitions for "Finnish (Finland)" language.
  *
- * Version:	@(#)VARCem-FI.str	1.0.10	2021/03/13
+ * Version:	@(#)VARCem-FI.str	1.0.10	2021/03/19
  *
  * Authors:	Daniel Gurney, <dgurney@varcem.com>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
@@ -127,6 +127,9 @@
 #define STR_OPEN_WRITE	"Tiedostoa ei voitu avata kirjoittamista varten"
 #define STR_DEVCONF_1	"Konfiguraatio"
 #define STR_DEVCONF_2	"Laitteet:"
+#define STR_VHD_TYPE	"VHD Type:"
+#define STR_PARENT_NAME	"VHD Parent:"
+#define STR_BLK_SIZE    "Block size:"
 
 
 /* UI dialog: About (3200.) */
@@ -256,6 +259,13 @@
 #define  STR_3517	"IDE"
 #define  STR_3518	"SCSI"
 #define  STR_3519	"USB"
+#define  STR_3520	"Fixed"
+#define  STR_3521	"Sparse"
+#define  STR_3522	"Differencing"
+#define  STR_3523	"Parent and child disk timestamps do not match : fix it ?"
+#define  STR_3524	"Could not fix VHD timestamp"
+#define  STR_3540	"Small blocks (512 KB)"
+#define  STR_3541	"Large blocks (2 MB)"
 
 /* UI dialog: Settings (Add Hard Disk, 3525.) */
 #define  STR_3525	"Lisää kiintolevy"
@@ -271,6 +281,7 @@
 #define  STR_3535	"HDI tai HDX-levykuvia joiden sektorikoko on yli 512 ei tueta"
 #define  STR_3536	"Kiintolevykuvat\0*.hd?;*.im?;*.vhd\0Kaikki tiedostot\0*.*\0"
 #define  STR_3537	"Muista osioida ja alustaa uusi asema"
+#define  STR_3538	"Kiintolevykuvat\0*.vhd\0"
 
 /* UI dialog: Settings (Floppy Drives, 3550.) */
 #define  STR_3550	"Levykeasemat:"
@@ -310,8 +321,9 @@
 
 #define STR_3920	"CD-ROM %i (%ls): %ls"
 #define STR_3921	"Isäntä CD/DVD-asema (%c:)"
-#define STR_3922	"Levykuvat\0*.iso;*.cue\0Kaikki tiedostot (*.*)\0*.*\0"
+#define STR_3922	"Levykuvat\0*.iso;*.cue\0Kaikki tiedostot(*.*)\0*.*\0"
 #define STR_3923	"&Mykistä"
+#define STR_3924	"Levykuvat\0*.iso;*.cue;*.chd\0;Kaikki tiedostot(*.*)\0*.*\0"
 
 #define STR_3930	"Kiintolevy %i (%ls): %ls"
 

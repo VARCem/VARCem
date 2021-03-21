@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows using Visual Studio 2015.
 #
-# Version:	@(#)Makefile.VC	1.0.85	2021/03/18
+# Version:	@(#)Makefile.VC	1.0.85	2021/03/20
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -156,36 +156,29 @@ endif
 #
 # Select the required build environment.
 #
-VCOPTS		:= -D_CRT_SECURE_NO_WARNINGS -D__MSC__
-ifeq ($(X64), y)
- ARCH		:= x64
- CPP		:= cl -nologo
- CC		:= cl -nologo
-else
- ARCH		:= x86
- CPP		:= cl -nologo
- CC		:= cl -nologo #-TP
-endif
-PREPROC		:= cl -EP
-MCPP		:= mcpp.exe
+VCOPTS		:= -D_CRT_SECURE_NO_WARNINGS -D__MSC__ \
+		   -D_USE_MATH_DEFINES \
+		   -D_CRT_NONSTDC_NO_DEPRECATE \
+		   -D_WINSOCK_DEPRECATED_NO_WARNINGS \
+		   -D_CRT_SECURE_NO_WARNINGS \
+		   -D_CRT_STDIO_ISO_WIDE_SPECIFIERS
+CPP		:= cl -nologo
+CC		:= cl -nologo
+PREPROC		:= cl -nologo -EP
 LINK		:= link -nologo
 WINDRES		:= rc -nologo -r -d_MSC_VER
-
-SYSINC		:= -I$(EXT_PATH)
-SYSLIB		:=
+ifeq ($(X64), y)
+ ARCH		:= x64
+else
+ ARCH		:= x86
+endif
+O		:= .obj
 
 DEPS		= -MMD -MF $*.d
 DEPFILE		:= win\.depends-msvc
 
 # Set up the correct toolchain flags.
-OPTS		:= $(EXTRAS) $(STUFF) $(VCOPTS) \
-		   -D_USE_MATH_DEFINES \
-		   -D_CRT_NONSTDC_NO_DEPRECATE \
-		   -D_WINSOCK_DEPRECATED_NO_WARNINGS \
-		   -D_CRT_SECURE_NO_WARNINGS \
-		   -D_CRT_STDIO_ISO_WIDE_SPECIFIERS \
-		   $(WPCAPINC) $(SYSINC)
-AFLAGS		:= #/arch:SSE2
+OPTS		:= $(EXTRAS) $(STUFF) $(VCOPTS)
 RFLAGS		:= /n
 COPTS		:= -W3
 CXXOPTS		:= -EHsc
@@ -200,7 +193,11 @@ else
  LOPTS_C	:= -SUBSYSTEM:CONSOLE,5.01
  LOPTS_W	:= -SUBSYSTEM:WINDOWS,5.01
 endif
-O		:= .obj
+ifeq ($(OPTIM), y)
+ AFLAGS		:= /arch:AVX2
+else
+ AFLAGS		:= /arch:SSE2
+endif
 
 
 # Add general build options from the environment.
@@ -216,10 +213,6 @@ endif
 ifdef EXINC
  OPTS		+= -I$(EXINC)
 endif
-OPTS		+= $(SYSINC)
-ifeq ($(OPTIM), y)
- AFLAGS		:= /arch:AVX2
-endif
 ifeq ($(DEBUG), y)
  OPTS		+= -D_DEBUG
  DOPTS		+= -MTd -Gs -Zi
@@ -232,7 +225,7 @@ else
  LOPTS		+= -LTCG
  DOPTS		:= -MT -GL
  ifndef COPTIM
-  COPTIM	:= -O2
+  COPTIM	:= -Ox
  endif
 endif
 ifeq ($(LOGGING), y)
@@ -701,8 +694,8 @@ endif
 
 # Final versions of the toolchain flags.
 LFLAGS		:= $(LOPTS)
-CFLAGS		:= $(WX_FLAGS) $(OPTS) $(COPTS) $(COPTIM) $(DOPTS) $(AFLAGS)
-CXXFLAGS	:= $(WX_FLAGS) $(OPTS) $(CXXOPTS) $(COPTS) $(COPTIM) $(DOPTS) $(AFLAGS)
+CFLAGS		:= $(AFLAGS) $(COPTIM) $(DOPTS) $(OPTS) $(COPTS)
+CXXFLAGS	:= $(AFLAGS) $(COPTIM) $(DOPTS) $(OPTS) $(CXXOPTS) $(COPTS)
 
 
 #########################################################################
@@ -887,11 +880,9 @@ endif
 ifeq ($(AUTODEP), y)
 %.obj:		%.c
 		@$(CC) $(CFLAGS) -Fo$@ -c $<
-		@$(MCPP) $(OPTS) $(DEPS) $<
 
 %.obj:		%.cpp
 		@$(CPP) $(CXXFLAGS) -Fo$@ -c $<
-		@$(MCPP) $(OPTS) $(DEPS) $<
 else
 %.obj:		%.c
 		@$(CC) $(CFLAGS) -Fo$@ -c $<
@@ -900,35 +891,30 @@ else
 		@$(CPP) $(CXXFLAGS) -Fo$@ -c $<
 
 %.d:		%.c $(wildcard $*.d)
-		@$(MCPP) $(OPTS) $(DEPS) $< >NUL
 
 %.d:		%.cpp $(wildcard $*.d)
-		@$(MCPP) $(OPTS) $(DEPS) $< >NUL
 endif
 
 
 all:		$(PREBUILD) $(PROG).exe $(NETIF).exe $(POSTBUILD)
 
-#
-# This rule creates a script (command file) that figures out which
-# language we want to make (its argument is the 2-letter language
-# name, or none) by looking it up in the database of supported ones,
-# and then it calls the (this) Makefile back with the proper args
-# for that target.
-#
-# We do it this way so it can also be used by the VC project files.
-#
+# Create a script (command file) that figures out which
+# language we want to make (its argument is the 2-letter
+# language name, or none) by looking it up in the database
+# of supported ones, and then it calls the (this) Makefile
+# back with the proper args for that target.
 win/Mklang.cmd:	win/Makefile.VC
-		@echo @SET PATH=$(PATH) >>win\Mklang.cmd
+		@echo @SET PATH=$(PATH) >win\Mklang.cmd
 		@echo @SETLOCAL >>win\Mklang.cmd
-		@echo @SET LANG=none >>win\Mklang.cmd
-		@echo @FOR /F "eol=# tokens=1,2,3,4* delims=, " %%%%i in (ui\lang\VARCem.lang) do @if "%%1"=="%%%%i" set LANG=%%%%i LANGID=%%%%j PRILANG=%%%%k SUBLANG=%%%%l >>win\Mklang.cmd
-		@echo @IF NOT "%%LANG%%"=="none" @$(MAKE) -fwin/Makefile.VC "RFLAGS=$(RFLAGS) $(EXTRAS)" LANG=%%LANG%% VARCem-%%1.dll >>win\Mklang.cmd
+		@echo @SET WANT=none >>win\Mklang.cmd
+		@echo @FOR /F "eol=# tokens=1,2,3,4,5* delims=, " %%%%i in (ui\lang\VARCem.lang) do @if "%%1"=="%%%%i" set WANT=LANG=%%%%i LANGID=%%%%j PRILANG=%%%%k SUBLANG=%%%%l >>win\Mklang.cmd
+		@echo @IF NOT "%%WANT%%"=="none" @$(MAKE) -fwin/Makefile.VC "RFLAGS=$(RFLAGS)" %%WANT%% VARCem-%%1.dll >>win\Mklang.cmd
 
 
 langs:		win/Mklang.cmd
 ifdef LANG
 		@echo Generating localization $(LANG) ..
+		@win\Mklang $(LANG)
 else
 		@echo Generating localizations..
 		@FOR /F "eol=# tokens=1 delims=, " %%i in (ui\lang\VARCem.lang) do @win\Mklang %%i
@@ -936,26 +922,26 @@ endif
 		@-del win\Mklang.cmd
 
 $(RESDLL).rc:	VARCem.rpp
+		@echo Generating $(RESDLL).rc ..
 		@win\preproc.cmd $< $@ $(PREPROC) "-DPREAMBLE=" "-DLANG=$(LANG)" "-DLANGID=$(LANGID)" "-DPRILANG=$(PRILANG)" "-DSUBLANG=$(SUBLANG)"
 
 $(RESDLL).res:	$(RESDLL).rc VARCem-common.rc
-		@echo Processing $(RESDLL).rc ..
-		@$(WINDRES) $(RFLAGS) -fo$@ $<
+		@echo Processing $@ ..
+		@$(WINDRES) $(RFLAGS) -fo$@ $< >NUL
 
-$(RESDLL).dll:	$(RESDLL).res
-		@echo Linking $(RESDLL).dll ..
+$(RESDLL).dll:	$(RESDLL).rc $(RESDLL).res
+		@echo Linking $@ ..
 		@$(LINK) /DLL /NOENTRY $(LFLAGS) -OUT:$@ $(RESDLL).res
 		@-del $(RESDLL).rc
 
 VARCem.res:	VARCem.rc win/VARCem.mpp
-		@win\preproc.cmd win/VARCem.mpp VARCem.manifest
+		@win\preproc.cmd win/VARCem.mpp VARCem.manifest $(PREPROC)
 		@echo Processing $<
 		@$(WINDRES) $(RFLAGS) $(EXTRAS) -fo$@ $<
 
 $(PROG).exe:	$(OBJ) VARCem.res
 		@echo Linking $(PROG).exe ..
-		@$(LINK) $(LFLAGS) $(LOPTS_W) -OUT:$(PROG).exe \
-			$(OBJ) VARCem.res $(LIBS)
+		@$(LINK) $(LFLAGS) $(LOPTS_W) -OUT:$@ $(OBJ) VARCem.res $(LIBS)
 
 pcap_if.res:	pcap_if.rc
 		@echo Processing $<
@@ -975,6 +961,7 @@ clobber:	Mklang.cmd clean
 		@echo Cleaning executables..
 		@-del *.d 2>NUL
 		@-del *.exe 2>NUL
+		@-del *.dll 2>NUL
 ifeq ($(DEBUG), y)
 		@-del *.ilk 2>NUL
 		@-del *.pdb 2>NUL

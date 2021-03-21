@@ -453,10 +453,10 @@
 #define  IDS_3520	3520		/* "Fixed" */
 #define  IDS_3521	3521		/* "Sparse" */
 #define  IDS_3522	3522		/* "Differential" */
-#define  IDS_3523	3523		// "Parent and child disk timestamps..."
-#define  IDS_3524   3524        // "Could not fix VHD timestamp."
-#define  IDS_3540   3540        // "Small blocks (512 KB)"
-#define  IDS_3541   3541        // "Large Blocks (2 MB)"
+#define  IDS_3523	3523		/* "Parent and child timestamps..." */
+#define  IDS_3524	3524		/* "Could not fix VHD timestamp." */
+#define  IDS_3540	3540		/* "Small blocks (512 KB)" */
+#define  IDS_3541	3541		/* "Large Blocks (2 MB)" */
 
 /* UI dialog: Settings (Add Hard Disk, 3525.) */
 #define  IDS_3525	3525		/* "Add Hard Disk" */

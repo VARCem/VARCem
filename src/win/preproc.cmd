@@ -50,11 +50,11 @@ REM OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   SETLOCAL
   SET infile=%1
   SET outfile=%2
-  SET CPP=%3
-SET CPP=cpp -P
+  SET PREPROC=%3
   SET args=%4 %5 %6 %7 %8 %9
 
   ECHO Preprocessing %infile% ..
   DEL %outfile% 2>NUL
-  %CPP% %args% %infile% >%outfile% 2>NUL
+  %PREPROC% %args% %infile% >%outfile% 2>NUL
+
   ENDLOCAL

@@ -8,7 +8,7 @@
  *
  *		String definitions for "Slovenian (Slovenia)" language.
  *
- * Version:	@(#)VARCem-SL.str	1.0.8	2021/03/13
+ * Version:	@(#)VARCem-SL.str	1.0.8	2021/03/19
  *
  * Authors:	David Simunic, <simunic.david@outlook.com>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
@@ -127,6 +127,9 @@
 #define STR_OPEN_WRITE	"Ne morem odpreti datoteke za pisanje"
 #define STR_DEVCONF_1	"Konfiguracija"
 #define STR_DEVCONF_2	"Naprava:"
+#define STR_VHD_TYPE	"VHD Type:"
+#define STR_PARENT_NAME	"VHD Parent:"
+#define STR_BLK_SIZE    "Block size:"
 
 
 /* UI dialog: About (3200.) */
@@ -256,6 +259,13 @@
 #define  STR_3517	"IDE"
 #define  STR_3518	"SCSI"
 #define  STR_3519	"USB"
+#define  STR_3520	"Fixed"
+#define  STR_3521	"Sparse"
+#define  STR_3522	"Differencing"
+#define  STR_3523	"Parent and child disk timestamps do not match : fix it ?"
+#define  STR_3524	"Could not fix VHD timestamp"
+#define  STR_3540	"Small blocks (512 KB)"
+#define  STR_3541	"Large blocks (2 MB)"
 
 /* UI dialog: Settings (Add Hard Disk, 3525.) */
 #define  STR_3525	"Dodaj trdi disk"
@@ -271,6 +281,7 @@
 #define  STR_3535	"HDI ali HDX slika, ki nima velikosti sektorjev 512, ni podprta"
 #define  STR_3536	"Slike trdih diskov\0*.hd?;*.im?;*.vhd\0Vse datoteke\0*.*\0"
 #define  STR_3537	"Ne pozabite razdeliti diska na particije in jih formatirati"
+#define  STR_3538	"Slike trdih diskov\0*.vhd\0"
 
 /* UI dialog: Settings (Floppy Drives, 3550.) */
 #define  STR_3550	"Disketni pogoni:"
@@ -310,8 +321,9 @@
 
 #define STR_3920	"CD-ROM %i (%ls): %ls"
 #define STR_3921	"Gostiteljev CD/DVD pogon (%c:)"
-#define STR_3922	"CD-ROM slike\0*.iso;*.cue\0Vse datoteke (*.*)\0*.*\0"
+#define STR_3922	"CD-ROM slike\0*.iso;*.cue\0Vse datoteke(*.*)\0*.*\0"
 #define STR_3923	"&Utišaj"
+#define STR_3924	"CD-ROM slike\0*.iso;*.cue;*.chd\0Vse datoteke(*.*)\0*.*\0"
 
 #define STR_3930	"Trdi disk %i (%ls): %ls"
 

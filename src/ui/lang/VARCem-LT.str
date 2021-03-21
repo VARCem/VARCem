@@ -8,7 +8,7 @@
  *
  *		String definitions for "Lithuanian (Lithuania)" language.
  *
- * Version:	@(#)VARCem-LT.str	1.0.6	2021/03/13
+ * Version:	@(#)VARCem-LT.str	1.0.6	2021/03/19
  *
  * Author:	Vegas (emu-land.net)
  *		Fred N. van Kempen, <decwiz@yahoo.com>
@@ -126,6 +126,9 @@
 #define STR_OPEN_WRITE	"Nepavyko atidaryti faila irašymui"
 #define STR_DEVCONF_1	"Konfigūracija"
 #define STR_DEVCONF_2	"Įrenginys:"
+#define STR_VHD_TYPE	"VHD Type:"
+#define STR_PARENT_NAME	"VHD Parent:"
+#define STR_BLK_SIZE    "Block size:"
 
 
 /* UI dialog: About (3200.) */
@@ -255,6 +258,13 @@
 #define  STR_3517	"IDE"
 #define  STR_3518	"SCSI"
 #define  STR_3519	"USB"
+#define  STR_3520	"Fixed"
+#define  STR_3521	"Sparse"
+#define  STR_3522	"Differencing"
+#define  STR_3523	"Parent and child disk timestamps do not match : fix it ?"
+#define  STR_3524	"Could not fix VHD timestamp"
+#define  STR_3540	"Small blocks (512 KB)"
+#define  STR_3541	"Large blocks (2 MB)"
 
 /* UI dialog: Settings (Add Hard Disk, 3525.) */
 #define  STR_3525	"Pridėti kietąjį diską"
@@ -270,6 +280,7 @@
 #define  STR_3535	"HDI arba HDX atvaizdas su sektoriaus dydžiu, kuris nėra 512, nepalaikomas"
 #define  STR_3536	"Kietojo disko atvaizdas\0*.hd?;*.im?;*.vhd\0Visi failai\0*.*\0"
 #define  STR_3537	"Nepamirškite perskirti ir formatuoti naują diską"
+#define  STR_3538	"Kietojo disko atvaizdas\0*.vhd\0"
 
 /* UI dialog: Settings (Floppy Drives, 3550.) */
 #define  STR_3550	"Floppy diskai:"
@@ -309,8 +320,9 @@
 
 #define STR_3920	"CD-ROM %i (%ls): %ls"
 #define STR_3921	"Host CD/DVD Drive (%c:)"
-#define STR_3922	"CD-ROM atvaizdai\0*.iso;*.cue\0Visi failai (*.*)\0*.*\0"
+#define STR_3922	"CD-ROM atvaizdai\0*.iso;*.cue\0Visi failai(*.*)\0*.*\0"
 #define STR_3923	"&Nutildyti"
+#define STR_3924	"CD-ROM atvaizdai\0*.iso;*.cue;*.chd\0Visi failai(*.*)\0*.*\0"
 
 #define STR_3930	"Kietasis diskas %i (%ls): %ls"
 

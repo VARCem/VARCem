@@ -8,7 +8,7 @@
  *
  *		String definitions for "Italian (Italy)" language.
  *
- * Version:	@(#)VARCem-IT.str	1.0.8	2021/03/13
+ * Version:	@(#)VARCem-IT.str	1.0.8	2021/03/19
  *
  * Authors:	Miran Grca, <mgrca8@gmail.com>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
@@ -127,6 +127,9 @@
 #define STR_OPEN_WRITE	"Impossibile aprire ilf ile per la scrittura"
 #define STR_DEVCONF_1	"Configurazione"
 #define STR_DEVCONF_2	"Dispositivo:"
+#define STR_VHD_TYPE	"VHD Type:"
+#define STR_PARENT_NAME	"VHD Parent:"
+#define STR_BLK_SIZE    "Block size:"
 
 
 /* UI dialog: About (3200.) */
@@ -135,6 +138,7 @@
 #define  STR_3202	"Fred N. van Kempen, Miran Grca, Sarah Walker e altri.\nBasato su opere anteriori come 86Box, PCem, MAME, DOSbox e Qemu."
 #define  STR_3203	"Rilasciato sotto le licenze BSD 3-Clause License e GNU General Public License (versione 2 o superiore) por codice existene, importato da altri progetti."
 #define  STR_3204	"Per ulteriori informazioni vedere il file LICENSE.txt."
+
 /* UI dialog: Localization (3210.) */
 #define STR_LOCALIZE	"Localization"
 #define  STR_3211	"Translations from English to these other languages contributed by:"
@@ -255,6 +259,13 @@
 #define  STR_3517	"IDE"
 #define  STR_3518	"SCSI"
 #define  STR_3519	"USB"
+#define  STR_3520	"Fixed"
+#define  STR_3521	"Sparse"
+#define  STR_3522	"Differencing"
+#define  STR_3523	"Parent and child disk timestamps do not match : fix it ?"
+#define  STR_3524	"Could not fix VHD timestamp"
+#define  STR_3540	"Small blocks (512 KB)"
+#define  STR_3541	"Large blocks (2 MB)"
 
 /* UI dialog: Settings (Add Hard Disk, 3525.) */
 #define  STR_3525	"Aggiungi hard disk"
@@ -270,6 +281,8 @@
 #define  STR_3535	"Immagini HDI o HDX con dimensione di settore diversa da 512 non sono supportate"
 #define  STR_3536	"Immagini hard disk\0*.hd?;*.im?;*.vhd\0Tutti i file\0*.*\0"
 #define  STR_3537	"Ricordarsi di partizionare e formattare il disco nuovo"
+#define  STR_3538	"Immagini hard disk\0*.vhd\0"
+
 /* UI dialog: Settings (Floppy Drives, 3550.) */
 #define  STR_3550	"Unità floppy:"
 #define  STR_3551	"Tipo:"
@@ -308,8 +321,9 @@
 
 #define STR_3920	"CD-ROM %i (%ls): %ls"
 #define STR_3921	"Unità CD/DVD host (%c:)"
-#define STR_3922	"Immagini CD-ROM\0*.iso;*.cue\0Tutti i file (*.*)\0*.*\0"
+#define STR_3922	"Immagini CD-ROM\0*.iso;*.cue\0Tutti i file(*.*)\0*.*\0"
 #define STR_3923	"&Muto"
+#define STR_3924	"Immagini CD-ROM\0*.iso;*.cue;*.chd\0Tutti i file(*.*)\0*.*\0"
 
 #define STR_3930	"Hard disk %i (%ls): %ls"
 

@@ -8,11 +8,11 @@
 #
 #		Supported Languages database.
 #
-# Version:	@(#)VARCem.lang	1.0.8	2020/12/06
+# Version:	@(#)VARCem.lang	1.0.9	2021/03/20
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
-#		Copyright 2018-2020 Fred N. van Kempen.
+#		Copyright 2018-2021 Fred N. van Kempen.
 #
 #		Redistribution and  use  in source  and binary forms, with
 #		or  without modification, are permitted  provided that the
@@ -52,7 +52,7 @@ DU,0413,LANG_DUTCH,SUBLANG_DUTCH,Dutch
 ES,040a,LANG_SPANISH,SUBLANG_SPANISH,Spanish
 FI,040b,LANG_FINNISH,SUBLANG_FINNISH_FINLAND,Finnish
 FR,040c,LANG_FRENCH,SUBLANG_FRENCH,French
-HE,040d,LANG_HEBREW,SUBLANG_HEBREW,Hebrew
+#HE,040d,LANG_HEBREW,SUBLANG_HEBREW,Hebrew
 IT,0410,LANG_ITALIAN,SUBLANG_ITALIAN,Italian
 JP,0411,LANG_JAPANESE,SUBLANG_JAPANESE_JAPAN,Japanese
 KR,0412,LANG_KOREAN,SUBLANG_KOREAN,Korean

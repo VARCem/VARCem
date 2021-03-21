@@ -8,7 +8,7 @@
  *
  *		String definitions for "French (France)" language.
  *
- * Version:	@(#)VARCem-FR.str	1.0.15	2020/11/21
+ * Version:	@(#)VARCem-FR.str	1.0.15	2021/03/19
  *
  * Authors:	Altheos, <altheos@varcem.com>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
@@ -259,14 +259,13 @@
 #define  STR_3517	"IDE"
 #define  STR_3518	"SCSI"
 #define  STR_3519	"USB"
-
 #define  STR_3520	"Statique"
 #define  STR_3521	"Dynamique"
 #define  STR_3522	"Différentiel"
-#define  STR_3523   "L'horadatage entre le VHD parent et le VHD différentiel ne correspond pas : corriger ?"
-#define  STR_3524   "Impossible de corriger l'horodatage"
-#define  STR_3540   "Petite taille de block (512 Ko)"
-#define  STR_3541   "Grande taille de block (2 Mo)"
+#define  STR_3523	"L'horadatage entre le VHD parent et le VHD différentiel ne correspond pas : corriger ?"
+#define  STR_3524	"Impossible de corriger l'horodatage"
+#define  STR_3540	"Petite taille de block (512 Ko)"
+#define  STR_3541	"Grande taille de block (2 Mo)"
 
 /* UI dialog: Settings (Add Hard Disk, 3525.) */
 #define  STR_3525	"Ajout d'un disque dur"
@@ -282,7 +281,7 @@
 #define  STR_3535	"La taille de secteur des images disques au format HDI ou HDX doit être de 512."
 #define  STR_3536	"Images disques durs\0*.hd?;*.im?;*.vhd\0Tous les fichiers\0*.*\0"
 #define  STR_3537	"Pensez à partitionner et formater ce nouveau disque"
-#define  STR_3538	"Images disques durs \0*.vhd\0"
+#define  STR_3538	"Images disques durs\0*.vhd\0"
 
 /* UI dialog: Settings (Floppy Drives, 3550.) */
 #define  STR_3550	"Lecteurs de disquettes:"
@@ -322,8 +321,9 @@
 
 #define STR_3920	"CD-ROM %i (%ls): %ls"
 #define STR_3921	"Lecteurs CD/DVD de l'hôte (%c:)"
-#define STR_3922	"Images CD-ROM \0*.iso;*.cue\0Tous les fichiers (*.*)\0*.*\0"
+#define STR_3922	"Images CD-ROM\0*.iso;*.cue\0Tous les fichiers(*.*)\0*.*\0"
 #define STR_3923	"&Muet"
+#define STR_3924	"Images CD-ROM\0*.chd\0Tous les fichiers (*.*)\0*.*\0"
 
 #define STR_3930	"Disque dur %i (%ls): %ls"
 
