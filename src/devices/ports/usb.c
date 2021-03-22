@@ -10,7 +10,7 @@
  *
  * **NOTE**	Currently dummy UHCI and OHCI only!
  *
- * Version:	@(#)usb.c	1.0.1   2020/12/30
+ * Version:	@(#)usb.c	1.0.2   2021/03/20
  *
  * Author:	Miran Grca, <mgrca8@gmail.com>
  *
@@ -49,7 +49,7 @@
 #include "../../cpu/cpu.h"
 #include "usb_port.h"
 
-
+#if 0
 #ifdef ENABLE_USB_LOG
 int usb_do_log = ENABLE_USB_LOG;
 #endif
@@ -69,6 +69,7 @@ usb_log(const char *fmt, ...)
     }
 # endif
 }
+#endif
 #endif
 
 
@@ -108,7 +109,7 @@ uhci_out(uint16_t port, uint8_t val, priv_t priv)
 		break;
 
 	case 0x0a: case 0x0b:
-		regs[addr] = val;
+		regs[port] = val;
 		break;
 
 	case 0x0c:
@@ -140,17 +141,17 @@ uhci_outw(uint16_t port, uint16_t val, priv_t priv)
 		break;
 
 	case 0x10: case 0x12:
-		regs[addr >> 1] = ((regs[addr >> 1] & 0xedbb) | (val & 0x1244)) & ~(val & 0x080a);
+		regs[port >> 1] = ((regs[port >> 1] & 0xedbb) | (val & 0x1244)) & ~(val & 0x080a);
 		break;
 
 	default:
-		uhci_reg_write(addr, val & 0xff, p);
-		uhci_reg_write(addr + 1, (val >> 8) & 0xff, p);
+		uhci_out(port, val & 0xff, priv);
+		uhci_out(port + 1, (val >> 8) & 0xff, priv);
 		break;
     }
 }
 
-
+#if 0
 static void
 update_io_mapping(usb_t *dev, uint8_t base_l, uint8_t base_h, int enable)
 {
@@ -165,7 +166,7 @@ update_io_mapping(usb_t *dev, uint8_t base_l, uint8_t base_h, int enable)
 	io_sethandler(dev->uhci_io_base, 32,
 		      uhci_in,NULL,NULL, uhci_out, uhci_outw,NULL, dev);
 }
-
+#endif
 
 static uint8_t
 ohci_mmio_read(uint32_t addr, priv_t priv)
@@ -389,7 +390,7 @@ ohci_mmio_write(uint32_t addr, uint8_t val, priv_t priv)
     dev->ohci_mmio[addr] = val;
 }
 
-
+#if 0
 static void
 update_mem_mapping(usb_t *dev, uint8_t base1, uint8_t base2, uint8_t base3, int enable)
 {
@@ -402,7 +403,7 @@ update_mem_mapping(usb_t *dev, uint8_t base1, uint8_t base2, uint8_t base3, int 
     if (dev->ohci_enable && (dev->ohci_mem_base != 0x00000000))
     	mem_map_set_addr(&dev->ohci_mmio_mapping, dev->ohci_mem_base, 0x1000);
 }
-
+#endif
 
 static void
 usb_reset(priv_t priv)
@@ -441,7 +442,7 @@ usb_init(const device_t *info, UNUSED(void *parent))
 {
     usb_t *dev;
 
-    dev = (usb_t *)mem_malloc(sizeof(usb_t));
+    dev = (usb_t *)mem_alloc(sizeof(usb_t));
     memset(dev, 0x00, sizeof(usb_t));
 
     dev->uhci_io[0x0c] = 0x40;

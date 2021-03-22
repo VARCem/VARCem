@@ -6,7 +6,7 @@
  *
  *		This file is part of the VARCem Project.
  *
- *		Definitions for the SERIAL card.
+ *		Definitions for the USB port.
  *
  * Version:	@(#)usb_port.h	1.0.1	2021/03/16
  *
@@ -37,15 +37,14 @@
 
 
 typedef struct {
-    uint32_t	ohci_mem_base;
-    int8_t	ohci_enable;
+  uint32_t ohci_mem_base;
+  int8_t   ohci_enable;
 
-    int8_t	uhci_enable;
-    uint16_t	uhci_io_base;
-    uint8_t	uhci_io[32],
-		ohci_mmio[4096];
+  int8_t   uhci_enable;
+  uint16_t uhci_io_base;
+  uint8_t  uhci_io[32], ohci_mmio[4096];
 
-    mem_map_t	ohci_mmio_mapping;
+  mem_map_t ohci_mmio_mapping;
 } usb_t;
 
 

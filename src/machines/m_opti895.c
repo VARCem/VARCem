@@ -8,7 +8,7 @@
  *
  *		Implementation of the Opti 82C495 based machines.
  *
- * Version:	@(#)m_opti8xx.c	1.0.2	2021/03/18
+ * Version:	@(#)m_opti8xx.c	1.0.3	2021/03/20
  *
  * Author:	Altheos, <altheos@varcem.com>
  *
@@ -73,17 +73,14 @@ common_init(const device_t *info, void *arg)
     device_add(&opti895_device);
 
     device_add(&fdc_at_device);
-
-    device_add(&apm_device);
     
-    switch (info->local) {
-	case 0:		// HOT-419
-		m_at_common_init();
-		device_add(&keyboard_at_device);
-		device_add(&memregs_device);
+    switch (info->local) { // DataExpert EXP4044
+	case 0:		
+		m_at_common_init(); 
+		device_add(&keyboard_at_device);  // Winbond W83C42
 		break;
 		
-	case 1:		// DataExpert EXP4044
+	case 1:		// HOT-419 - AMIKEY-2
 		m_at_common_init();
 		device_add(&keyboard_at_ami_device);
 		device_add(&memregs_device);

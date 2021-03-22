@@ -8,7 +8,7 @@
  *
  *		Implementation of the MultiTech-Thomson TO-16 machine.
  *
- * Version:	@(#)m_thomson.c	1.0.1	2021/03/18
+ * Version:	@(#)m_thomson.c	1.0.2	2021/03/20
  *
  * Authors:	Altheos, <altheos@varcem.com>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
@@ -55,6 +55,7 @@
 #include "../config.h"
 #include "../timer.h"
 #include "../cpu/cpu.h"
+#include "../io.h"
 #include "../mem.h"
 #include "../device.h"
 #include "../devices/system/nmi.h"
@@ -72,10 +73,42 @@
 typedef struct {
     uint8_t	type;
 
-    int8_t	basic;
-    int8_t	floppy;
+    int8_t	turbo,
+            pvc,
+            floppy;
 } to16_t;
 
+
+static uint8_t
+turbo_get(uint16_t port, priv_t priv)
+{
+    to16_t *dev = (to16_t *)priv;
+    uint8_t ret = 0;
+    
+    switch (port) {
+        case 0xe0: case 0xe1:
+        case 0xe2: case 0xe3:
+        ret = dev->turbo << 7;
+        break;
+    }
+
+    return(ret);
+}
+
+
+static void
+turbo_set(uint16_t port, uint8_t val, priv_t priv)
+{
+    to16_t *dev = (to16_t *)priv;
+
+    switch (port) {
+        case 0xc0: case 0xc1:
+        case 0xc2: case 0xc3:
+            dev->turbo ^= 1;
+            pc_set_speed(dev->turbo);
+            break;
+    }
+}
 
 static void
 to_close(priv_t priv)
@@ -98,7 +131,8 @@ to_init(const device_t *info, UNUSED(void *arg))
     device_add_ex(info, (priv_t)dev);
 
     dev->floppy = machine_get_config_int("floppy");
-
+    dev->pvc = machine_get_config_int("pvc");
+    
     machine_common_init();
 
     nmi_init();
@@ -108,7 +142,7 @@ to_init(const device_t *info, UNUSED(void *arg))
 
     switch (dev->type) {
 	case 16:	/* TO16 */
-		if (config.video_card == VID_INTERNAL) {
+		if (config.video_card == VID_INTERNAL && dev->pvc) {
 			video_load_font(L"video/ibm/mda/mda.rom", 0);
 
 			/* Real chip is Paradise PVC-2 */
@@ -119,14 +153,40 @@ to_init(const device_t *info, UNUSED(void *arg))
 		device_add(&keyboard_xt86_device);
 		break;
     }
+    
+    dev->turbo = machine_get_config_int("turbo");
+    pc_set_speed(dev->turbo);
 
-    /* Not entirely correct, they were optional. */
+    io_sethandler(0x00e0, 4,
+	    turbo_get,NULL,NULL, NULL,NULL,NULL, dev);
+    io_sethandler(0x00c0, 4,
+	    NULL,NULL,NULL, turbo_set,NULL,NULL, dev);
+    
     if (dev->floppy)
-	device_add(&fdc_xt_device);
+	    device_add(&fdc_xt_device);
 
     return(dev);
 }
 
+/*
+ * TO-16 motherboard switches and jumpers
+ *
+ * SWD1	DIPswitch.
+ * SW1-1   ON   Enable / Disable internal COM port
+ * SW1-2   OFF  Enable / Disable COM port 2 (not present)
+ * SW1-3   OFF  RTC at address 0x300-0x303 / RTC at address 0x2c0-0x2c
+ * SW1-4   OFF  IRQ 2 is free / used by RTC
+ *
+ * SWD2	DIPswitch.
+ * SW2-1   ON Enable / Disable Floppy controller
+ * SW2-6   ON Enable / Disable Internal video card
+ *
+ * SWD3	DIPswitch.
+ * SW3-6   OFF Enable / Disable 128 Ko high RAM
+ * SW3-8   ON  CPU speed at 4.77 / 9.54 Mhz
+ *  
+ * 
+ */
 
 static const device_config_t to_config[] = {
     {
@@ -144,21 +204,54 @@ static const device_config_t to_config[] = {
 	}
     },
     {
+    	"pvc", "Internal video", CONFIG_SELECTION, "", 1,
+	{	/* This is SW2-6 on mainboard. */
+		{
+			"Disabled", 0
+		},
+		{
+			"Enabled", 1
+		},
+		{
+			NULL
+		}
+	}
+    },
+    {
+    	"turbo", "Turbo mode", CONFIG_SELECTION, "", 1,
+	{	/* This is SW3-8 on mainboard. */
+		{
+			"Slow", 0
+		},
+		{
+			"Fast", 1
+		},
+		{
+			NULL
+		}
+	}
+    },
+    {
 	NULL
     }
+};
+
+static const CPU cpus_to16[] = {
+    { "8088/9.54", CPU_8088, 9545456, 1, 0, 0, 0, 0, 0, 0,0,0,0, 1 },
+    { NULL }
 };
 
 static const machine_t to16_info = {
     MACHINE_ISA | MACHINE_VIDEO,
     0,
     512, 640, 128, 16, 0,
-    {{"Intel",cpus_8088}}
+    {{"Intel",cpus_to16}}
 };
 
 const device_t m_thom_to16 = {
     "Thomson TO16",
     DEVICE_ROOT,
-    106,
+    16,
     L"thomson/to16",
     to_init, to_close, NULL,
     NULL, NULL, NULL,
