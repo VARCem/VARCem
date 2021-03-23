@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings_disk.h	1.0.22	2021/03/19
+ * Version:	@(#)win_settings_disk.h	1.0.23	2021/03/22
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -199,12 +199,12 @@ disk_add_locations(HWND hdlg)
 
 #ifdef USE_MINIVHD     
     h = GetDlgItem(hdlg,  IDC_COMBO_VHD_TYPE);
-//    for (i = 2; i < 5; i++)
-//	SendMessage(h, CB_ADDSTRING, 0, (LPARAM)vhd_type_to_ids(i)); 
+    for (i = 2; i < 5; i++)
+	SendMessage(h, CB_ADDSTRING, 0, (LPARAM)vhd_type_to_ids(i)); 
 
     h = GetDlgItem(hdlg, IDC_COMBO_HD_BLOCK_SIZE);
-//    for (i = 0; i < 2; i++)
-//	SendMessage(h, CB_ADDSTRING, 0, (LPARAM)vhd_blksize_to_ids(i));
+    for (i = 0; i < 2; i++)
+	SendMessage(h, CB_ADDSTRING, 0, (LPARAM)vhd_blksize_to_ids(i));
 #endif
 }
 
@@ -289,8 +289,9 @@ static void
 vhd_progress_callback(uint32_t current_sector, uint32_t total_sectors)
 {
     MSG msg;
+    HWND h;
 
-    HWND h = GetDlgItem(vhd_progress_hdlg, IDC_PBAR_IMG_CREATE);	
+    h = GetDlgItem(vhd_progress_hdlg, IDC_PBAR_IMG_CREATE);	
 
     SendMessage(h, PBM_SETPOS, (WPARAM) current_sector, (LPARAM) 0);
 
@@ -310,7 +311,7 @@ vhd_progress_callback(uint32_t current_sector, uint32_t total_sectors)
  * in size.
  */
 static void
-adjust_geometry_for_vhd(MVHDGeom *geom, MVHDGeom *vhd_geom)
+vhd_adjust_geometry(MVHDGeom *geom, MVHDGeom *vhd_geom)
 {
     uint64_t desired;
     uint64_t remainder;
@@ -343,7 +344,7 @@ adjust_geometry_for_vhd(MVHDGeom *geom, MVHDGeom *vhd_geom)
 
 
 static void
-adjust_vhd_geometry(MVHDGeom *vhd_geom)
+vhd_set_geometry(MVHDGeom *vhd_geom)
 {
     uint64_t desired;
     uint64_t remainder;
@@ -379,9 +380,9 @@ create_drive_vhd_fixed(const char *fn, int cyl, int heads, int spt)
     geom.cyl = cyl;
     geom.heads = heads;
     geom.spt = spt;
-    adjust_geometry_for_vhd(&geom, &vhd_geom);
+    vhd_adjust_geometry(&geom, &vhd_geom);
 
-    // Progress Bar
+    /* Progress Bar. */
     h = GetDlgItem(vhd_progress_hdlg, IDC_PBAR_IMG_CREATE);
 
     h = GetDlgItem(vhd_progress_hdlg, IDT_1731);
@@ -401,7 +402,7 @@ create_drive_vhd_fixed(const char *fn, int cyl, int heads, int spt)
     EnableWindow(h, TRUE);
     ShowWindow(h, SW_SHOW);
 
-    /* Create progress bar. */
+    /* Show progress bar. */
     h = GetDlgItem(vhd_progress_hdlg, IDC_PBAR_IMG_CREATE);
     EnableWindow(h, TRUE);
 
@@ -419,7 +420,7 @@ create_drive_vhd_fixed(const char *fn, int cyl, int heads, int spt)
     } else
 	mvhd_close(vhd);                
 
-    return geom;
+    return(geom);
 }
 
 
@@ -435,7 +436,7 @@ create_drive_vhd_dynamic(const char *fn, int cyl, int heads, int spt, int blocks
     geom.cyl = cyl;
     geom.heads = heads;
     geom.spt = spt;
-    adjust_geometry_for_vhd(&geom, &vhd_geom);
+    vhd_adjust_geometry(&geom, &vhd_geom);
 
     options.block_size_in_sectors = blocksize;
     options.path = (char *)fn;
@@ -451,7 +452,7 @@ create_drive_vhd_dynamic(const char *fn, int cyl, int heads, int spt, int blocks
     } else
 	mvhd_close(vhd);
 
-    return geom;
+    return(geom);
 }
 
 
@@ -484,7 +485,7 @@ create_drive_vhd_diff(const char *fn, const char *parent_fn, int blocksize)
 	mvhd_close(vhd);                
     }
 
-    return vhd_geom;
+    return(vhd_geom);
 }
 #endif
 
@@ -1057,9 +1058,8 @@ disk_add_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 		if (existing & 2) {
 			next_free_id = (existing >> 3) & 0x1f;
 			hdd_ptr = &(hdd[next_free_id]);
-		} else {
+		} else
 			hdd_ptr = &(temp_hdd[next_free_id]);
-		}
 
 		/* Override the window title. */
 		SetWindowText(hdlg, get_string((existing & 1) ? IDS_3527
@@ -1107,9 +1107,8 @@ disk_add_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 			SetWindowPos(h, NULL, point.x, point.y - dlg_height_adjust, 0, 0, SWP_NOSIZE | SWP_NOREPOSITION | SWP_NOZORDER);
 
 			chs_enabled = 0;
-		} else {
+		} else
 			chs_enabled = 1;
-		}
 
 		disk_add_locations(hdlg);
 
@@ -1193,25 +1192,29 @@ disk_add_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 		EnableWindow(h, FALSE);
 		ShowWindow(h, SW_HIDE);
 
-/* VHD parameters */
+		/* VHD parameters. */
 		h = GetDlgItem(hdlg, IDC_COMBO_VHD_TYPE);
 		EnableWindow(h, FALSE);
+
 		h = GetDlgItem(hdlg, IDT_1769);
 		EnableWindow(h, FALSE);
 		ShowWindow(h, SW_HIDE);
+
 		h = GetDlgItem(hdlg, IDC_COMBO_HD_BLOCK_SIZE);
 		EnableWindow(h, FALSE);
 		ShowWindow(h, SW_HIDE);
+
 		h = GetDlgItem(hdlg, IDT_1745);
 		EnableWindow(h, FALSE);
 		ShowWindow(h, SW_HIDE);
+
 		h = GetDlgItem(hdlg, IDC_EDIT_HD_PARENT_NAME);
 		EnableWindow(h, FALSE);
 		ShowWindow(h, SW_HIDE);
+
 		h = GetDlgItem(hdlg, IDC_PARFILE);
 		EnableWindow(h, FALSE);
 		ShowWindow(h, SW_HIDE);
-/*****************/
 
 		no_update = 0;
 		return TRUE;
@@ -1499,7 +1502,7 @@ hdd_add_file_open_error:
 						fread(&tracks, 1, 4, f);
 					}
 #ifdef USE_MINIVHD
-					else if (image_is_vhd(temp_path, 1)) { /* VHD */
+					else if (image_is_vhd(temp_path, 1)) {
 						wcstombs(shortpath, temp_path, sizeof(shortpath));
 						_fullpath(fullpath, shortpath, sizeof(fullpath)); /* May break linux */
 						
@@ -1511,29 +1514,27 @@ hdd_add_file_open_error:
 							return TRUE;
 						} else if (err == MVHD_ERR_TIMESTAMP) {
 							if (settings_msgbox(MBX_QUESTION,(wchar_t *) IDS_3523) != 0) {
-									int ts_res = mvhd_diff_update_par_timestamp(vhd, &err);
-									if (ts_res != 0) {
-										settings_msgbox(MBX_ERROR, (wchar_t *) IDS_3524);
-										mvhd_close(vhd);
-										return TRUE;
-									}
-								} else {
+								int ts_res = mvhd_diff_update_par_timestamp(vhd, &err);
+								if (ts_res != 0) {
+									settings_msgbox(MBX_ERROR, (wchar_t *) IDS_3524);
 									mvhd_close(vhd);
 									return TRUE;
 								}
+							} else {
+								mvhd_close(vhd);
+								return TRUE;
 							}
+						}
 
 						MVHDGeom vhd_geom = mvhd_get_geometry(vhd);							
-						adjust_vhd_geometry(&vhd_geom);
+						vhd_set_geometry(&vhd_geom);
 						vhd_geom = mvhd_get_geometry(vhd);							
 
 						spt = vhd_geom.spt;
 						hpc = vhd_geom.heads;
 						tracks = vhd_geom.cyl;
 						size = (uint64_t)tracks * hpc * spt * 512;
-//FIXME:
-//						created_type_vhd = vhd->footer.disk_type;
-						created_type_vhd = 2;
+						created_type_vhd = mvhd_get_type(vhd);
 						h = GetDlgItem(hdlg, IDC_COMBO_VHD_TYPE);
 						SendMessage(h, CB_SETCURSEL, (created_type_vhd - 2) , 0);
 						EnableWindow(h, FALSE);
@@ -1579,18 +1580,6 @@ hdd_add_file_open_error:
 					set_edit_box_contents(hdlg, IDC_EDIT_HD_SIZE, size >> 20);
 					disk_recalc_selection(hdlg);
 
-#if 0
-					h = GetDlgItem(hdlg, IDC_EDIT_HD_SPT);
-					EnableWindow(h, TRUE);
-					h = GetDlgItem(hdlg, IDC_EDIT_HD_HPC);
-					EnableWindow(h, TRUE);
-					h = GetDlgItem(hdlg, IDC_EDIT_HD_CYL);
-					EnableWindow(h, TRUE);
-					h = GetDlgItem(hdlg, IDC_EDIT_HD_SIZE);
-					EnableWindow(h, TRUE);
-					h = GetDlgItem(hdlg, IDC_COMBO_HD_TYPE);
-					EnableWindow(h, TRUE);
-#endif
 					chs_enabled = 1;
 
 					no_update = 0;
@@ -1600,10 +1589,11 @@ hdd_add_file_open_error:
 						h = GetDlgItem(hdlg, IDT_1744);
 						EnableWindow(h, TRUE);
 						ShowWindow(h, SW_SHOW);
+
 						h = GetDlgItem(hdlg, IDC_COMBO_VHD_TYPE); /* Enable VHD Type Selection */
 						EnableWindow(h, TRUE);
 						ShowWindow(h, SW_SHOW);
-				}
+					}
 #endif
 					fclose(f);
 				}
@@ -1922,6 +1912,8 @@ hd_add_bus_skip:
 						EnableWindow(h, FALSE);
 						h = GetDlgItem(hdlg, IDC_COMBO_HD_TYPE);
 						EnableWindow(h, FALSE);
+						/*FALLTHROUGH*/
+
 					case MVHD_TYPE_DYNAMIC:
 						h = GetDlgItem(hdlg, IDT_1769);
 						EnableWindow(h, TRUE);
@@ -1933,13 +1925,14 @@ hd_add_bus_skip:
 							h = GetDlgItem(hdlg, IDT_1745);
 							EnableWindow(h, FALSE);
 							ShowWindow(h, SW_HIDE);
+
 							h = GetDlgItem(hdlg, IDC_PARFILE);
 							EnableWindow(h, FALSE);
 							ShowWindow(h, SW_HIDE);
 						}
 						break;
 
-					case MVHD_TYPE_FIXED: 					
+					case MVHD_TYPE_FIXED:
 					default:
 						h = GetDlgItem(hdlg, IDT_1769);
 						EnableWindow(h, FALSE);
@@ -1947,9 +1940,11 @@ hd_add_bus_skip:
 						h = GetDlgItem(hdlg, IDC_COMBO_HD_BLOCK_SIZE);
 						EnableWindow(h, FALSE);
 						ShowWindow(h, SW_HIDE);
+
 						h = GetDlgItem(hdlg, IDT_1745);
 						EnableWindow(h, FALSE);
 						ShowWindow(h, SW_HIDE);
+
 						h = GetDlgItem(hdlg, IDC_PARFILE);
 						EnableWindow(h, FALSE);
 						ShowWindow(h, SW_HIDE);
