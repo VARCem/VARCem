@@ -8,7 +8,7 @@
  *
  *		Handling of the emulated machines.
  *
- * Version:	@(#)machine.h	1.0.39	2021/03/18
+ * Version:	@(#)machine.h	1.0.40	2021/03/23
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -214,6 +214,7 @@ extern const device_t	m_sis471_ami;
 extern const device_t	m_dtk486;
 
 extern const device_t	m_sis496_ami;
+extern const device_t	m_sis496_award;
 extern const device_t	m_rise418;
 
 /* Acer boards. */

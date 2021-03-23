@@ -8,7 +8,7 @@
  *
  *		Implementation of the SiS 85C496/497 based machines.
  *
- * Version:	@(#)m_sis49x.c	1.0.18	2021/03/18
+ * Version:	@(#)m_sis49x.c	1.0.19	2021/03/23
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -119,13 +119,32 @@ static const machine_t ami_info = {
 };
 
 const device_t m_sis496_ami = {
-    "Lucky Star LS-486E (SiS 496)",
+    "Lucky Star LS-486E (Sis496, AMI)",
     DEVICE_ROOT,
     0,
     L"sis/sis496/ami",
     common_init, NULL, NULL,
     NULL, NULL, NULL,
     &ami_info,
+    NULL
+};
+
+
+static const machine_t award_info = {
+    MACHINE_PCI | MACHINE_ISA | MACHINE_AT | MACHINE_HDC,
+    0,
+    1, 255, 1, 128, 0,
+    {{"Intel",cpus_i486},{"AMD",cpus_Am486},{"Cyrix",cpus_Cx486}}
+};
+
+const device_t m_sis496_award = {
+    "Lucky Star LS-486E (Sis496, Award)",
+    DEVICE_ROOT,
+    0,
+    L"sis/sis496/award",
+    common_init, NULL, NULL,
+    NULL, NULL, NULL,
+    &award_info,
     NULL
 };
 
