@@ -13,11 +13,11 @@
  *		8MB of DRAM chips', because it works fine with bus-based
  *		memory expansion.
  *
- * Version:	@(#)neat.c	1.0.7	2020/01/29
+ * Version:	@(#)neat.c	1.0.8	2021/03/23
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
- *		Copyright 2018-2020 Fred N. van Kempen.
+ *		Copyright 2018-2021 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
  * 		or  without modification, are permitted  provided that the
@@ -225,7 +225,7 @@
 
 #define REG_RB11	0x6f		/* Miscellaneous */
 # define RB11_MASK	0xe6		/* 111R R11R */
-# define RB11_GA20	0x02		/*  gate for A20 */
+# define RB11_GA20	0x02		/*  gate for A20 (active LOW) */
 # define RB11_RASTMO	0x04		/*  enable RAS timeout counter */
 # define RB11_EMSLEN	0xe0		/*  EMS memory chunk size */
 # define RB11_EMSLEN_SH	5
@@ -354,20 +354,45 @@ ems_recalc(neat_t *dev, emspage_t *ems)
 }
 
 
+static uint8_t
+ems_in(uint16_t port, priv_t priv)
+{
+    neat_t *dev = (neat_t *)priv;
+    uint8_t ret = 0xff;
+    int vpage;
+
+    /* Get the viewport page number. */
+    vpage = (port / EMS_PGSIZE);
+
+    switch (port & 0x000f) {
+	case 0x0008:		/* page number register */
+		ret = dev->ems[vpage].page & 0x7f;
+		if (dev->ems[vpage].enabled)
+			ret |= 0x80;
+		break;
+    }
+
+    DBGLOG(2, "NEAT: ems_in(%04x) = %02x\n", port, ret);
+
+    return(ret);
+}
+
+
+/* Initialize the EMS module. */
 static void
-ems_write(uint16_t port, uint8_t val, priv_t priv)
+ems_out(uint16_t port, uint8_t val, priv_t priv)
 {
     neat_t *dev = (neat_t *)priv;
     emspage_t *ems;
     int vpage;
 
-    DBGLOG(2, "NEAT: ems_write(%04x, %02x)\n", port, val);
+    DBGLOG(2, "NEAT: ems_out(%04x, %02x)\n", port, val);
 
     /* Get the viewport page number. */
     vpage = (port / EMS_PGSIZE);
     ems = &dev->ems[vpage];
 
-    switch(port & 0x000f) {
+    switch (port & 0x000f) {
 	case 0x0008:
 	case 0x0009:
 		ems->enabled = !!(val & 0x80);
@@ -379,31 +404,6 @@ ems_write(uint16_t port, uint8_t val, priv_t priv)
 }
 
 
-static uint8_t
-ems_read(uint16_t port, priv_t priv)
-{
-    neat_t *dev = (neat_t *)priv;
-    uint8_t ret = 0xff;
-    int vpage;
-
-    /* Get the viewport page number. */
-    vpage = (port / EMS_PGSIZE);
-
-    switch(port & 0x000f) {
-	case 0x0008:		/* page number register */
-		ret = dev->ems[vpage].page & 0x7f;
-		if (dev->ems[vpage].enabled)
-			ret |= 0x80;
-		break;
-    }
-
-    DBGLOG(2, "NEAT: ems_read(%04x) = %02x\n", port, ret);
-
-    return(ret);
-}
-
-
-/* Initialize the EMS module. */
 static void
 ems_init(neat_t *dev, int en)
 {
@@ -417,7 +417,7 @@ ems_init(neat_t *dev, int en)
 
 		/* Remove I/O handler. */
 		io_removehandler(dev->ems_base + (i * EMS_PGSIZE), 2,
-				 ems_read,NULL,NULL, ems_write,NULL,NULL, dev);
+				 ems_in,NULL,NULL, ems_out,NULL,NULL, dev);
 	}
 
 	DEBUG("NEAT: EMS disabled\n");
@@ -453,7 +453,7 @@ ems_init(neat_t *dev, int en)
 
 	/* Set up an I/O port handler. */
 	io_sethandler(dev->ems_base + (i * EMS_PGSIZE), 2,
-		      ems_read,NULL,NULL, ems_write,NULL,NULL, dev);
+		      ems_in,NULL,NULL, ems_out,NULL,NULL, dev);
 
 	/*
 	 * TODO: update the 'high_mem' mapping to reflect that we now
@@ -466,14 +466,39 @@ ems_init(neat_t *dev, int en)
 }
 
 
+static uint8_t
+neat_in(uint16_t port, priv_t priv)
+{
+    neat_t *dev = (neat_t *)priv;
+    uint8_t ret = 0xff;
+
+    switch (port) {
+	case 0x22:
+		ret = dev->indx;
+		break;
+
+	case 0x23:
+		ret = dev->regs[dev->indx];
+		break;
+
+	default:
+		break;
+    }
+
+    DBGLOG(3, "NEAT: in(%04x) = %02x\n", port, ret);
+
+    return(ret);
+}
+
+
 static void
-neat_write(uint16_t port, uint8_t val, priv_t priv)
+neat_out(uint16_t port, uint8_t val, priv_t priv)
 {
     neat_t *dev = (neat_t *)priv;
     uint8_t xval, *reg;
     int i;
 
-    DBGLOG(3, "NEAT: write(%04x, %02x)\n", port, val);
+    DBGLOG(3, "NEAT: out(%04x, %02x)\n", port, val);
 
     switch (port) {
 	case 0x22:
@@ -548,7 +573,6 @@ neat_write(uint16_t port, uint8_t val, priv_t priv)
 
 			case REG_RB7: 
 				val &= RB7_MASK;
-				//*reg = (*reg & ~RB7_MASK) | val;
 				*reg = val;
 				DBGLOG(2, "NEAT: RB7=%02x(%02x)\n", val, *reg);
 				if (val & RB7_EMSEN)
@@ -617,6 +641,17 @@ neat_write(uint16_t port, uint8_t val, priv_t priv)
 				if (dev->regs[REG_RB7] & RB7_EMSEN)
 					DEBUG("NEAT: EMS %iKB (%i pages)\n",
 						dev->ems_size, dev->ems_pages);
+
+				if (xval & RB11_GA20) {
+					if (val & RB11_GA20) {
+						mem_a20_alt = 0;
+						mem_a20_state = 0;
+					} else {
+						mem_a20_alt = 1;
+						mem_a20_state = 1;
+					}
+					flushmmucache();
+				}
 				break;
 
 			default:
@@ -626,31 +661,6 @@ neat_write(uint16_t port, uint8_t val, priv_t priv)
 		}
 		break;
     }
-}
-
-
-static uint8_t
-neat_read(uint16_t port, priv_t priv)
-{
-    neat_t *dev = (neat_t *)priv;
-    uint8_t ret = 0xff;
-
-    switch (port) {
-	case 0x22:
-		ret = dev->indx;
-		break;
-
-	case 0x23:
-		ret = dev->regs[dev->indx];
-		break;
-
-	default:
-		break;
-    }
-
-    DBGLOG(3, "NEAT: read(%04x) = %02x\n", port, ret);
-
-    return(ret);
 }
 
 
@@ -666,6 +676,18 @@ neat_close(priv_t priv)
 static priv_t
 neat_init(const device_t *info, UNUSED(void *parent))
 {
+    struct regval {
+	uint8_t	reg;
+	uint8_t	val;
+    } values[] = {
+	{ REG_RA1, ( (1<<6) | (1<<2) | (1<<0) )	},	// I/O waitstates
+	{ REG_RA2, ( (3<<4) | (3<<2) )		},	// I/O waitstates
+	{ REG_RB0, ( 0x0e )			},	// 192K ROM disable
+	{ REG_RB6, (RTYPE_256K << RTYPE_SH)	},	// 256K chips used
+	{ REG_RB7, ( (1<<6) | (1 << 5) )	},	// set 1 waitstate
+	{ REG_RB8, (1 << 4)			},	// 4-way interleave
+	{ REG_RB11,( (1<<4) | RB11_GA20 )	}	// disable A20
+    };
     neat_t *dev;
     int i;
 
@@ -675,9 +697,10 @@ neat_init(const device_t *info, UNUSED(void *parent))
     dev->type = info->local;
 
     /* Initialize some of the registers to specific defaults. */
-    for (i = REG_RA0; i <= REG_RB11; i++) {
-	dev->indx = i;
-	neat_write(0x0023, 0x00, dev);
+    for (i = 0; i <= sizeof(values)/sizeof(struct regval); i++) {
+INFO("NEAT: setting register %2i to %02X\n", dev->indx, values[i].val);
+	dev->indx = values[i].reg;
+	neat_out(0x0023, values[i].val, dev);
     }
 
     /*
@@ -688,7 +711,7 @@ neat_init(const device_t *info, UNUSED(void *parent))
      *       bits, based on our cpu speed.
      */
     i = 0;
-    switch(mem_size) {
+    switch (mem_size) {
 	case 512:	/* 512KB */
 		/* 256K, 0, 0, 0 */
 		dev->regs[REG_RB6] &= ~RB6_BANKS;		/* one bank */
@@ -816,9 +839,9 @@ neat_init(const device_t *info, UNUSED(void *parent))
 
     /* Set up an I/O handler for the chipset. */
     io_sethandler(0x0022, 2,
-		  neat_read,NULL,NULL, neat_write,NULL,NULL, dev);
+		  neat_in,NULL,NULL, neat_out,NULL,NULL, dev);
 
-    return((priv_t)dev);
+    return(dev);
 }
 
 
