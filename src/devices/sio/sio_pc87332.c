@@ -66,7 +66,7 @@ static void
 lpt1_handler(pc87332_t *dev)
 {
     uint16_t lpt_port = 0x378;
-    uint8_t lpt_irq = 5;
+    //uint8_t lpt_irq = 5;
     int temp;
 
     temp = dev->regs[0x01] & 3;
@@ -74,22 +74,22 @@ lpt1_handler(pc87332_t *dev)
     switch (temp) {
 	case 0:
 		lpt_port = 0x378;
-		lpt_irq = (dev->regs[0x02] & 0x08) ? 7 : 5;
+		//lpt_irq = (dev->regs[0x02] & 0x08) ? 7 : 5;
 		break;
 
 	case 1:
 		lpt_port = 0x3bc;
-		lpt_irq = 7;
+		//lpt_irq = 7;
 		break;
 
 	case 2:
 		lpt_port = 0x278;
-		lpt_irq = 5;
+		//lpt_irq = 5;
 		break;
 
 	case 3:
 		lpt_port = 0x000;
-		lpt_irq = 0xff;
+		//lpt_irq = 0xff;
 		break;
     }
 

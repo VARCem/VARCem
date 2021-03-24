@@ -8,7 +8,7 @@
  *
  *		Definitions for the Super I/O chips.
  *
- * Version:	@(#)sio.h	1.0.6	2021/03/16
+ * Version:	@(#)sio.h	1.0.7	2021/03/24
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -72,6 +72,6 @@ extern const device_t	um8669f_device;
 
 extern const device_t	w83877f_device;
 extern const device_t	w83877f_president_device;
-
+extern const device_t   w83787f_device;
 
 #endif	/*EMU_SIO_H*/

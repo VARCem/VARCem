@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows using Visual Studio 2015.
 #
-# Version:	@(#)Makefile.VC	1.0.85	2021/03/23
+# Version:	@(#)Makefile.VC	1.0.86	2021/03/24
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -775,7 +775,8 @@ DEVOBJ		:= bugger.obj \
 		   sio_acc3221.obj sio_f82c710.obj sio_fdc37c66x.obj \
 		   sio_fdc37c669.obj sio_fdc37c93x.obj \
 		   sio_pc87306.obj sio_pc87332.obj \
-		   sio_w83877f.obj sio_um8669f.obj sio_detect.obj \
+		   sio_w83877f.obj sio_w83787f.obj \
+		   sio_um8669f.obj sio_detect.obj \
 		   intel_flash.obj intel_sio.obj intel_piix.obj \
 		   keyboard.obj \
 		    keyboard_xt.obj keyboard_at.obj \

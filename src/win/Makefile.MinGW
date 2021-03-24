@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows systems using the MinGW32 environment.
 #
-# Version:	@(#)Makefile.minGW	1.0.103	2021/03/23
+# Version:	@(#)Makefile.minGW	1.0.104	2021/03/24
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -871,7 +871,8 @@ DEVOBJ		:= bugger.o \
 		   sio_acc3221.o sio_f82c710.o sio_fdc37c66x.o \
 		   sio_fdc37c669.o sio_fdc37c93x.o \
 		   sio_pc87306.o sio_pc87332.o \
-		   sio_w83877f.o sio_um8669f.o sio_detect.o \
+		   sio_w83877f.o sio_w83787f.o \
+		   sio_um8669f.o sio_detect.o \
 		   intel_flash.o intel_sio.o intel_piix.o \
 		   keyboard.o \
 		    keyboard_xt.o keyboard_at.o \
