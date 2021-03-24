@@ -8,7 +8,7 @@
  *
  *		Handling of the emulated machines.
  *
- * Version:	@(#)machine_table.c	1.0.51	2021/03/23
+ * Version:	@(#)machine_table.c	1.0.52	2021/03/24
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -187,7 +187,7 @@ static const struct {
     { "[486 MCA] IBM PS/2 model 70 (type 4)",	"ibm_ps2_m70_type4",	&m_ps2_m70_4		},
 
     { "[486 PCI] Lucky Star LS-486E (SiS496,AMI)",	"ami_486_sis496",	&m_sis496_ami		},
-    { "[486 PCI] Lucky Star LS-486E (SiS496,Award)",	"award_486_sis496",	&m_sis496_award		},
+    { "[486 PCI] Lucky Star LS-486E Rev C1 (Sis496, Award)",	"award_486_sis496",	&m_sis496_award		},
     { "[486 PCI] Rise Computer R418",		"rise_r418",		&m_rise418		},
 
     /* Pentium, Socket4 (LX) */

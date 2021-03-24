@@ -80,12 +80,31 @@ common_init(const device_t *info, void *arg)
 		device_add(&memregs_device);
 		device_add(&sis_85c496_device);
 		m_at_common_ide_init();
-		device_add(&keyboard_at_ami_device);
+		device_add(&keyboard_ps2_ami_pci_device);
 		device_add(&fdc_at_device);
 		device_add(&fdc37c665_device);
 		break;
 
-	case 1:		/* Rise 418 */
+	case 1:		/* Lucky Star 4C-1 */
+		pci_init(PCI_CONFIG_TYPE_1);
+		pci_register_slot(0x05, PCI_CARD_SPECIAL, 0, 0, 0, 0);
+		pci_register_slot(0x0B, PCI_CARD_NORMAL, 1, 2, 3, 4);
+		pci_register_slot(0x0D, PCI_CARD_NORMAL, 2, 3, 4, 1);
+		pci_register_slot(0x0F, PCI_CARD_NORMAL, 3, 4, 1, 2);
+
+		pci_set_irq_routing(PCI_INTA, PCI_IRQ_DISABLED);
+		pci_set_irq_routing(PCI_INTB, PCI_IRQ_DISABLED);
+		pci_set_irq_routing(PCI_INTC, PCI_IRQ_DISABLED);
+		pci_set_irq_routing(PCI_INTD, PCI_IRQ_DISABLED);
+
+		device_add(&memregs_device);
+		device_add(&sis_85c496_device);
+		m_at_common_ide_init();
+		device_add(&keyboard_at_device);
+		device_add(&w83787f_device);
+		break;
+
+	case 2:		/* Rise 418 */
 		pci_init(PCI_CONFIG_TYPE_1);
 		pci_register_slot(0x05, PCI_CARD_SPECIAL, 0, 0, 0, 0);
 		pci_register_slot(0x0B, PCI_CARD_NORMAL, 1, 2, 3, 4);
@@ -114,7 +133,7 @@ common_init(const device_t *info, void *arg)
 static const machine_t ami_info = {
     MACHINE_PCI | MACHINE_ISA | MACHINE_AT | MACHINE_HDC,
     0,
-    1, 255, 1, 128, 0,
+    1, 128, 1, 128, 0,
     {{"Intel",cpus_i486},{"AMD",cpus_Am486},{"Cyrix",cpus_Cx486}}
 };
 
@@ -133,14 +152,14 @@ const device_t m_sis496_ami = {
 static const machine_t award_info = {
     MACHINE_PCI | MACHINE_ISA | MACHINE_AT | MACHINE_HDC,
     0,
-    1, 255, 1, 128, 0,
+    1, 128, 1, 128, 0,
     {{"Intel",cpus_i486},{"AMD",cpus_Am486},{"Cyrix",cpus_Cx486}}
 };
 
 const device_t m_sis496_award = {
-    "Lucky Star LS-486E (Sis496, Award)",
+    "Lucky Star LS-486E Rev C1 (Sis496, Award)",
     DEVICE_ROOT,
-    0,
+    1,
     L"sis/sis496/award",
     common_init, NULL, NULL,
     NULL, NULL, NULL,
@@ -152,14 +171,14 @@ const device_t m_sis496_award = {
 static const machine_t rise_info = {
     MACHINE_PCI | MACHINE_ISA | MACHINE_AT | MACHINE_HDC,
     0,
-    1, 255, 1, 128, 0,
+    1, 256, 1, 128, 0,
     {{"Intel",cpus_i486},{"AMD",cpus_Am486},{"Cyrix",cpus_Cx486}}
 };
 
 const device_t m_rise418 = {
     "Rise 418 (SiS 496)",
     DEVICE_ROOT,
-    1,
+    2,
     L"rise/r418",
     common_init, NULL, NULL,
     NULL, NULL, NULL,

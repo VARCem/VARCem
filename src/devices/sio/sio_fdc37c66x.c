@@ -9,14 +9,14 @@
  *		Implementation of the SMC FDC37C663 and FDC37C665 Super
  *		I/O Chips.
  *
- * Version:	@(#)sio_fdc37c66x.c	1.0.13	2019/05/17
+ * Version:	@(#)sio_fdc37c66x.c	1.0.14	2021/03/23
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
- *		Copyright 2016-2018 Miran Grca.
+ *		Copyright 2017-2021 Fred N. van Kempen.
+ *		Copyright 2016-2021 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -45,12 +45,14 @@
 #include "../../emu.h"
 #include "../../io.h"
 #include "../../device.h"
+#include "../../timer.h"
 #include "../system/pci.h"
 #include "../ports/parallel.h"
 #include "../ports/serial.h"
 #include "../floppy/fdd.h"
 #include "../floppy/fdc.h"
 #include "../disk/hdc.h"
+#include "../disk/hdc_ide.h"
 #include "../../plat.h"
 #include "sio.h"
 
@@ -58,7 +60,7 @@
 typedef struct {
     uint8_t	chip_id,
 		cur_reg,
-		lock[2];
+		tries;
 
     uint16_t	com3_addr,
 		com4_addr;
@@ -67,19 +69,6 @@ typedef struct {
 
     uint8_t	regs[16];
 } fdc37c66x_t;
-
-
-static void
-write_lock(fdc37c66x_t *dev, uint8_t val)
-{
-    if (val == 0x55 && dev->lock[1] == 0x55)
-	fdc_3f1_enable(dev->fdc, 0);
-    if ((dev->lock[0] == 0x55) && (dev->lock[1] == 0x55) && (val != 0x55))
-	fdc_3f1_enable(dev->fdc, 1);
-
-    dev->lock[0] = dev->lock[1];
-    dev->lock[1] = val;
-}
 
 
 static void
@@ -114,23 +103,26 @@ set_serial_addr(fdc37c66x_t *dev, int port)
 {
     uint8_t shift = (port << 4);
 
-    if (dev->regs[2] & (4 << shift)) switch (dev->regs[2] & (3 << shift)) {
-	case 0:
-		serial_setup(port, SERIAL1_ADDR, SERIAL1_IRQ);
-		break;
+//	serial_remove(0);
+	if (dev->regs[2] & (4 << shift)) {
+		switch (dev->regs[2] & (3 << shift)) {
+		case 0:
+			serial_setup(port, SERIAL1_ADDR, SERIAL1_IRQ);
+			break;
 
-	case 1:
-		serial_setup(port, SERIAL2_ADDR, SERIAL2_IRQ);
-		break;
+		case 1:
+			serial_setup(port, SERIAL2_ADDR, SERIAL2_IRQ);
+			break;
 
-	case 2:
-		serial_setup(port, dev->com3_addr, 4);
-		break;
+		case 2:
+			serial_setup(port, dev->com3_addr, 4);
+			break;
 
-	case 3:
-		serial_setup(port, dev->com4_addr, 3);
-		break;
-    }
+		case 3:
+			serial_setup(port, dev->com4_addr, 3);
+			break;
+    	}
+	}
 }
 
 
@@ -154,6 +146,25 @@ lpt1_handler(fdc37c66x_t *dev)
     }
 }
 
+static void
+fdc_handler(fdc37c66x_t *dev)
+{
+    fdc_remove(dev->fdc);
+    if (dev->regs[0] & 0x10)
+		fdc_set_base(dev->fdc, (dev->regs[5] & 0x01) ? 0x0370 : 0x03f0);
+}
+
+#if 0
+static void
+ide_handler(fdc37c66x_t *dev)
+{
+    ide_sec_disable();
+    ide_set_base(0, (dev->regs[0x05] & 0x02) ? 0x170 : 0x1f0);
+    ide_set_side(0, (dev->regs[0x05] & 0x02) ? 0x376 : 0x3f6);
+    if (dev->regs[0x00] & 0x01)
+		ide_sec_enable();
+}
+#endif
 
 static void
 fdc37c66x_write(uint16_t port, uint8_t val, priv_t priv)
@@ -161,12 +172,12 @@ fdc37c66x_write(uint16_t port, uint8_t val, priv_t priv)
     fdc37c66x_t *dev = (fdc37c66x_t *)priv;
     uint8_t valxor = 0;
 
-    if ((dev->lock[0] == 0x55) && (dev->lock[1] == 0x55)) {
+    if (dev->tries == 2) {
 	if (port == 0x03f0) {
 		if (val == 0xaa)
-			write_lock(dev, val);
-		else
-			dev->cur_reg = val;
+            dev->tries = 0;
+        else
+            dev->cur_reg = val;
 	} else {
 		if (dev->cur_reg > 15)
 			return;
@@ -175,12 +186,16 @@ fdc37c66x_write(uint16_t port, uint8_t val, priv_t priv)
 		dev->regs[dev->cur_reg] = val;
 
 		switch (dev->cur_reg) {
-			case 1:
-				if (valxor & 3)
+			case 0:
+				//if (valxor & 0x01)
+                //    ide_handler(dev);
+                if (valxor & 0x10)
+                    fdc_handler(dev);
+                break;
+            case 1:
+                if (valxor & 0x03)
 					lpt1_handler(dev);
 				if (valxor & 0x60) {
-//					serial_remove(0);
-//					serial_remove(1);
 					set_com34_addr(dev);
 					set_serial_addr(dev, 0);
 					set_serial_addr(dev, 1);
@@ -188,15 +203,11 @@ fdc37c66x_write(uint16_t port, uint8_t val, priv_t priv)
 				break;
 
 			case 2:
-				if (valxor & 0x07) {
-//					serial_remove(0);
+				if (valxor & 0x07)
 					set_serial_addr(dev, 0);
-				}
 
-				if (valxor & 0x70) {
-//					serial_remove(1);
+				if (valxor & 0x70) 
 					set_serial_addr(dev, 1);
-				}
 				break;
 
 			case 3:
@@ -204,17 +215,28 @@ fdc37c66x_write(uint16_t port, uint8_t val, priv_t priv)
 					fdc_update_enh_mode(dev->fdc, (dev->regs[3] & 2) ? 1 : 0);
 				break;
 
-			case 5:
-				if (valxor & 0x18)
-					fdc_update_densel_force(dev->fdc, (dev->regs[5] & 0x18) >> 3);
+			case 4:
+				if (valxor & 0x10)
+                    set_serial_addr(dev, 0);
+				if (valxor & 0x20)
+                    set_serial_addr(dev, 1);
+                break;
+
+            case 5:
+				if (valxor & 0x01)
+                    fdc_handler(dev);
+				//if (valxor & 0x02)
+                //  ide_handler(dev);
+                if (valxor & 0x18)
+                    fdc_update_densel_force(dev->fdc, (dev->regs[5] & 0x18) >> 3);
 				if (valxor & 0x20)
 					fdc_set_swap(dev->fdc, (dev->regs[5] & 0x20) >> 5);
 				break;
 		}
 	}
     } else {
-	if (port == 0x03f0)
-		write_lock(dev, val);
+	if ((port == 0x03f0) && (val == 0x55)) 
+		dev->tries++;
     }
 }
 
@@ -223,11 +245,11 @@ static uint8_t
 fdc37c66x_read(uint16_t port, priv_t priv)
 {
     fdc37c66x_t *dev = (fdc37c66x_t *)priv;
-    uint8_t ret = 0xff;
+    uint8_t ret = 0x00;
 
-    if ((dev->lock[0] == 0x55) && (dev->lock[1] == 0x55)) {
-	if (port == 0x03f1)
-		ret = dev->regs[dev->cur_reg];
+    if (dev->tries == 2) {
+		if (port == 0x03f1)
+			ret = dev->regs[dev->cur_reg];
     }
 
     return ret;
@@ -253,7 +275,7 @@ fdc37c66x_reset(fdc37c66x_t *dev)
 
     fdc_reset(dev->fdc);
 
-    memset(dev->lock, 0x00, sizeof(dev->lock));
+    dev->tries = 0;
     memset(dev->regs, 0x00, sizeof(dev->regs));
 
     dev->regs[0x0] = 0x3a;
@@ -263,8 +285,9 @@ fdc37c66x_reset(fdc37c66x_t *dev)
     dev->regs[0x6] = 0xff;
     dev->regs[0xd] = dev->chip_id;
     dev->regs[0xe] = 0x01;
-}
 
+    //ide_handler(dev);
+}
 
 static void
 fdc37c66x_close(priv_t priv)
