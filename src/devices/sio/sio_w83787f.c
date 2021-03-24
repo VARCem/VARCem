@@ -69,22 +69,23 @@
 
 #define EN3MODE		((dev->regs[9] >> 5) & 1)
 
-#define DRV2EN_NEG	(dev->regs[0x0b] & 1)        /* 0=drive 2 installed */
-#define INVERTZ		((dev->regs[0x0b] >> 1) & 1) /* 0=inv DENSEL polarity */
+#define DRV2EN_NEG	(dev->regs[0x0b] & 1)		// 0=drive 2 installed
+#define INVERTZ		((dev->regs[0x0b] >> 1) & 1)	// 0=inv DENSEL polarity
 #define IDENT		((dev->regs[0x0b] >> 3) & 1)
 
 #define HEFERE		((dev->regs[0x0c] >> 5) & 1)
 
 #define HAS_IDE_FUNCTIONALITY dev->ide_function
 
+
 typedef struct {
     int8_t	locked,
 		rw_locked;
 
-    uint8_t tries,
-        cur_reg,
-        ide_function,
-        key;
+    uint8_t	tries,
+		cur_reg,
+		ide_function,
+		key;
 
     uint16_t    reg16_init;
 
@@ -94,25 +95,12 @@ typedef struct {
 } w83787f_t;
 
 
-static void	w83787f_write(uint16_t port, uint8_t val, priv_t priv);
-static uint8_t	w83787f_read(uint16_t port, priv_t priv);
+static uint8_t	w83787f_in(uint16_t port, priv_t priv);
+static void	w83787f_out(uint16_t port, uint8_t val, priv_t priv);
 
 
-static void
-w83787f_remap(w83787f_t *dev)
-{
-
-    io_removehandler(0x0250, 3,
-		     w83787f_read,NULL,NULL, w83787f_write,NULL,NULL, dev);
-
-    io_sethandler(0x0250, 3,
-		  w83787f_read,NULL,NULL, w83787f_write,NULL,NULL, dev);
-
-    dev->key = 0x88 | HEFERE;
-}
-
-/* FIXME: Implement EPP (and ECP) parallel port modes. */
 #if 0
+/* FIXME: Implement EPP (and ECP) parallel port modes. */
 static uint8_t
 get_lpt_length(w83787f_t *dev)
 {
@@ -120,14 +108,15 @@ get_lpt_length(w83787f_t *dev)
 
     if (dev->regs[9] & 0x80) {
 	    if (dev->regs[0] & 0x04)
-		    length = 8;	/* EPP mode. */
+		    length = 8;			// EPP mode
 	    if (dev->regs[0] & 0x08)
-		    length |= 0x80;	/* ECP mode. */
+		    length |= 0x80;		// ECP mode
     }
 
-    return length;
+    return(length);
 }
 #endif
+
 
 static void
 serial_handler(w83787f_t *dev, int uart)
@@ -143,35 +132,38 @@ serial_handler(w83787f_t *dev, int uart)
     if (urs2) {
 	    addr = uart ? 0x3f8 : 0x2f8;
 	    irq = uart ? 4 : 3;
-    } else {
-	    switch (urs) {
-		    case 0:
-			    addr = uart ? 0x3e8 : 0x2e8;
-			    irq = uart ? 4 : 3;
-			    break;
-		    case 1:
-			    addr = uart ? 0x2e8 : 0x3e8;
-			    irq = uart ? 3 : 4;
-			    break;
-		    case 2:
-			    addr = uart ? 0x2f8 : 0x3f8;
-			    irq = uart ? 3 : 4;
-			    break;
-		    case 3:
-		    default:
-			    enable = 0;
-			    break;
-	    }
+    } else switch (urs) {
+	case 0:
+		addr = uart ? 0x3e8 : 0x2e8;
+		irq = uart ? 4 : 3;
+		break;
+
+	case 1:
+		addr = uart ? 0x2e8 : 0x3e8;
+		irq = uart ? 3 : 4;
+		break;
+
+	case 2:
+		addr = uart ? 0x2f8 : 0x3f8;
+		irq = uart ? 3 : 4;
+		break;
+
+	case 3:
+	default:
+		enable = 0;
+		break;
     }
 
     if (dev->regs[4] & (0x20 >> uart))
-        enable = 0;
+	enable = 0;
+
 #if 0
-	serial_remove(uart);
+    serial_remove(uart);
 #endif
     if (enable)
-	    serial_setup(uart, addr, irq);
+	serial_setup(uart, addr, irq);
 }
+
 
 static void
 lpt_handler(w83787f_t *dev)
@@ -181,163 +173,77 @@ lpt_handler(w83787f_t *dev)
     uint16_t addr = 0x378, enable = 1;
 
     switch (ptras) {
-        case 0x00:
-            addr = 0x3bc;
-            //irq = 7;
-            break;
-        case 0x01:
-            addr = 0x278;
-            //irq = 5;
-            break;
-        case 0x02:
-            addr = 0x378;
-            //irq = 7;
-            break;
-        case 0x03:
-        default:
-            enable = 0;
-            break;
+	case 0x00:
+		addr = 0x3bc;
+		//irq = 7;
+		break;
+
+	case 0x01:
+		addr = 0x278;
+		//irq = 5;
+		break;
+
+	case 0x02:
+		addr = 0x378;
+		//irq = 7;
+		break;
+
+	case 0x03:
+		default:
+		enable = 0;
+		break;
     }
 
     if (dev->regs[4] & 0x80)
-        enable = 0;
+	enable = 0;
     
-//    parallel_remove(0);
+#if 0
+    parallel_remove(0);
+#endif
     if (enable)
-		parallel_setup(0, addr);
+	parallel_setup(0, addr);
 }
+
 
 static void
 fdc_handler(w83787f_t *dev)
 {
     fdc_remove(dev->fdc);
+
     if (!(dev->regs[0] & 0x20) && !(dev->regs[6] & 0x08))
-        fdc_set_base(dev->fdc, (dev->regs[0] & 0x10) ? 0x03f0 : 0x0370);
+	fdc_set_base(dev->fdc, (dev->regs[0] & 0x10) ? 0x03f0 : 0x0370);
 }
+
 
 static void
 ide_handler(w83787f_t *dev)
 {
     ide_pri_disable();
+
     if (dev->regs[0] & 0x80) {
-        ide_set_base(0, (dev->regs[0] & 0x40) ? 0x1f0 : 0x170);
-        ide_set_side(0, (dev->regs[0] & 0x40) ? 0x3f6 : 0x376);
-        ide_pri_enable();
+	ide_set_base(0, (dev->regs[0] & 0x40) ? 0x1f0 : 0x170);
+	ide_set_side(0, (dev->regs[0] & 0x40) ? 0x3f6 : 0x376);
+	ide_pri_enable();
     }
 }
 
+
 static void
-w83787f_write(uint16_t port, uint8_t val, priv_t priv)
+w83787f_remap(w83787f_t *dev)
 {
-    w83787f_t *dev = (w83787f_t *)priv;
-    uint8_t valxor = 0;
-    uint8_t max = 0x15;
 
-    if (port == 0x250) {
-        if (val == dev->key)
-            dev->locked = 1;
-        else
-            dev->locked = 0;
-        return;
-    } else if (port == 0x251) {
-        if (val <= max)
-            dev->cur_reg = val;
-        return;
-    } else {
-        if (dev->locked) {
-            if (dev->rw_locked)
-                return;
-            if (dev->cur_reg == 6)
-                val &= 0xf3;
-            valxor = val ^ dev->regs[dev->cur_reg];
-            dev->regs[dev->cur_reg] = val;
-        } else
-            return;
-    }
+    io_removehandler(0x0250, 3,
+		     w83787f_in,NULL,NULL, w83787f_out,NULL,NULL, dev);
 
-    switch (dev->cur_reg) {
-	case 0:
-        if ((valxor & 0xc0) && (HAS_IDE_FUNCTIONALITY))
-            ide_handler(dev);
-        if (valxor & 0x30)
-            fdc_handler(dev);
-        if (valxor & 0x0c)
-            lpt_handler(dev);
-        break;
+    io_sethandler(0x0250, 3,
+		  w83787f_in,NULL,NULL, w83787f_out,NULL,NULL, dev);
 
-    case 1:
-		if (valxor & 0x80)
-			fdc_set_swap(dev->fdc, (dev->regs[1] & 0x80) ? 1 : 0);
-        if (valxor & 0x30)
-            lpt_handler(dev);
-        if (valxor & 0x0a)
-            serial_handler(dev, 1);
-        if (valxor & 0x05)
-            serial_handler(dev, 0);
-        break;
-
-    case 3:
-        if (valxor & 0x80)
-            lpt_handler(dev);
-        if (valxor & 0x08)
-            serial_handler(dev, 0);
-        if (valxor & 0x04)
-            serial_handler(dev, 1);
-        break;
-
-    case 4:
-        if (valxor & 0x10)
-			serial_handler(dev, 1);
-		if (valxor & 0x20)
-			serial_handler(dev, 0);
-		if (valxor & 0x80)
-            lpt_handler(dev);
-            break;
-
-    case 6:
-        if (valxor & 0x08)
-            fdc_handler(dev);
-        break;
-
-    case 7:
-        if (valxor & 0x03)
-            fdc_update_rwc(dev->fdc, 0, FDDA_TYPE);
-        if (valxor & 0x0c)
-            fdc_update_rwc(dev->fdc, 1, FDDB_TYPE);
-        if (valxor & 0x30)
-            fdc_update_rwc(dev->fdc, 2, FDDC_TYPE);
-        if (valxor & 0xc0)
-            fdc_update_rwc(dev->fdc, 3, FDDD_TYPE);
-        break;
-
-    case 8:
-        if (valxor & 0x03)
-            fdc_update_boot_drive(dev->fdc, FD_BOOT);
-        if (valxor & 0x10)
-            fdc_set_swwp(dev->fdc, SWWP ? 1 : 0);
-        if (valxor & 0x20)
-            fdc_set_diswr(dev->fdc, DISFDDWR ? 1 : 0);
-        break;
-
-    case 9:
-        if (valxor & 0x20)
-            fdc_update_enh_mode(dev->fdc, EN3MODE ? 1 : 0);
-        if (valxor & 0x40)
-            dev->rw_locked = (val & 0x40) ? 1 : 0;
-        if (valxor & 0x80)
-            lpt_handler(dev);
-        break;
-
-	case 0x0c:
-		if (valxor & 0x20)
-			w83787f_remap(dev);
-		break;
-    }
+    dev->key = 0x88 | HEFERE;
 }
 
 
 static uint8_t
-w83787f_read(uint16_t port, priv_t priv)
+w83787f_in(uint16_t port, priv_t priv)
 {
     w83787f_t *dev = (w83787f_t *)priv;
     uint8_t ret = 0xff;
@@ -346,14 +252,126 @@ w83787f_read(uint16_t port, priv_t priv)
 	    if (port == 0x251)
 		    ret = dev->cur_reg;
 	    else if (port == 0x252) {
-            if (dev->cur_reg == 7)
-                ret = (fdc_get_rwc(dev->fdc, 0) | (fdc_get_rwc(dev->fdc, 1) << 2));
-            else if (!dev->rw_locked)
-                ret = dev->regs[dev->cur_reg];
-        }
+	    if (dev->cur_reg == 7)
+		ret = (fdc_get_rwc(dev->fdc, 0) | (fdc_get_rwc(dev->fdc, 1) << 2));
+	    else if (!dev->rw_locked)
+		ret = dev->regs[dev->cur_reg];
+	}
     } 
 
     return ret;
+}
+
+
+static void
+w83787f_out(uint16_t port, uint8_t val, priv_t priv)
+{
+    w83787f_t *dev = (w83787f_t *)priv;
+    uint8_t valxor = 0;
+    uint8_t max = 0x15;
+
+    if (port == 0x250) {
+	if (val == dev->key)
+		dev->locked = 1;
+	else
+		dev->locked = 0;
+	return;
+    }
+
+    if (port == 0x251) {
+	if (val <= max)
+		dev->cur_reg = val;
+	return;
+    }
+
+    if (dev->locked) {
+	if (dev->rw_locked)
+		return;
+	if (dev->cur_reg == 6)
+		val &= 0xf3;
+	valxor = val ^ dev->regs[dev->cur_reg];
+	dev->regs[dev->cur_reg] = val;
+    } else
+	return;
+
+    switch (dev->cur_reg) {
+	case 0:
+		if ((valxor & 0xc0) && (HAS_IDE_FUNCTIONALITY))
+			ide_handler(dev);
+		if (valxor & 0x30)
+			fdc_handler(dev);
+		if (valxor & 0x0c)
+			lpt_handler(dev);
+		break;
+
+	case 1:
+		if (valxor & 0x80)
+			fdc_set_swap(dev->fdc, (dev->regs[1] & 0x80) ? 1 : 0);
+		if (valxor & 0x30)
+			lpt_handler(dev);
+		if (valxor & 0x0a)
+			serial_handler(dev, 1);
+		if (valxor & 0x05)
+			serial_handler(dev, 0);
+		break;
+
+	case 3:
+		if (valxor & 0x80)
+			lpt_handler(dev);
+		if (valxor & 0x08)
+			serial_handler(dev, 0);
+		if (valxor & 0x04)
+			serial_handler(dev, 1);
+		break;
+
+	case 4:
+		if (valxor & 0x10)
+			serial_handler(dev, 1);
+		if (valxor & 0x20)
+			serial_handler(dev, 0);
+		if (valxor & 0x80)
+			lpt_handler(dev);
+		break;
+
+	case 6:
+		if (valxor & 0x08)
+			fdc_handler(dev);
+		break;
+
+	case 7:
+		if (valxor & 0x03)
+			fdc_update_rwc(dev->fdc, 0, FDDA_TYPE);
+		if (valxor & 0x0c)
+			fdc_update_rwc(dev->fdc, 1, FDDB_TYPE);
+		if (valxor & 0x30)
+			fdc_update_rwc(dev->fdc, 2, FDDC_TYPE);
+		if (valxor & 0xc0)
+			fdc_update_rwc(dev->fdc, 3, FDDD_TYPE);
+		break;
+
+	case 8:
+		if (valxor & 0x03)
+			fdc_update_boot_drive(dev->fdc, FD_BOOT);
+		if (valxor & 0x10)
+			fdc_set_swwp(dev->fdc, SWWP ? 1 : 0);
+		if (valxor & 0x20)
+			fdc_set_diswr(dev->fdc, DISFDDWR ? 1 : 0);
+		break;
+
+	case 9:
+		if (valxor & 0x20)
+			fdc_update_enh_mode(dev->fdc, EN3MODE ? 1 : 0);
+		if (valxor & 0x40)
+			dev->rw_locked = (val & 0x40) ? 1 : 0;
+		if (valxor & 0x80)
+			lpt_handler(dev);
+		break;
+
+	case 0x0c:
+		if (valxor & 0x20)
+			w83787f_remap(dev);
+		break;
+    }
 }
 
 
@@ -367,11 +385,11 @@ w83787f_reset(w83787f_t *dev)
 #endif
     parallel_setup(0, 0x0378);
 
-    if(HAS_IDE_FUNCTIONALITY) {
-        ide_pri_disable();
-        ide_set_base(0, 0x1f0);
-        ide_set_side(0, 0x3f6);
-        ide_pri_enable();
+    if (HAS_IDE_FUNCTIONALITY) {
+	ide_pri_disable();
+	ide_set_base(0, 0x1f0);
+	ide_set_side(0, 0x3f6);
+	ide_pri_enable();
     }
 
     fdc_reset(dev->fdc);
@@ -410,7 +428,9 @@ w83787f_close(priv_t priv)
 static priv_t
 w83787f_init(const device_t *info, UNUSED(void *parent))
 {
-    w83787f_t *dev = (w83787f_t *)mem_alloc(sizeof(w83787f_t));
+    w83787f_t *dev;
+
+    dev = (w83787f_t *)mem_alloc(sizeof(w83787f_t));
     memset(dev, 0x00, sizeof(w83787f_t));
     dev->reg16_init = info->local;
 
@@ -418,7 +438,7 @@ w83787f_init(const device_t *info, UNUSED(void *parent))
 
     w83787f_reset(dev);
 
-    return((priv_t)dev);
+    return(dev);
 }
 
 

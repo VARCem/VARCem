@@ -9,11 +9,11 @@
 #
 #		Build script for the Travis CI remote builder service.
 #
-# Version:	@(#).travis-build.sh	1.0.9	2019/07/17
+# Version:	@(#).travis-build.sh	1.0.10	2021/03/24
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
-#		Copyright 2018-2020 Fred N. van Kempen.
+#		Copyright 2018-2021 Fred N. van Kempen.
 #
 #		Redistribution and  use  in source  and binary forms, with
 #		or  without modification, are permitted  provided that the
@@ -46,7 +46,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
     # Define the build options here.
-    OPTS="D2D=d SDL=d VNC=d PNG=d"
+    OPTS="SDL=d VNC=d PNG=d"
 
     if [ "x${DEV_BUILD}" = "xy" ]; then
 	TARGET="win-${TRAVIS_BUILD_NUMBER}_dev-x86"
