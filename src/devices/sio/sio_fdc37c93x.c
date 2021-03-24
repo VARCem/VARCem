@@ -6,10 +6,9 @@
  *
  *		This file is part of the VARCem Project.
  *
- *		Implementation of the SMC FDC37C932FR and FDC37C935 Super
- *		I/O Chips.
+ *		SMC FDC37C932FR and FDC37C935 Super I/O Chips.
  *
- * Version:	@(#)sio_fdc37c93x.c	1.0.17	2021/03/16
+ * Version:	@(#)sio_fdc37c93x.c	1.0.17	2021/03/23
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -94,21 +93,21 @@ make_port(fdc37c93x_t *dev, uint8_t ld)
 
     uint16_t p = (r0 << 8) + r1;
 
-    return p;
+    return(p);
 }
 
 
 static uint8_t
-auxio_read(uint16_t port, priv_t priv)
+auxio_in(uint16_t port, priv_t priv)
 {
     fdc37c93x_t *dev = (fdc37c93x_t *)priv;
 
-    return dev->auxio_reg;
+    return(dev->auxio_reg);
 }
 
 
 static void
-auxio_write(uint16_t port, uint8_t val, priv_t priv)
+auxio_out(uint16_t port, uint8_t val, priv_t priv)
 {
     fdc37c93x_t *dev = (fdc37c93x_t *)priv;
 
@@ -123,31 +122,31 @@ auxio_handler(fdc37c93x_t *dev)
     uint16_t ld_port;
 
     io_removehandler(dev->auxio_base, 1,
-		     auxio_read,NULL,NULL, auxio_write,NULL,NULL, dev);
+		     auxio_in,NULL,NULL, auxio_out,NULL,NULL, dev);
 
     if (local_enable) {
 	dev->auxio_base = ld_port = make_port(dev, 8);
 	if ((ld_port >= 0x0100) && (ld_port <= 0x0fff))
 	        io_sethandler(dev->auxio_base, 0x0001,
-			      auxio_read,NULL,NULL, auxio_write,NULL,NULL, dev);
+			      auxio_in,NULL,NULL, auxio_out,NULL,NULL, dev);
     }
 }
 
 
 static uint8_t
-gpio_read(uint16_t port, priv_t priv)
+gpio_in(uint16_t port, priv_t priv)
 {
     fdc37c93x_t *dev = (fdc37c93x_t *)priv;
     uint8_t ret = 0xff;
 
     ret = dev->gpio_regs[port & 1];
 
-    return ret;
+    return(ret);
 }
 
 
 static void
-gpio_write(uint16_t port, uint8_t val, priv_t priv)
+gpio_out(uint16_t port, uint8_t val, priv_t priv)
 {
     fdc37c93x_t *dev = (fdc37c93x_t *)priv;
 
@@ -163,7 +162,7 @@ gpio_handler(fdc37c93x_t *dev)
     uint16_t ld_port = 0x0000;
 
     io_removehandler(dev->gpio_base, 0x0002,
-		     gpio_read,NULL,NULL, gpio_write,NULL,NULL, dev);
+		     gpio_in,NULL,NULL, gpio_out,NULL,NULL, dev);
 
     if (local_enable) {
 	switch (dev->regs[0x03] & 0x03) {
@@ -187,7 +186,7 @@ gpio_handler(fdc37c93x_t *dev)
 
 	if ((ld_port >= 0x0100) && (ld_port <= 0x0ffe))
 	        io_sethandler(dev->gpio_base, 0x0002,
-			      gpio_read,NULL,NULL, gpio_write,NULL,NULL, dev);
+			      gpio_in,NULL,NULL, gpio_out,NULL,NULL, dev);
     }
 }
 
@@ -222,6 +221,8 @@ lpt_handler(fdc37c93x_t *dev)
 	if ((ld_port >= 0x0100) && (ld_port <= 0x0ffc))
 		parallel_setup(0, ld_port);
     }
+
+    (void)lpt_irq;
 }
 
 
@@ -242,7 +243,7 @@ serial_handler(fdc37c93x_t *dev, int uart)
 
 
 static uint8_t
-access_bus_read(uint16_t port, priv_t priv)
+access_bus_in(uint16_t port, priv_t priv)
 {
     access_bus_t *dev = (access_bus_t *)priv;
     uint8_t ret = 0xff;
@@ -265,12 +266,12 @@ access_bus_read(uint16_t port, priv_t priv)
 		break;
     }
 
-    return ret;
+    return(ret);
 }
 
 
 static void
-access_bus_write(uint16_t port, uint8_t val, priv_t priv)
+access_bus_out(uint16_t port, uint8_t val, priv_t priv)
 {
     access_bus_t *dev = (access_bus_t *)priv;
 
@@ -307,7 +308,9 @@ access_bus_close(priv_t priv)
 static priv_t
 access_bus_init(const device_t *info, UNUSED(void *parent))
 {
-    access_bus_t *dev = (access_bus_t *)mem_alloc(sizeof(access_bus_t));
+    access_bus_t *dev;
+
+    dev = (access_bus_t *)mem_alloc(sizeof(access_bus_t));
     memset(dev, 0x00, sizeof(access_bus_t));
 
     return(dev);
@@ -333,21 +336,53 @@ access_bus_handler(fdc37c93x_t *dev)
     uint16_t ld_port = 0;
 
     io_removehandler(dev->access_bus->base, 4,
-		     access_bus_read,NULL,NULL,
-		     access_bus_write,NULL,NULL, dev->access_bus);
+		     access_bus_in,NULL,NULL,
+		     access_bus_out,NULL,NULL, dev->access_bus);
 
     if (global_enable && local_enable) {
 	dev->access_bus->base = ld_port = make_port(dev, 9);
 	if ((ld_port >= 0x0100) && (ld_port <= 0x0ffc))
 	        io_sethandler(dev->access_bus->base, 4,
-			      access_bus_read,NULL,NULL,
-			      access_bus_write,NULL,NULL, dev->access_bus);
+			      access_bus_in,NULL,NULL,
+			      access_bus_out,NULL,NULL, dev->access_bus);
     }
 }
 
 
+static uint8_t
+fdc37c93x_in(uint16_t port, priv_t priv)
+{
+    fdc37c93x_t *dev = (fdc37c93x_t *)priv;
+    uint8_t indx = (port & 1) ? 0 : 1;
+    uint8_t ret = 0xff;
+
+    if (! dev->locked)
+	return(ret);
+
+    if (indx) {
+	ret = dev->cur_reg;
+	return(ret);
+    }
+
+    if (dev->cur_reg < 0x30) {
+	if (dev->cur_reg == 0x20)
+		ret = dev->chip_id;
+	else
+		ret = dev->regs[dev->cur_reg];
+    } else {
+	if ((dev->regs[7] == 0) && (dev->cur_reg == 0xF2)) {
+		ret = (fdc_get_rwc(dev->fdc, 0) | (fdc_get_rwc(dev->fdc, 1) << 2) |
+		      (fdc_get_rwc(dev->fdc, 2) << 4) | (fdc_get_rwc(dev->fdc, 3) << 6));
+	} else
+		ret = dev->ld_regs[dev->regs[7]][dev->cur_reg];
+    }
+
+    return(ret);
+}
+
+
 static void
-fdc37c93x_write(uint16_t port, uint8_t val, priv_t priv)
+fdc37c93x_out(uint16_t port, uint8_t val, priv_t priv)
 {
     fdc37c93x_t *dev = (fdc37c93x_t *)priv;
     uint8_t indx = (port & 1) ? 0 : 1;
@@ -375,42 +410,43 @@ fdc37c93x_write(uint16_t port, uint8_t val, priv_t priv)
 		}
 	}
 	return;
-    } else {
-	if (dev->locked) {
-		if (dev->cur_reg < 48) {
-			valxor = val ^ dev->regs[dev->cur_reg];
-			if ((val == 0x20) || (val == 0x21))
-				return;
-			dev->regs[dev->cur_reg] = val;
-		} else {
-			valxor = val ^ dev->ld_regs[dev->regs[7]][dev->cur_reg];
-			if (((dev->cur_reg & 0xF0) == 0x70) && (dev->regs[7] < 4))
-				return;
-			/* Block writes to some logical devices. */
-			if (dev->regs[7] > 9)
-				return;
-			else switch (dev->regs[7]) {
-				case 1:
-				case 2:
-				case 6:
-				case 7:
-					return;
-
-				case 9:
-					/*
-					 * If we are on the FDC37C935, return
-					 * as this is not a valid logical
-					 * device there.
-					 */
-					if (dev->chip_id == 0x02)
-						return;
-					break;
-			}
-			dev->ld_regs[dev->regs[7]][dev->cur_reg] = val;
-		}
-	} else
-		return;
     }
+
+    if (dev->locked) {
+	if (dev->cur_reg < 48) {
+		valxor = val ^ dev->regs[dev->cur_reg];
+		if ((val == 0x20) || (val == 0x21))
+			return;
+		dev->regs[dev->cur_reg] = val;
+	} else {
+		valxor = val ^ dev->ld_regs[dev->regs[7]][dev->cur_reg];
+		if (((dev->cur_reg & 0xF0) == 0x70) && (dev->regs[7] < 4))
+			return;
+
+		/* Block writes to some logical devices. */
+		if (dev->regs[7] > 9)
+			return;
+		else switch (dev->regs[7]) {
+			case 1:
+			case 2:
+			case 6:
+			case 7:
+				return;
+
+			case 9:
+				/*
+				 * If we are on the FDC37C935, return
+				 * as this is not a valid logical
+				 * device there.
+				 */
+				if (dev->chip_id == 0x02)
+					return;
+				break;
+		}
+		dev->ld_regs[dev->regs[7]][dev->cur_reg] = val;
+	}
+    } else
+	return;
 
     if (dev->cur_reg < 48) {
 	switch(dev->cur_reg) {
@@ -569,42 +605,12 @@ fdc37c93x_write(uint16_t port, uint8_t val, priv_t priv)
 }
 
 
-static uint8_t
-fdc37c93x_read(uint16_t port, priv_t priv)
-{
-    fdc37c93x_t *dev = (fdc37c93x_t *)priv;
-    uint8_t indx = (port & 1) ? 0 : 1;
-    uint8_t ret = 0xff;
-
-    if (! dev->locked)
-	return ret;
-
-    if (indx) {
-	ret = dev->cur_reg;
-	return ret;
-    }
-
-    if (dev->cur_reg < 0x30) {
-	if (dev->cur_reg == 0x20)
-		ret = dev->chip_id;
-	else
-		ret = dev->regs[dev->cur_reg];
-    } else {
-	if ((dev->regs[7] == 0) && (dev->cur_reg == 0xF2)) {
-		ret = (fdc_get_rwc(dev->fdc, 0) | (fdc_get_rwc(dev->fdc, 1) << 2) |
-		      (fdc_get_rwc(dev->fdc, 2) << 4) | (fdc_get_rwc(dev->fdc, 3) << 6));
-	} else
-		ret = dev->ld_regs[dev->regs[7]][dev->cur_reg];
-    }
-
-    return ret;
-}
-
-
 static void
 fdc37c93x_reset(fdc37c93x_t *dev)
 {
-//    parallel_remove(1);
+#if 0
+    parallel_remove(1);
+#endif
 
     memset(dev->regs, 0, 48);
 
@@ -681,10 +687,9 @@ fdc37c93x_reset(fdc37c93x_t *dev)
 
     /* Logical device 8: Auxiliary I/O */
     io_removehandler(dev->access_bus->base, 4,
-		     access_bus_read,NULL,NULL, access_bus_write,NULL,NULL, dev->access_bus);
+		     access_bus_in,NULL,NULL, access_bus_out,NULL,NULL, dev->access_bus);
 
     /* Logical device 9: ACCESS.bus */
-
     gpio_handler(dev);
     lpt_handler(dev);
     serial_handler(dev, 0);
@@ -726,9 +731,9 @@ fdc37c93x_init(const device_t *info, void *parent)
 	dev->access_bus = device_add_parent(&access_bus_device, parent);
 
     io_sethandler(0x370, 0x0002,
-		  fdc37c93x_read, NULL, NULL, fdc37c93x_write, NULL, NULL, dev);
+		  fdc37c93x_in, NULL, NULL, fdc37c93x_out, NULL, NULL, dev);
     io_sethandler(0x3f0, 2,
-		  fdc37c93x_read,NULL,NULL, fdc37c93x_write,NULL,NULL, dev);
+		  fdc37c93x_in,NULL,NULL, fdc37c93x_out,NULL,NULL, dev);
 
     fdc37c93x_reset(dev);
 

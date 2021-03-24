@@ -66,7 +66,7 @@ static void
 lpt1_handler(pc87332_t *dev)
 {
     uint16_t lpt_port = 0x378;
-    //uint8_t lpt_irq = 5;
+    uint8_t lpt_irq = 5;
     int temp;
 
     temp = dev->regs[0x01] & 3;
@@ -74,29 +74,33 @@ lpt1_handler(pc87332_t *dev)
     switch (temp) {
 	case 0:
 		lpt_port = 0x378;
-		//lpt_irq = (dev->regs[0x02] & 0x08) ? 7 : 5;
+		lpt_irq = (dev->regs[0x02] & 0x08) ? 7 : 5;
 		break;
 
 	case 1:
 		lpt_port = 0x3bc;
-		//lpt_irq = 7;
+		lpt_irq = 7;
 		break;
 
 	case 2:
 		lpt_port = 0x278;
-		//lpt_irq = 5;
+		lpt_irq = 5;
 		break;
 
 	case 3:
 		lpt_port = 0x000;
-		//lpt_irq = 0xff;
+		lpt_irq = 0xff;
 		break;
     }
 
     if (lpt_port)
 	parallel_setup(0, lpt_port);
 
-    //lpt1_irq(lpt_irq);
+#if 0
+    lpt1_irq(lpt_irq);
+#else
+    (void)lpt_irq;
+#endif
 }
 
 
@@ -159,15 +163,34 @@ serial_handler(pc87332_t *dev, int uart)
 }
 
 
-static void
-pc87332_write(uint16_t port, uint8_t val, priv_t priv)
+static uint8_t
+pc87332_in(uint16_t port, priv_t priv)
 {
     pc87332_t *dev = (pc87332_t *)priv;
-    uint8_t index, valxor;
+    uint8_t ret = 0xff;
 
-    index = (port & 1) ? 0 : 1;
+    dev->tries = 0;
 
-    if (index) {
+    if (port & 1) {
+	if (dev->cur_reg == 8)
+		ret = 0x10;
+	else if (dev->cur_reg < 14)
+		ret = dev->regs[dev->cur_reg];
+    } else
+	ret = dev->cur_reg & 0x1f;
+
+    return(ret);
+}
+
+
+static void
+pc87332_out(uint16_t port, uint8_t val, priv_t priv)
+{
+    pc87332_t *dev = (pc87332_t *)priv;
+    uint8_t indx, valxor;
+
+    indx = (port & 1) ? 0 : 1;
+    if (indx) {
     	dev->cur_reg = val & 0x1f;
     	dev->tries = 0;
 	return;
@@ -245,29 +268,6 @@ pc87332_write(uint16_t port, uint8_t val, priv_t priv)
 }
 
 
-static uint8_t
-pc87332_read(uint16_t port, priv_t priv)
-{
-    pc87332_t *dev = (pc87332_t *)priv;
-    uint8_t ret = 0xff, index;
-
-    index = (port & 1) ? 0 : 1;
-
-    dev->tries = 0;
-
-    if (index)
-	ret = dev->cur_reg & 0x1f;
-    else {
-	if (dev->cur_reg == 8)
-		ret = 0x10;
-	else if (dev->cur_reg < 14)
-		ret = dev->regs[dev->cur_reg];
-    }
-
-    return ret;
-}
-
-
 static void
 pc87332_reset(pc87332_t *dev)
 {
@@ -283,12 +283,11 @@ pc87332_reset(pc87332_t *dev)
 	0 = 360 rpm @ 500 kbps for 3.5"
 	1 = Default, 300 rpm @ 500,300,250,1000 kbps for 3.5"
     */
+    fdc_reset(dev->fdc);
 
     lpt1_handler(dev);
     serial_handler(dev, 0);
     serial_handler(dev, 1);
-
-    fdc_reset(dev->fdc);
 }
 
 
@@ -304,7 +303,9 @@ pc87332_close(priv_t priv)
 static priv_t
 pc87332_init(const device_t *info, UNUSED(void *parent))
 {
-    pc87332_t *dev = (pc87332_t *)mem_alloc(sizeof(pc87332_t));
+    pc87332_t *dev;
+
+    dev = (pc87332_t *)mem_alloc(sizeof(pc87332_t));
     memset(dev, 0x00, sizeof(pc87332_t));
 
     dev->fdc = device_add(&fdc_at_nsc_device);
@@ -313,10 +314,10 @@ pc87332_init(const device_t *info, UNUSED(void *parent))
 
     if (info->local == 1) {
 	io_sethandler(0x398, 2,
-		      pc87332_read,NULL,NULL, pc87332_write,NULL,NULL, dev);
+		      pc87332_in,NULL,NULL, pc87332_out,NULL,NULL, dev);
     } else {
 	io_sethandler(0x02e, 2,
-		      pc87332_read,NULL,NULL, pc87332_write,NULL,NULL, dev);
+		      pc87332_in,NULL,NULL, pc87332_out,NULL,NULL, dev);
     }
 
     return(dev);

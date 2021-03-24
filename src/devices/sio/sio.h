@@ -70,8 +70,9 @@ extern const device_t	pc87332_ps1_device;
 
 extern const device_t	um8669f_device;
 
+extern const device_t   w83787f_device;
 extern const device_t	w83877f_device;
 extern const device_t	w83877f_president_device;
-extern const device_t   w83787f_device;
+
 
 #endif	/*EMU_SIO_H*/

@@ -186,8 +186,8 @@ static const struct {
 
     { "[486 MCA] IBM PS/2 model 70 (type 4)",	"ibm_ps2_m70_type4",	&m_ps2_m70_4		},
 
-    { "[486 PCI] Lucky Star LS-486E (SiS496,AMI)",	"ami_486_sis496",	&m_sis496_ami		},
-    { "[486 PCI] Lucky Star LS-486E Rev C1 (Sis496, Award)",	"award_486_sis496",	&m_sis496_award		},
+    { "[486 PCI] Lucky Star LS-486E (SiS496,AMI)","ami_486_sis496",	&m_sis496_ami		},
+    { "[486 PCI] Lucky Star LS-486E Rev C1 (Sis496, Award)","award_486_sis496",	&m_sis496_award	},
     { "[486 PCI] Rise Computer R418",		"rise_r418",		&m_rise418		},
 
     /* Pentium, Socket4 (LX) */
