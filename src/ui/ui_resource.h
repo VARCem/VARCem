@@ -12,11 +12,11 @@
  *		those are not used by the platform code. This is easier to
  *		maintain.
  *
- * Version:	@(#)ui_resource.h	1.0.23	2020/12/02
+ * Version:	@(#)ui_resource.h	1.0.24	2021/03/20
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
- *		Copyright 2018,2020 Fred N. van Kempen.
+ *		Copyright 2018-2021 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -411,6 +411,8 @@
 #define  IDS_3425	3425		/* "Network type:" */
 #define  IDS_3426	3426		/* "PCap device:" */
 #define  IDS_3427	3427		/* "Network adapter:" */
+#define  IDS_3428	3428		/* "Tunnel Server:" */
+#define  IDS_3429	3429		/* "Tunnel Server Port:" */
 
 /* UI dialog: Settings (Ports, 3450.) */
 #define  IDS_3450	3450		/* "Game port" */

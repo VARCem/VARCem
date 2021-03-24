@@ -8,11 +8,11 @@
  *
  *		Definitions for the network module.
  *
- * Version:	@(#)network.h	1.0.9	2019/05/02
+ * Version:	@(#)network.h	1.0.10	2021/03/22
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -46,16 +46,14 @@
  */
 #ifndef EMU_NETWORK_H
 # define EMU_NETWORK_H
-# include <stdint.h>
 
 
 enum {
     NET_NONE = 0,
     NET_SLIRP,
-    NET_PCAP
-#ifdef USE_VNS
-    ,NET_VNS
-#endif
+    NET_UDPLINK,
+    NET_PCAP,
+    NET_VNS
 };
 
 enum {
@@ -68,19 +66,19 @@ typedef void (*NETRXCB)(void *, uint8_t *bufp, int);
 
 /* Define a host interface entry for a network provider. */
 typedef struct {
-    char		device[128];
-    char		description[128];
+    char	device[128];
+    char	description[128];
 } netdev_t;
 
 /* Define a network provider. */
 typedef struct {
-    const char		*name;
+    const char	*name;
 
-    int			(*init)(netdev_t *);
-    void		(*close)(void);
-    int			(*reset)(uint8_t *);
-    int			(*available)(void);
-    void		(*send)(uint8_t *, int);
+    int		(*init)(netdev_t *);
+    void	(*close)(void);
+    int		(*reset)(uint8_t *);
+    int		(*available)(void);
+    void	(*send)(const uint8_t *, int);
 } network_t;
 
 
@@ -89,14 +87,13 @@ extern "C" {
 #endif
 
 /* Global variables. */
-extern int      network_host_ndev;
-extern netdev_t network_host_devs[32];
+extern int		network_host_ndev;
+extern netdev_t		network_host_devs[32];
 
 extern const network_t	network_slirp;
 extern const network_t	network_pcap;
-#ifdef USE_VNS
+extern const network_t	network_udplink;
 extern const network_t	network_vns;
-#endif
 
 
 /* Function prototypes. */

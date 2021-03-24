@@ -8,7 +8,7 @@
  *
  *		Main emulator module where most things are controlled.
  *
- * Version:	@(#)pc.c	1.0.84	2021/03/18
+ * Version:	@(#)pc.c	1.0.85	2021/03/23
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -523,7 +523,7 @@ usage:
 		printf("  -R or --fps num      - set render speed to 'num' fps\n");
 #endif
 		printf("  -S or --settings     - show only the settings dialog\n");
-		printf("  -W or --readonly     - do not modify the config file\n");
+		printf("  -W or --read_only    - do not modify the config file\n");
 		printf("  -K or --keep_space   - keep whitespace in config file\n");
 		printf("\nA config file can be specified. If none is, the default file will be used.\n");
 		return(ret);
@@ -568,6 +568,9 @@ usage:
 	} else if (!wcscasecmp(argv[c], L"--settings") ||
 		   !wcscasecmp(argv[c], L"-S")) {
 		settings_only = 1;
+	} else if (!wcscasecmp(argv[c], L"--read_only") ||
+		   !wcscasecmp(argv[c], L"-W")) {
+		config_ro = 1;
 	} else if (!wcscasecmp(argv[c], L"--keep_space") ||
 		   !wcscasecmp(argv[c], L"-K")) {
 		config_keep_space = 1;

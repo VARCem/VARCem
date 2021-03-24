@@ -8,11 +8,11 @@
  *
  *		Handle WinPcap library processing.
  *
- * Version:	@(#)net_pcap.c	1.0.12	2020/07/17
+ * Version:	@(#)net_pcap.c	1.0.13	2021/03/23
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
- *		Copyright 2017-2020 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -337,13 +337,13 @@ do_available(void)
 
 /* Send a packet to the Pcap interface. */
 static void
-do_send(uint8_t *bufp, int len)
+do_send(const uint8_t *bufp, int len)
 {
     if (pcap == NULL) return;
 
     network_busy(1);
 
-    PCAP_sendpacket((pcap_t *)pcap, bufp, len);
+    PCAP_sendpacket((pcap_t *)pcap, (uint8_t *)bufp, len);
 
     network_busy(0);
 }

@@ -13,7 +13,7 @@
  *		it as the line-by-line base for the translated version, and
  *		update fields as needed.
  *
- * Version:	@(#)VARCem.str	1.0.17	2021/03/13
+ * Version:	@(#)VARCem.str	1.0.18	2021/03/20
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -225,6 +225,8 @@
 #define  STR_3425	"Network type:"
 #define  STR_3426	"PCap device:"
 #define  STR_3427	"Network adapter:"
+#define  STR_3428	"Tunnel Server:"
+#define  STR_3429	"Port:"
 
 /* UI dialog: Settings (Ports, 3450.) */
 #define  STR_3450	"Game port"

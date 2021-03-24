@@ -8,13 +8,13 @@
  *
  *		Windows resource defines.
  *
- * Version:	@(#)resource.h	1.0.21	2020/11/20
+ * Version:	@(#)resource.h	1.0.22	2021/03/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2020 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -118,7 +118,10 @@
 #define IDT_1765		1765	/* ISAMEM #3: */
 #define IDT_1766		1766	/* ISAMEM #4: */
 #define IDT_1767		1767	/* ISARTC: */
-#define IDT_1769        1769    /* Block Size: */
+/* 1768 unused */
+#define IDT_1769		1769	/* VHD Block Size: */
+#define IDT_1770		1770	/* UDP server */
+#define IDT_1771		1771	/* UDP server port */
 
 #define IDT_TITLE		1790	/* "VARCem for Plaform" */
 #define IDT_VERSION		1791	/* "version.." */
@@ -174,10 +177,12 @@
 
 #define IDC_COMBO_NET_TYPE	1090	/* network config */
 #define IDC_CONFIGURE_NET_TYPE	1091
-#define IDC_COMBO_PCAP		1092
-#define IDC_CONFIGURE_PCAP	1093
-#define IDC_COMBO_NET_CARD	1094
-#define IDC_CONFIGURE_NET_CARD	1095
+#define IDC_COMBO_NET_CARD	1092
+#define IDC_CONFIGURE_NET_CARD	1093
+#define IDC_COMBO_PCAP		1094
+#define IDC_CONFIGURE_PCAP	1095
+#define IDC_NET_SRV_ADDR	1096
+#define IDC_NET_SRV_PORT	1097
 
 #define IDC_CHECK_GAME		1110	/* ports config */
 #define IDC_CHECK_PARALLEL1	1111

@@ -8,11 +8,14 @@
  *
  *		Implementation of the network module.
  *
- * Version:	@(#)network.c	1.0.22	2020/07/17
+ * FIXME:	We should move the "receiver thread" out of the providers,
+ *		and into here, really.
+ *
+ * Version:	@(#)network.c	1.0.23	2021/03/23
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
- *		Copyright 2017-2020 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -64,14 +67,15 @@
 
 
 typedef struct {
+    int		network;			// current provider
     mutex_t	*mutex;
 
-    void	*priv;				/* card priv data */
-    int		(*poll)(void *);		/* card poll function */
-    NETRXCB	rx;				/* card RX function */
-    uint8_t	*mac;				/* card MAC address */
+    void	*priv;				// card priv data
+    int		(*poll)(void *);		// card poll function
+    NETRXCB	rx;				// card RX function
+    uint8_t	*mac;				// card MAC address
 
-    volatile int poll_busy,			/* polling thread data */
+    volatile int poll_busy,			// polling thread data
 		queue_in_use;
     event_t	*poll_wake,
 		*poll_complete,
@@ -87,25 +91,28 @@ int		network_host_ndev;
 netdev_t	network_host_devs[32];
 
 
-static netdata_t	netdata;		/* operational data per card */
 static const struct {
     const char		*internal_name;
     const network_t	*net;
 } networks[] = {
-    { "none",		NULL		},
+    { "none",		NULL			},
 
 #ifdef USE_SLIRP
-    { "slirp",		&network_slirp	},
+    { "slirp",		&network_slirp		},
+#endif
+#ifdef USE_UDPLINK
+    { "udplink",	&network_udplink	},
 #endif
 #ifdef USE_PCAP
-    { "pcap",		&network_pcap	},
+    { "pcap",		&network_pcap		},
 #endif
 #ifdef USE_VNS
-    { "vns",		&network_vns	},
+    { "vns",		&network_vns		},
 #endif
 
-    { NULL,		NULL		}
+    { NULL					}
 };
+static netdata_t	netdata;		/* operational data per card */
 
 
 /* UI */
@@ -221,6 +228,7 @@ network_init(void)
 
     /* Clear the local data. */
     memset(&netdata, 0x00, sizeof(netdata_t));
+    netdata.network = NET_NONE;
 
     /* Initialize to a known state. */
     config.network_type = NET_NONE;
@@ -261,10 +269,10 @@ network_attach(void *dev, uint8_t *mac, NETRXCB rx)
 	return(1);
 
     /* Reset the network provider module. */
-    if (networks[config.network_type].net->reset(mac) < 0) {
+    if (networks[netdata.network].net->reset(mac) < 0) {
 	/* Tell user we can't do this (at the moment.) */
 	swprintf(temp, sizeof_w(temp), get_string(IDS_ERR_NONET),
-		 networks[config.network_type].net->name);
+		 networks[netdata.network].net->name);
 
 	(void)ui_msgbox(MBX_ERROR, temp);
 
@@ -288,16 +296,13 @@ network_attach(void *dev, uint8_t *mac, NETRXCB rx)
 void
 network_close(void)
 {
-    int i;
-
     /* If already closed, do nothing. */
-    if (netdata.mutex == NULL) return;
+    if (netdata.network == NET_NONE)
 
-    /* Force-close the network provider modules. */
-    for (i = 0; networks[i].internal_name != NULL; i++) {
-	if (networks[i].net)
-		networks[i].net->close();
-    }
+    /* Force-close the network provider module. */
+    if (networks[netdata.network].net)
+	networks[netdata.network].net->close();
+    netdata.network = NET_NONE;
 
     /* Close the network events. */
     if (netdata.poll_wake != NULL) {
@@ -312,8 +317,6 @@ network_close(void)
     /* Close the network thread mutex. */
     thread_close_mutex(netdata.mutex);
     netdata.mutex = NULL;
-
-    INFO("NETWORK: closed.\n");
 }
 
 
@@ -351,6 +354,7 @@ network_reset(void)
 	network_getname(config.network_type),
 	network_card_getname(config.network_card));
 
+    netdata.network = config.network_type;
     netdata.mutex = thread_create_mutex(L"VARCem.NetMutex");
 
     /* Add the selected card to the I/O system. */
@@ -376,7 +380,7 @@ network_tx(uint8_t *bufp, int len)
 }
 #endif
 
-    networks[config.network_type].net->send(bufp, len);
+    networks[netdata.network].net->send(bufp, len);
 
     ui_sb_icon_update(SB_NETWORK, 0);
 }

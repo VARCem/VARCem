@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows using Visual Studio 2015.
 #
-# Version:	@(#)Makefile.VC	1.0.85	2021/03/20
+# Version:	@(#)Makefile.VC	1.0.85	2021/03/23
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -255,6 +255,7 @@ LIBS		:= ddraw.lib dxguid.lib d3d9.lib \
 
 
 # Optional modules.
+ZLIB_NEEDED	:= n
 MISCOBJ		:=
 
 # Dynamic Recompiler (compiled-in)
@@ -293,17 +294,14 @@ ifneq ($(SLIRP), n)
   SLIRP_PATH	:= $(EXT_PATH)/slirp
  endif
  OPTS		+= -I$(SLIRP_PATH)/include
- ifeq ($(X64), y)
-  LIBS		+= -LIBPATH:$(SLIRP_PATH)/lib/x64
- else
-  LIBS		+= -LIBPATH:$(SLIRP_PATH)/lib/x86
- endif
+ LIBS		+= -LIBPATH:$(SLIRP_PATH)/lib/$(ARCH)
  ifeq ($(SLIRP), y)
   LIBS		+= libslirp.dll.lib
  endif
  ifeq ($(SLIRP), s)
   LIBS		+= libslirp.lib
  endif
+ MISCOBJ	+= net_slirp.obj
 endif
 
 # (Win)Pcap: N=no, Y=yes,linked, D=yes,dynamic, S=yes,static (always dynamic)
@@ -320,17 +318,39 @@ ifneq ($(PCAP), n)
   PCAP_PATH	:= $(EXT_PATH)/pcap
  endif
  OPTS		+= -I$(PCAP_PATH)/include
- ifeq ($(X64), y)
-  LIBS		+= -LIBPATH:$(PCAP_PATH)/lib/x64
- else
-  LIBS		+= -LIBPATH:$(PCAP_PATH)/lib/x86
- endif
+ LIBS		+= -LIBPATH:$(PCAP_PATH)/lib/$(ARCH)
  ifeq ($(PCAP), y)
   LIBS		+= libwpcap.dll.lib
  endif
  ifeq ($(PCAP), s)
   LIBS		+= libwpcap.lib
  endif
+ MISCOBJ	+= net_pcap.obj
+endif
+
+# UDP: N=no, Y=yes,linked
+ifndef UDP
+ UDP		:= d
+endif
+ifneq ($(UDP), n)
+ ifeq ($(UDP), d)
+  OPTS		+= -DUSE_UDPLINK=2
+ else
+  OPTS		+= -DUSE_UDPLINK=1
+ endif
+ ifeq ($(UDP_PATH), )
+  UDP_PATH	:= $(EXT_PATH)/udplink
+ endif
+ OPTS		+= -I$(UDP_PATH)/include
+ LIBS		+= -LIBPATH:$(UDP_PATH)/lib/$(ARCH)
+ ifeq ($(UDP), y)
+  LIBS		+= udplink.dll.lib
+ endif
+ ifeq ($(UDP), s)
+  LIBS		+= udplink.lib
+  ZLIB_NEEDED	:= y
+ endif
+ MISCOBJ	+= net_udplink.obj
 endif
 
 # VNS: N=no, Y=yes,linked, D=yes,dynamic, S=yes,static
@@ -347,11 +367,7 @@ ifneq ($(VNS), n)
   VNS_PATH	:= $(EXT_PATH)/vns
  endif
  OPTS		+= -I$(VNS_PATH)/include
- ifeq ($(X64), y)
-  LIBS		+= -LIBPATH:$(VNS_PATH)/lib/x64
- else
-  LIBS		+= -LIBPATH:$(VNS_PATH)/lib/x86
- endif
+ LIBS		+= -LIBPATH:$(VNS_PATH)/lib/$(ARCH)
  ifeq ($(VNS), y)
   LIBS		+= libvns.dll.lib
  endif
@@ -414,11 +430,7 @@ ifneq ($(MUNT), n)
   MUNT_PATH	:= $(EXT_PATH)/munt
  endif
  OPTS		+= -I$(MUNT_PATH)/include
- ifeq ($(X64), y)
-  LIBS		+= -LIBPATH:$(MUNT_PATH)/lib/x64
- else
-  LIBS		+= -LIBPATH:$(MUNT_PATH)/lib/x86
- endif
+ LIBS		+= -LIBPATH:$(MUNT_PATH)/lib/$(ARCH)
  ifeq ($(MUNT), y)
   LIBS		+= libmunt.dll.lib
  endif
@@ -441,11 +453,7 @@ ifneq ($(RESID), n)
   RESID_PATH	:= $(EXT_PATH)/resid
  endif
  OPTS		+= -I$(RESID_PATH)/include
- ifeq ($(X64), y)
-  LIBS		+= -LIBPATH:$(RESID_PATH)/lib/x64
- else
-  LIBS		+= -LIBPATH:$(RESID_PATH)/lib/x86
- endif
+ LIBS		+= -LIBPATH:$(RESID_PATH)/lib/$(ARCH)
  ifeq ($(RESID), y)
   LIBS		+= libmunt.dll.lib
  endif
@@ -464,11 +472,7 @@ ifneq ($(SDL), n)
   SDL_PATH	:= $(EXT_PATH)/sdl
  endif
  OPTS		+= -I$(SDL_PATH)/include
- ifeq ($(X64), y)
-  LIBS		+= -LIBPATH:$(SDL_PATH)/lib/x64
- else
-  LIBS		+= -LIBPATH:$(SDL_PATH)/lib/x86
- endif
+ LIBS		+= -LIBPATH:$(SDL_PATH)/lib/$(ARCH)
  ifeq ($(SDL), y)
   LIBS		+= sdl2.lib
  endif
@@ -492,16 +496,13 @@ ifneq ($(VNC), n)
   VNC_PATH	:= $(EXT_PATH)/vnc
  endif
  OPTS		+= -I$(VNC_PATH)/include
- ifeq ($(X64), y)
-  LIBS		+= -LIBPATH:$(VNC_PATH)/lib/x64
- else
-  LIBS		+= -LIBPATH:$(VNC_PATH)/lib/x86
- endif
+ LIBS		+= -LIBPATH:$(VNC_PATH)/lib/$(ARCH)
  ifeq ($(VNC), y)
   LIBS		+= libvncserver.lib
  endif
  ifeq ($(VNC), s)
-  LIBS		+= libvncserver_static.lib zlib.lib
+  LIBS		+= libvncserver_static.lib
+  ZLIB_NEEDED	:= y
  endif
  MISCOBJ	+= ui_vnc.obj ui_vnc_keymap.obj
 endif
@@ -520,11 +521,7 @@ ifneq ($(RDP), n)
   RDP_PATH	:= $(EXT_PATH)/rdp
  endif
  OPTS		+= -I$(RDP_PATH)/include
- ifeq ($(X64), y)
-  LIBS		+= -LIBPATH:$(RDP_PATH)/lib/x64
- else
-  LIBS		+= -LIBPATH:$(RDP_PATH)/lib/x86
- endif
+ LIBS		+= -LIBPATH:$(RDP_PATH)/lib/$(ARCH)
  ifeq ($(RDP), y)
   LIBS		+= rdpsrvr.lib
  endif
@@ -548,16 +545,13 @@ ifneq ($(PNG), n)
   PNG_PATH	:= $(EXT_PATH)/png
  endif
  OPTS		+= -I$(PNG_PATH)/include
- ifeq ($(X64), y)
-  LIBS		+= -LIBPATH:$(PNG_PATH)/lib/x64
- else
-  LIBS		+= -LIBPATH:$(PNG_PATH)/lib/x86
- endif
+ LIBS		+= -LIBPATH:$(PNG_PATH)/lib/$(ARCH)
  ifeq ($(PNG), y)
   LIBS		+= libpng16_dll.lib #zlib.lib
  endif
  ifeq ($(PNG), s)
-  LIBS		+= libpng16.lib zlib.lib
+  LIBS		+= libpng16.lib
+  ZLIB_NEEDED	:= y
  endif
  MISCOBJ	+= png.obj
 endif
@@ -576,16 +570,35 @@ ifneq ($(MINIVHD), n)
   OPTS		+= -DUSE_MINIVHD=1
  endif
  OPTS		+= -I$(MINIVHD_PATH)/include
- ifeq ($(X64), y)
-  LIBS		+= -LIBPATH:$(MINIVHD_PATH)/lib/x64
- else
-  LIBS		+= -LIBPATH:$(MINIVHD_PATH)/lib/x86
- endif
+ LIBS		+= -LIBPATH:$(MINIVHD_PATH)/lib/$(ARCH)
  ifeq ($(MINIVHD), y)
   LIBS		+= minivhd.lib
  endif
  ifeq ($(MINIVHD), s)
   LIBS		+= -lminivhd_s.lib
+ endif
+endif
+
+# ZLIB: N=no, Y=yes,linked, D=yes,dynamic, S=yes,static
+ifndef ZLIB
+ ZLIB		:= $(ZLIB_NEEDED)
+endif
+ifneq ($(ZLIB), n)
+ ifeq ($(ZLIB_PATH), )
+  ZLIB_PATH	:= $(EXT_PATH)/zlib
+ endif
+ ifeq ($(ZLIB), d)
+  OPTS		+= -DUSE_ZLIB=2
+ else
+  OPTS		+= -DUSE_ZLIB=1
+ endif
+ OPTS		+= -I$(ZLIB_PATH)/include
+ LIBS		+= -LIBPATH:$(ZLIB_PATH)/lib/$(ARCH)
+ ifeq ($(ZLIB), y)
+  LIBS		+= zlib.lib
+ endif
+ ifeq ($(ZLIB), s)
+  LIBS		+= zlib_static.lib
  endif
 endif
 
@@ -804,8 +817,6 @@ SCSIOBJ		:= scsi.obj \
 
 NETOBJ		:= network.obj \
 		   network_dev.obj \
-		    net_pcap.obj \
-		    net_slirp.obj \
 		    net_dp8390.obj \
 		    net_ne2000.obj net_wd80x3.obj net_3c503.obj
 

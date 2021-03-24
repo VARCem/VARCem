@@ -12,7 +12,7 @@
  *		"extern" reference to its device into the video.h file,
  *		and add an entry for it into the table here.
  *
- * Version:	@(#)video_dev.c	1.0.41	2021/03/16
+ * Version:	@(#)video_dev.c	1.0.42	2021/03/23
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -265,5 +265,5 @@ video_get_video_from_internal_name(const char *s)
     }
 
     /* Not found. */
-    return(-1);
+    return(0);
 }

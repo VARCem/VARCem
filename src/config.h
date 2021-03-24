@@ -8,7 +8,7 @@
  *
  *		Configuration file handler header.
  *
- * Version:	@(#)config.h	1.0.8	2021/03/09
+ * Version:	@(#)config.h	1.0.9	2021/03/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -131,6 +131,9 @@ typedef struct {
     int		network_type;			/* net provider type */
     int		network_card;			/* net interface num */
     char	network_host[128];		/* host network intf */
+
+    char	network_srv_addr[512];		/* network server address */
+    int		network_srv_port;		/* network server port */
 
     int		bugger_enabled;			/* enable ISAbugger */
 

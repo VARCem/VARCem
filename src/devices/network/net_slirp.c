@@ -8,11 +8,11 @@
  *
  *		Handle SLiRP library processing.
  *
- * Version:	@(#)net_slirp.c	1.0.8	2020/07/17
+ * Version:	@(#)net_slirp.c	1.0.9	2021/03/23
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
- *		Copyright 2017-2020 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -50,6 +50,9 @@
 #include <stdlib.h>
 #include <wchar.h>
 #include <stdarg.h>
+#if 0
+# include <libslirp.h>
+#endif
 #define HAVE_STDARG_H
 #define netdbg network_log
 #include "../../emu.h"
@@ -59,8 +62,6 @@
 #include "network.h"
 
 
-#ifdef USE_SLIRP
-//# include <libslirp.h>
 typedef void slirp_t;				// nicer than void
 
 
@@ -323,12 +324,12 @@ do_available(void)
 
 /* Send a packet to the SLiRP interface. */
 static void
-do_send(uint8_t *pkt, int pkt_len)
+do_send(const uint8_t *pkt, int pkt_len)
 {
     if (slirp != NULL) {
 	network_busy(1);
 
-	FUNC(send)(slirp, (const uint8_t *)pkt, pkt_len);
+	FUNC(send)(slirp, pkt, pkt_len);
 
 	network_busy(0);
     }
@@ -343,6 +344,3 @@ const network_t network_slirp = {
     do_available,
     do_send
 };
-
-
-#endif	/*USE_SLIRP*/

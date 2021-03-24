@@ -8,7 +8,7 @@
  *
  *		Definitions for the hard disk image handler.
  *
- * Version:	@(#)hdd.h	1.0.16	2021/03/16
+ * Version:	@(#)hdd.h	1.0.17	2021/03/22
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -131,10 +131,15 @@ extern void	hdd_image_unload(uint8_t id, int fn_preserve);
 extern void	hdd_image_close(uint8_t id);
 extern void	hdd_image_calc_chs(uint32_t *c, uint32_t *h, uint32_t *s, uint32_t size);
 
+#ifdef USE_MINIVHD
+extern const wchar_t *vhd_type_to_ids(int vhd_type);
+extern const wchar_t *vhd_blksize_to_ids(int blk_size);
+extern int	image_is_vhd(const wchar_t *s, int check_signature);
+#endif
+
 //FIXME: used in win_settings_disk.h UI !!
 extern int	image_is_hdi(const wchar_t *s);
 extern int	image_is_hdx(const wchar_t *s, int check_signature);
-extern int	image_is_vhd(const wchar_t *s, int check_signature);
 
 #ifdef __cplusplus
 }

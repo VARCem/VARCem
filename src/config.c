@@ -12,7 +12,7 @@
  *		on Windows XP, possibly Vista and several UNIX systems.
  *		Use the -DANSI_CFG for use on these systems.
  *
- * Version:	@(#)config.c	1.0.55	2021/03/14
+ * Version:	@(#)config.c	1.0.56	2021/03/23
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -676,31 +676,45 @@ static void
 load_network(config_t *cfg, const char *cat)
 {
     char *p;
+    int k;
 
     p = config_get_string(cat, "net_type", "none");
     cfg->network_type = network_get_from_internal_name(p);
 
-    memset(cfg->network_host, '\0', sizeof(cfg->network_host));
+    /* Get any UDPlink parameters. */
+    p = config_get_string(cat, "net_srv_addr", NULL);
+    if (p == NULL) {
+	p = "none";
+	k = -1;
+    } else
+	k = config_get_int(cat, "net_srv_port", -1);
+    strcpy(cfg->network_srv_addr, p);
+    cfg->network_srv_port = k;
+
+    /* Get any PCap parameters. */
     p = config_get_string(cat, "net_host_device", NULL);
     if (p == NULL) {
+	/* Try the old name. */
 	p = config_get_string(cat, "net_pcap_device", NULL);
 	if (p != NULL)
 		config_delete_var(cat, "net_pcap_device");
     }
-    if (p != NULL) {
-	if ((network_card_to_id(p) == -1) || (network_host_ndev == 1)) {
-		if ((network_host_ndev == 1) && strcmp(cfg->network_host, "none")) {
-			ui_msgbox(MBX_ERROR, (wchar_t *)IDS_ERR_PCAP_NO);
-		} else if (network_card_to_id(p) == -1) {
-			ui_msgbox(MBX_ERROR, (wchar_t *)IDS_ERR_PCAP_DEV);
-		}
+    if (p == NULL)
+	p = "none";
+    strcpy(cfg->network_host, p);
 
-		strcpy(cfg->network_host, "none");
-	} else {
-		strcpy(cfg->network_host, p);
+#if 0
+    //FIXME: do this in network_reset, not here!
+    if ((network_card_to_id(p) == -1) || (network_host_ndev == 1)) {
+	if ((network_host_ndev == 1) && strcmp(cfg->network_host, "none")) {
+		ui_msgbox(MBX_ERROR, (wchar_t *)IDS_ERR_PCAP_NO);
+	} else if (network_card_to_id(p) == -1) {
+		ui_msgbox(MBX_ERROR, (wchar_t *)IDS_ERR_PCAP_DEV);
 	}
-    } else
 	strcpy(cfg->network_host, "none");
+    } else
+	strcpy(cfg->network_host, p);
+#endif
 
     if (machine_get_flags_fixed() & MACHINE_NETWORK) {
 	config_delete_var(cat, "net_card");
@@ -722,20 +736,21 @@ load_network(config_t *cfg, const char *cat)
 static void
 save_network(const config_t *cfg, const char *cat)
 {
-    if (cfg->network_type == NET_NONE)
-	config_delete_var(cat, "net_type");
-    else
-	config_set_string(cat, "net_type",
-			  network_get_internal_name(cfg->network_type));
+    config_set_string(cat, "net_type",
+		      network_get_internal_name(cfg->network_type));
 
-    if (cfg->network_host[0] != '\0') {
-	if (! strcmp(cfg->network_host, "none"))
-		config_delete_var(cat, "net_host_device");
-	else
-		config_set_string(cat, "net_host_device", cfg->network_host);
-    } else {
-	config_delete_var(cat, "net_host_device");
+    if ((cfg->network_srv_addr[0] == '\0') || !strcmp(cfg->network_srv_addr, "none"))
+	config_delete_var(cat, "net_srv_addr");
+    else {
+	config_set_string(cat, "net_srv_addr", cfg->network_srv_addr);
+	if (cfg->network_srv_port != -1)
+		config_set_int(cat, "net_srv_port", cfg->network_srv_port);
     }
+
+    if ((cfg->network_host[0] == '\0') || (!strcmp(cfg->network_host, "none")))
+	config_delete_var(cat, "net_host_device");
+    else
+	config_set_string(cat, "net_host_device", cfg->network_host);
 
     if (cfg->network_card == 0)
 	config_delete_var(cat, "net_card");
@@ -1622,7 +1637,7 @@ config_read(const wchar_t *fn)
 		}
 
 		/* Are we starting a comment? */
-		if ((c == L';') || (c == L'#')) {
+		if (!doquot && ((c == L';') || (c == L'#'))) {
 			/* Terminate value string. */
 			*p = L'\0';
 

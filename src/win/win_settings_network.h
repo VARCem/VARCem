@@ -8,12 +8,12 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings_network.h	1.0.16	2020/07/15
+ * Version:	@(#)win_settings_network.h	1.0.17	2021/03/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2017-2020 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -53,36 +53,44 @@ static int	net_ignore_message = 0;
 static void
 network_recalc_combos(HWND hdlg)
 {
-    HWND h, h1, h2;
+    HWND h1, h2, h3, h4, h5;
 
     net_ignore_message = 1;
 
-    h = GetDlgItem(hdlg, IDC_COMBO_PCAP);
-    h1 = GetDlgItem(hdlg, IDC_COMBO_NET_CARD);
-    h2 = GetDlgItem(hdlg, IDC_CONFIGURE_NET_CARD);
+    /* Everything disabled. */
+    h1 = GetDlgItem(hdlg, IDC_COMBO_PCAP);
+     EnableWindow(h1, FALSE);
+    h2 = GetDlgItem(hdlg, IDC_NET_SRV_ADDR);
+     EnableWindow(h2, FALSE);
+    h3 = GetDlgItem(hdlg, IDC_NET_SRV_PORT);
+     EnableWindow(h3, FALSE);
+    h4 = GetDlgItem(hdlg, IDC_COMBO_NET_CARD);
+     EnableWindow(h4, FALSE);
+    h5 = GetDlgItem(hdlg, IDC_CONFIGURE_NET_CARD);
+     EnableWindow(h5, FALSE);
 
-    switch(temp_cfg.network_type) {
+    switch (temp_cfg.network_type) {
 	case NET_SLIRP:
-		EnableWindow(h, FALSE);
-		EnableWindow(h1, TRUE);
+		EnableWindow(h4, TRUE);
+		EnableWindow(h5, TRUE);
+		break;
+
+	case NET_UDPLINK:
 		EnableWindow(h2, TRUE);
+		EnableWindow(h3, TRUE);
+		EnableWindow(h4, TRUE);
+		EnableWindow(h5, TRUE);
 		break;
 
 	case NET_PCAP:
-		EnableWindow(h, TRUE);
+		EnableWindow(h1, TRUE);
 		if (network_card_to_id(temp_cfg.network_host) > 0) {
-			EnableWindow(h1, TRUE);
-			EnableWindow(h2, TRUE);
-		} else {
-			EnableWindow(h1, FALSE);
-			EnableWindow(h2, FALSE);
+			EnableWindow(h4, TRUE);
+			EnableWindow(h5, TRUE);
 		}
 		break;
 
 	default:
-		EnableWindow(h, FALSE);
-		EnableWindow(h1, TRUE);
-		EnableWindow(h2, TRUE);
 		break;
     }
 
@@ -135,17 +143,11 @@ network_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 		}
 		SendMessage(h, CB_SETCURSEL,
 			    net_to_list[temp_cfg.network_type], 0);
-
 		EnableWindow(h, d ? TRUE : FALSE);
-
-		h = GetDlgItem(hdlg, IDC_COMBO_PCAP);
-		if (temp_cfg.network_type == NET_PCAP)
-			EnableWindow(h, TRUE);
-		else
-			EnableWindow(h, FALSE);
 
 		/* Populate the "host interfaces" box. */
 		h = GetDlgItem(hdlg, IDC_COMBO_PCAP);
+		EnableWindow(h, TRUE);
 		for (c = 0; c < network_host_ndev; c++) {
 			if (c == 0) {
 				/* Translate "None". */
@@ -159,13 +161,22 @@ network_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 		SendMessage(h, CB_SETCURSEL,
 			    network_card_to_id(temp_cfg.network_host), 0);
 
+		/* Populate the "Tunnel Server" box. */
+		h = GetDlgItem(hdlg, IDC_NET_SRV_ADDR);
+		mbstowcs(temp, temp_cfg.network_srv_addr, sizeof_w(temp));
+		SendMessage(h, WM_SETTEXT, 0, (LPARAM)temp);
+
+		/* Populate the "Tunnel Server Port" box. */
+		h = GetDlgItem(hdlg, IDC_NET_SRV_PORT);
+		swprintf(temp, sizeof_w(temp), L"%i", temp_cfg.network_srv_port);
+		SendMessage(h, WM_SETTEXT, 0, (LPARAM)temp);
+
 		/* Populate the "network cards" box. */
 		h = GetDlgItem(hdlg, IDC_COMBO_NET_CARD);
 		c = d = 0;
 		for (;;) {
 			stransi = network_card_get_internal_name(c);
 			if (stransi == NULL) break;
-
 			dev = network_card_getdevice(c);
 			if (!network_card_available(c) ||
 			    !device_is_valid(dev, m->flags)) {
@@ -200,7 +211,6 @@ network_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 		SendMessage(h, CB_SETCURSEL,
 			    nic_to_list[temp_cfg.network_card], 0);
 
-		EnableWindow(h, d ? TRUE : FALSE);
 		network_recalc_combos(hdlg);
 		return TRUE;
 
@@ -256,12 +266,19 @@ network_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 		h = GetDlgItem(hdlg, IDC_COMBO_NET_TYPE);
 		temp_cfg.network_type = list_to_net[SendMessage(h, CB_GETCURSEL, 0, 0)];
 
-		h = GetDlgItem(hdlg, IDC_COMBO_PCAP);
-		memset(temp_cfg.network_host, '\0', sizeof(temp_cfg.network_host));
-		strcpy(temp_cfg.network_host, network_host_devs[SendMessage(h, CB_GETCURSEL, 0, 0)].device);
-
 		h = GetDlgItem(hdlg, IDC_COMBO_NET_CARD);
 		temp_cfg.network_card = list_to_nic[SendMessage(h, CB_GETCURSEL, 0, 0)];
+
+		memset(temp_cfg.network_srv_addr, 0x00, sizeof(temp_cfg.network_srv_addr));
+		h = GetDlgItem(hdlg, IDC_NET_SRV_ADDR);
+		SendMessage(h, WM_GETTEXT, sizeof_w(temp), (LPARAM)temp);
+		wcstombs(tempA, temp, sizeof(tempA));
+		strncpy(temp_cfg.network_srv_addr, tempA, sizeof(temp_cfg.network_srv_addr));
+		h = GetDlgItem(hdlg, IDC_NET_SRV_PORT);
+		SendMessage(h, WM_GETTEXT, sizeof_w(temp), (LPARAM)temp);
+		wcstombs(tempA, temp, sizeof(tempA));
+		sscanf(tempA, "%i", &temp_cfg.network_srv_port);
+
 		return FALSE;
 
 	default:
