@@ -51,7 +51,9 @@
 #include <string.h>
 #include <stdlib.h>
 #include <wchar.h>
-#include <udplink.h>
+#if USE_UDPLINK != 2
+# include <udplink.h>
+#endif
 #include "../../emu.h"
 #include "../../config.h"
 #include "../../device.h"
