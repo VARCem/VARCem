@@ -213,27 +213,12 @@ static int
 do_reset(uint8_t *mac)
 {
     char temp[256];
-    int port;
 
     /* Get the value of our server address. */
     if ((config.network_srv_addr[0] == '\0') ||
 	!strcmp(config.network_srv_addr, "none")) {
         ERRLOG("UDPlink: no server address configured!\n");
         return(-1);
-    }
-
-    /* Get the value of our server port. */
-    switch (config.network_srv_port) {
-	case 0:		/* not set */
-		ERRLOG("UDPlink: no server port configured!\n");
-		return(-1);
-
-	case -1:	/* default */
-		port = UDPLINK_PORT;
-		break;
-
-	default:
-		port = config.network_srv_port;
     }
 
     /* Tell the thread to terminate. */
@@ -253,14 +238,15 @@ do_reset(uint8_t *mac)
 
     /* OK, now shut down UDP itself. */
     FUNC(close)();
-    if (FUNC(open)(UDPLINK_PORT) <= 0) {
+    if (FUNC(open)(0) <= 0) {
 	FUNC(error)(temp, sizeof(temp));
 	ERRLOG("UDPlink: %s\n", temp);
 	return(0);
     }
 
     /* Tell the protocol to (virtually) connect to our peer. */
-    if (FUNC(connect)(config.network_srv_addr, port, mac) <= 0) {
+    if (FUNC(connect)(config.network_srv_addr,
+		      config.network_srv_port, mac) <= 0) {
 	FUNC(error)(temp, sizeof(temp));
 	ERRLOG("UDPlink: %s\n", temp);
 	return(0);
