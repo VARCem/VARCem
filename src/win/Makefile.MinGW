@@ -615,7 +615,7 @@ ifneq ($(PNG), n)
  LIBS		+= -L$(PNG_PATH)/lib/$(ARCH)
  ifeq ($(PNG), y)
   # FIXME: should be -lpng.dll
-  LIBS		+= -lpng -lz
+  LIBS		+= -lpng
  endif
  ifeq ($(PNG), s)
   LIBS		+= -lpng -lz
