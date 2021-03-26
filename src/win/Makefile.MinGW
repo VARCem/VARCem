@@ -1059,7 +1059,7 @@ VARCem.res:	VARCem.rc VARCem.mpp
 
 $(PROG).exe:	VARCem.res $(OBJ)
 		@echo Linking $@ ..
-		@$(CC) $(LDFLAGS) -o $@ $(OBJ) $< $(LIBS)
+		$(CC) $(LDFLAGS) -o $@ $(OBJ) $< $(LIBS)
 ifneq ($(DEBUG), y)
 		@$(STRIP) $@
 endif
