@@ -48,7 +48,7 @@
  */
 
 /* Main application strings (2000) - DO NOT TRANSLATE! */
-#define STR_VERSION	1,0,10
+#define STR_VERSION	1,0,11
 #define STR_AUTHOR	"Daniel Gurney"
 #define STR_EMAIL	"dgurney@varcem.com"
 #define STR_NAME	"VARCem"

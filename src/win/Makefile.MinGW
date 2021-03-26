@@ -569,8 +569,8 @@ ifneq ($(VNC), n)
  endif
  ifeq ($(VNC), s)
   LIBS		+= -lvncserver -lz -static -lpthread
+  ZLIB_NEEDED	:= y
  endif
- ZLIB_NEEDED	:= y
  MISCOBJ	+= ui_vnc.o ui_vnc_keymap.o
 endif
 

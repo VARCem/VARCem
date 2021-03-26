@@ -8,13 +8,13 @@
  *
  *		Implementation of the SSI2001 sound device.
  *
- * Version:	@(#)snd_ssi2001.c	1.0.11	2020/07/15
+ * Version:	@(#)snd_ssi2001.c	1.0.12	2021/03/24
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2020 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -52,9 +52,9 @@
 
 
 #ifdef _WIN32
-# define PATH_RESID_DLL		"libresid.dll"
+# define PATH_RESID_DLL		"resid.dll"
 #else
-# define PATH_RESID_DLL		"libresid.so"
+# define PATH_RESID_DLL		"resid.so"
 #endif
 
 

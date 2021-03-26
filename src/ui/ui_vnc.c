@@ -10,7 +10,7 @@
  *
  * TODO:	Implement screenshots, and Audio Redirection.
  *
- * Version:	@(#)ui_vnc.c	1.0.15	2021/03/18
+ * Version:	@(#)ui_vnc.c	1.0.15	2021/03/24
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Based on raw code by RichardG, <richardg867@gmail.com>
@@ -84,9 +84,9 @@
 # define FUNC(x)	rfb_##x
 
 # ifdef _WIN32
-#  define PATH_VNC_DLL	"libvncserver.dll"
+#  define PATH_VNC_DLL	"vncserver.dll"
 # else
-#  define PATH_VNC_DLL	"libvncserver.so"
+#  define PATH_VNC_DLL	"vncserver.so"
 # endif
 
 static void		*vnc_handle = NULL;	// handle to DLL
