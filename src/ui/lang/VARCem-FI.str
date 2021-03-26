@@ -8,12 +8,12 @@
  *
  *		String definitions for "Finnish (Finland)" language.
  *
- * Version:	@(#)VARCem-FI.str	1.0.10	2021/03/19
+ * Version:	@(#)VARCem-FI.str	1.0.11	2021/03/26
  *
  * Authors:	Daniel Gurney, <dgurney@varcem.com>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
  *
- *		Copyright 2018 Daniel Gurney.
+ *		Copyright 2018-2021 Daniel Gurney.
  *		Copyright 2017-2021 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
@@ -83,7 +83,7 @@
 
 
 /* Application messages (2400.) */
-#define STR_2400	"Haluatko varmasti tallentaa nämä asetukset?\n\n(Uudelleenkäynnistys voi olla tarpeellinen...)"
+#define STR_2400	"Haluatko varmasti tallentaa nämä asetukset?\n\n(Uudelleenkäynnistys voi olla tarpeen...)"
 #define STR_2401	"Muutokset tallennettu, käynnistä emulaattori uudelleen!"
 #define STR_2402	"Valittu laite:\n\n  %s\n\non tällä hetkellä `kehitteillä`, ja voi aiheuttaa ongelmia.\n\nHaluatko varmasti käyttää sitä?"
 #define STR_2403	"Klikkaa kaapataksesi hiiri"
@@ -127,9 +127,9 @@
 #define STR_OPEN_WRITE	"Tiedostoa ei voitu avata kirjoittamista varten"
 #define STR_DEVCONF_1	"Konfiguraatio"
 #define STR_DEVCONF_2	"Laitteet:"
-#define STR_VHD_TYPE	"VHD Type:"
-#define STR_PARENT_NAME	"VHD Parent:"
-#define STR_BLK_SIZE    "Block size:"
+#define STR_VHD_TYPE	"VHD-tyyppi:"
+#define STR_PARENT_NAME	"Pää-VHD:"
+#define STR_BLK_SIZE    "Lohkokoko:"
 
 
 /* UI dialog: About (3200.) */
@@ -202,7 +202,7 @@
 
 /* UI dialog: Settings (Video, 3350.) */
 #define  STR_3350	"Video:"
-#define  STR_3351	"Voodoo-grafiikat"
+#define  STR_3351	"Voodoo-grafiikka"
 
 /* UI dialog: Settings (Input, 3375.) */
 #define  STR_3375	"Hiiri:"
@@ -259,13 +259,13 @@
 #define  STR_3517	"IDE"
 #define  STR_3518	"SCSI"
 #define  STR_3519	"USB"
-#define  STR_3520	"Fixed"
-#define  STR_3521	"Sparse"
-#define  STR_3522	"Differencing"
-#define  STR_3523	"Parent and child disk timestamps do not match : fix it ?"
-#define  STR_3524	"Could not fix VHD timestamp"
-#define  STR_3540	"Small blocks (512 KB)"
-#define  STR_3541	"Large blocks (2 MB)"
+#define  STR_3520	"Kiinteä"
+#define  STR_3521	"Harva"
+#define  STR_3522	"Differensoiva"
+#define  STR_3523	"Pää- ja alilevyjen aikaleimat eivät täsmää: korjaa ne?"
+#define  STR_3524	"VHD:n aikaleimaa ei voitu korjata"
+#define  STR_3540	"Pienet lohkot (512 KB)"
+#define  STR_3541	"Suuret lohkot (2 MB)"
 
 /* UI dialog: Settings (Add Hard Disk, 3525.) */
 #define  STR_3525	"Lisää kiintolevy"
