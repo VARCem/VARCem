@@ -8,7 +8,7 @@
  *
  *		String definitions for "Finnish (Finland)" language.
  *
- * Version:	@(#)VARCem-FI.str	1.0.11	2021/03/26
+ * Version:	@(#)VARCem-FI.str	1.0.12	2021/03/27
  *
  * Authors:	Daniel Gurney, <dgurney@varcem.com>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
@@ -222,8 +222,8 @@
 #define  STR_3425	"Verkkotyyppi:"
 #define  STR_3426	"PCap-laite:"
 #define  STR_3427	"Verkkoadapteri:"
-#define  STR_3428	"Tunnel Server:"
-#define  STR_3429	"Port:"
+#define  STR_3428	"Tunnelipalvelin:"
+#define  STR_3429	"Portti:"
 
 /* UI dialog: Settings (Ports, 3450.) */
 #define  STR_3450	"Peliportti"
@@ -266,8 +266,8 @@
 #define  STR_3522	"Differensoiva"
 #define  STR_3523	"Pää- ja alilevyjen aikaleimat eivät täsmää: korjaa ne?"
 #define  STR_3524	"VHD:n aikaleimaa ei voitu korjata"
-#define  STR_3540	"Pienet lohkot (512 KB)"
-#define  STR_3541	"Suuret lohkot (2 MB)"
+#define  STR_3540	"Pienet lohkot (512 KT)"
+#define  STR_3541	"Suuret lohkot (2 MT)"
 
 /* UI dialog: Settings (Add Hard Disk, 3525.) */
 #define  STR_3525	"Lisää kiintolevy"
