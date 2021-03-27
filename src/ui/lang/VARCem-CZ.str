@@ -8,7 +8,7 @@
  *
  *		String definitions for "Czech (Czech Republic)" language.
  *
- * Version:	@(#)VARCem-CZ.str	1.0.7	2021/03/19
+ * Version:	@(#)VARCem-CZ.str	1.0.7	2021/03/26
  *
  * Authors:	David Hrdlička, <hrdlickadavid@outlook.com>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
@@ -222,6 +222,8 @@
 #define  STR_3425	"Druh sítě:"
 #define  STR_3426	"Zařízení PCap:"
 #define  STR_3427	"Síťový adaptér:"
+#define  STR_3428	"Tunnel Server:"
+#define  STR_3429	"Port:"
 
 /* UI dialog: Settings (Ports, 3450.) */
 #define  STR_3450	"Game port"

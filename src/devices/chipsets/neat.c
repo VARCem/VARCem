@@ -697,8 +697,7 @@ neat_init(const device_t *info, UNUSED(void *parent))
     dev->type = info->local;
 
     /* Initialize some of the registers to specific defaults. */
-    for (i = 0; i <= sizeof(values)/sizeof(struct regval); i++) {
-INFO("NEAT: setting register %2i to %02X\n", dev->indx, values[i].val);
+    for (i = 0; i < sizeof(values)/sizeof(struct regval); i++) {
 	dev->indx = values[i].reg;
 	neat_out(0x0023, values[i].val, dev);
     }

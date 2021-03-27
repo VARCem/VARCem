@@ -8,7 +8,7 @@
  *
  *		String definitions for "Lithuanian (Lithuania)" language.
  *
- * Version:	@(#)VARCem-LT.str	1.0.6	2021/03/19
+ * Version:	@(#)VARCem-LT.str	1.0.6	2021/03/26
  *
  * Author:	Vegas (emu-land.net)
  *		Fred N. van Kempen, <decwiz@yahoo.com>
@@ -221,6 +221,8 @@
 #define  STR_3425	"Tinklo tipas:"
 #define  STR_3426	"PCap įrenginys:"
 #define  STR_3427	"Tinklo adapteris:"
+#define  STR_3428	"Tunnel Server:"
+#define  STR_3429	"Port:"
 
 /* UI dialog: Settings (Ports, 3450.) */
 #define  STR_3450	"Game port"

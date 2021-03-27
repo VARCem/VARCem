@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows using Visual Studio 2015.
 #
-# Version:	@(#)Makefile.VC	1.0.86	2021/03/24
+# Version:	@(#)Makefile.VC	1.0.87	2021/03/26
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -285,21 +285,21 @@ ifndef SLIRP
  SLIRP		:= d
 endif
 ifneq ($(SLIRP), n)
- ifeq ($(SLIRP), d)
-  OPTS		+= -DUSE_SLIRP=2
- else
-  OPTS		+= -DUSE_SLIRP=1
- endif
  ifeq ($(SLIRP_PATH), )
   SLIRP_PATH	:= $(EXT_PATH)/slirp
  endif
  OPTS		+= -I$(SLIRP_PATH)/include
- LIBS		+= -LIBPATH:$(SLIRP_PATH)/lib/$(ARCH)
- ifeq ($(SLIRP), y)
-  LIBS		+= libslirp.dll.lib
- endif
- ifeq ($(SLIRP), s)
-  LIBS		+= libslirp.lib
+ ifeq ($(SLIRP), d)
+  OPTS		+= -DUSE_SLIRP=2
+ else
+  OPTS		+= -DUSE_SLIRP=1
+  LIBS		+= -LIBPATH:$(SLIRP_PATH)/lib/$(ARCH)
+  ifeq ($(SLIRP), y)
+   LIBS		+= libslirp.dll.lib
+  endif
+  ifeq ($(SLIRP), s)
+   LIBS		+= libslirp.lib
+  endif
  endif
  MISCOBJ	+= net_slirp.obj
 endif
@@ -309,21 +309,21 @@ ifndef PCAP
  PCAP		:= d
 endif
 ifneq ($(PCAP), n)
- ifeq ($(PCAP), d)
-  OPTS		+= -DUSE_PCAP=2
- else
-  OPTS		+= -DUSE_PCAP=1
- endif
  ifeq ($(PCAP_PATH), )
   PCAP_PATH	:= $(EXT_PATH)/pcap
  endif
  OPTS		+= -I$(PCAP_PATH)/include
- LIBS		+= -LIBPATH:$(PCAP_PATH)/lib/$(ARCH)
- ifeq ($(PCAP), y)
-  LIBS		+= libwpcap.dll.lib
- endif
- ifeq ($(PCAP), s)
-  LIBS		+= libwpcap.lib
+ ifeq ($(PCAP), d)
+  OPTS		+= -DUSE_PCAP=2
+ else
+  OPTS		+= -DUSE_PCAP=1
+  LIBS		+= -LIBPATH:$(PCAP_PATH)/lib/$(ARCH)
+  ifeq ($(PCAP), y)
+   LIBS		+= libwpcap.dll.lib
+  endif
+  ifeq ($(PCAP), s)
+   LIBS		+= libwpcap.lib
+  endif
  endif
  MISCOBJ	+= net_pcap.obj
 endif
@@ -333,22 +333,22 @@ ifndef UDP
  UDP		:= d
 endif
 ifneq ($(UDP), n)
- ifeq ($(UDP), d)
-  OPTS		+= -DUSE_UDPLINK=2
- else
-  OPTS		+= -DUSE_UDPLINK=1
- endif
  ifeq ($(UDP_PATH), )
   UDP_PATH	:= $(EXT_PATH)/udplink
  endif
  OPTS		+= -I$(UDP_PATH)/include
- LIBS		+= -LIBPATH:$(UDP_PATH)/lib/$(ARCH)
- ifeq ($(UDP), y)
-  LIBS		+= udplink.dll.lib
- endif
- ifeq ($(UDP), s)
-  LIBS		+= udplink.lib
-  ZLIB_NEEDED	:= y
+ ifeq ($(UDP), d)
+  OPTS		+= -DUSE_UDPLINK=2
+ else
+  OPTS		+= -DUSE_UDPLINK=1
+  LIBS		+= -LIBPATH:$(UDP_PATH)/lib/$(ARCH)
+  ifeq ($(UDP), y)
+   LIBS		+= udplink.dll.lib
+  endif
+  ifeq ($(UDP), s)
+   LIBS		+= udplink.lib
+   ZLIB_NEEDED	:= s
+  endif
  endif
  MISCOBJ	+= net_udplink.obj
 endif
@@ -358,21 +358,21 @@ ifndef VNS
  VNS		:= n
 endif
 ifneq ($(VNS), n)
- ifeq ($(VNS), d)
-  OPTS		+= -DUSE_VNS=2
- else
-  OPTS		+= -DUSE_VNS=1
- endif
  ifeq ($(VNS_PATH), )
   VNS_PATH	:= $(EXT_PATH)/vns
  endif
  OPTS		+= -I$(VNS_PATH)/include
- LIBS		+= -LIBPATH:$(VNS_PATH)/lib/$(ARCH)
- ifeq ($(VNS), y)
-  LIBS		+= libvns.dll.lib
- endif
- ifeq ($(VNS), s)
-  LIBS		+= libvns.lib
+ ifeq ($(VNS), d)
+  OPTS		+= -DUSE_VNS=2
+ else
+  OPTS		+= -DUSE_VNS=1
+  LIBS		+= -LIBPATH:$(VNS_PATH)/lib/$(ARCH)
+  ifeq ($(VNS), y)
+   LIBS		+= libvns.dll.lib
+  endif
+  ifeq ($(VNS), s)
+   LIBS		+= libvns.lib
+  endif
  endif
  MISCOBJ	+= net_vns.obj
 endif
@@ -421,21 +421,21 @@ ifndef MUNT
  MUNT		:= d
 endif
 ifneq ($(MUNT), n)
- ifeq ($(MUNT), d)
-  OPTS		+= -DUSE_MUNT=2
- else
-  OPTS		+= -DUSE_MUNT=1
- endif
  ifeq ($(MUNT_PATH), )
   MUNT_PATH	:= $(EXT_PATH)/munt
  endif
  OPTS		+= -I$(MUNT_PATH)/include
- LIBS		+= -LIBPATH:$(MUNT_PATH)/lib/$(ARCH)
- ifeq ($(MUNT), y)
-  LIBS		+= libmunt.dll.lib
- endif
- ifeq ($(MUNT), s)
-  LIBS		+= libmunt.lib
+ ifeq ($(MUNT), d)
+  OPTS		+= -DUSE_MUNT=2
+ else
+  OPTS		+= -DUSE_MUNT=1
+  LIBS		+= -LIBPATH:$(MUNT_PATH)/lib/$(ARCH)
+  ifeq ($(MUNT), y)
+   LIBS		+= libmunt.dll.lib
+  endif
+  ifeq ($(MUNT), s)
+   LIBS		+= libmunt.lib
+  endif
  endif
 endif
 
@@ -444,21 +444,21 @@ ifndef RESID
  RESID		:= d
 endif
 ifneq ($(RESID), n)
- ifeq ($(RESID), d)
-  OPTS		+= -DUSE_RESID=2
- else
-  OPTS		+= -DUSE_RESID=1
- endif
  ifeq ($(RESID_PATH), )
   RESID_PATH	:= $(EXT_PATH)/resid
  endif
  OPTS		+= -I$(RESID_PATH)/include
- LIBS		+= -LIBPATH:$(RESID_PATH)/lib/$(ARCH)
- ifeq ($(RESID), y)
-  LIBS		+= libmunt.dll.lib
- endif
- ifeq ($(RESID), s)
-  LIBS		+= libmunt.lib
+ ifeq ($(RESID), d)
+  OPTS		+= -DUSE_RESID=2
+ else
+  OPTS		+= -DUSE_RESID=1
+  LIBS		+= -LIBPATH:$(RESID_PATH)/lib/$(ARCH)
+  ifeq ($(RESID), y)
+   LIBS		+= libmunt.dll.lib
+  endif
+  ifeq ($(RESID), s)
+   LIBS		+= libmunt.lib
+  endif
  endif
 endif
 
@@ -467,17 +467,21 @@ ifndef SDL
  SDL		:= n
 endif
 ifneq ($(SDL), n)
- OPTS		+= -DUSE_SDL
  ifeq ($(SDL_PATH), )
   SDL_PATH	:= $(EXT_PATH)/sdl
  endif
  OPTS		+= -I$(SDL_PATH)/include
- LIBS		+= -LIBPATH:$(SDL_PATH)/lib/$(ARCH)
- ifeq ($(SDL), y)
-  LIBS		+= sdl2.lib
- endif
  ifeq ($(SDL), s)
-  LIBS		+= sdl2_static.lib
+  OPTS		+= -DUSE_SDL=2
+ else
+  OPTS		+= -DUSE_SDL=1
+  LIBS		+= -LIBPATH:$(SDL_PATH)/lib/$(ARCH)
+  ifeq ($(SDL), y)
+   LIBS		+= SDL2.lib
+  endif
+  ifeq ($(SDL), s)
+   LIBS		+= SDL2_static.lib
+  endif
  endif
  SDLOBJ		:= win_sdl.obj
 endif
@@ -487,23 +491,23 @@ ifndef VNC
  VNC		:= n
 endif
 ifneq ($(VNC), n)
- ifeq ($(VNC), d)
-  OPTS		+= -DUSE_VNC=2
- else
-  OPTS		+= -DUSE_VNC=1
- endif
  ifeq ($(VNC_PATH), )
   VNC_PATH	:= $(EXT_PATH)/vnc
  endif
  OPTS		+= -I$(VNC_PATH)/include
- LIBS		+= -LIBPATH:$(VNC_PATH)/lib/$(ARCH)
- ifeq ($(VNC), y)
-  LIBS		+= libvncserver.lib
+ ifeq ($(VNC), d)
+  OPTS		+= -DUSE_VNC=2
+ else
+  OPTS		+= -DUSE_VNC=1
+  LIBS		+= -LIBPATH:$(VNC_PATH)/lib/$(ARCH)
+  ifeq ($(VNC), y)
+   LIBS		+= libvncserver.lib
+  endif
+  ifeq ($(VNC), s)
+   LIBS		+= libvncserver_static.lib
+  endif
  endif
- ifeq ($(VNC), s)
-  LIBS		+= libvncserver_static.lib
-  ZLIB_NEEDED	:= y
- endif
+ ZLIB_NEEDED	:= $(VNC)
  MISCOBJ	+= ui_vnc.obj ui_vnc_keymap.obj
 endif
 
@@ -512,46 +516,46 @@ ifndef RDP
  RDP		:= n
 endif
 ifneq ($(RDP), n)
- ifeq ($(RDP), d)
-  OPTS		+= -DUSE_RDP=2
- else
-  OPTS		+= -DUSE_RDP=1
- endif
  ifeq ($(RDP_PATH), )
   RDP_PATH	:= $(EXT_PATH)/rdp
  endif
  OPTS		+= -I$(RDP_PATH)/include
- LIBS		+= -LIBPATH:$(RDP_PATH)/lib/$(ARCH)
- ifeq ($(RDP), y)
-  LIBS		+= rdpsrvr.lib
- endif
- ifeq ($(RDP), s)
-  LIBS		+= rdpsrvr_static.lib
+ ifeq ($(RDP), d)
+  OPTS		+= -DUSE_RDP=2
+ else
+  OPTS		+= -DUSE_RDP=1
+  LIBS		+= -LIBPATH:$(RDP_PATH)/lib/$(ARCH)
+  ifeq ($(RDP), y)
+   LIBS		+= rdpsrvr.lib
+  endif
+  ifeq ($(RDP), s)
+   LIBS		+= rdpsrvr_static.lib
+  endif
  endif
  MISCOBJ	+= rdp.obj
 endif
 
 # PNG: N=no, Y=yes,linked, D=yes,dynamic, S=yes,static
 ifndef PNG
- PNG		:= n
+ PNG		:= d
 endif
 ifneq ($(PNG), n)
- ifeq ($(PNG), d)
-  OPTS		+= -DUSE_LIBPNG=2
- else
-  OPTS		+= -DUSE_LIBPNG=1
- endif
  ifeq ($(PNG_PATH), )
   PNG_PATH	:= $(EXT_PATH)/png
  endif
  OPTS		+= -I$(PNG_PATH)/include
- LIBS		+= -LIBPATH:$(PNG_PATH)/lib/$(ARCH)
- ifeq ($(PNG), y)
-  LIBS		+= libpng16_dll.lib #zlib.lib
- endif
- ifeq ($(PNG), s)
-  LIBS		+= libpng16.lib
-  ZLIB_NEEDED	:= y
+ ifeq ($(PNG), d)
+  OPTS		+= -DUSE_LIBPNG=2
+ else
+  OPTS		+= -DUSE_LIBPNG=1
+  LIBS		+= -LIBPATH:$(PNG_PATH)/lib/$(ARCH)
+  ifeq ($(PNG), y)
+   LIBS		+= libpng16_dll.lib #zlib.lib
+  endif
+  ifeq ($(PNG), s)
+   LIBS		+= libpng16.lib
+   ZLIB_NEEDED	:= s
+  endif
  endif
  MISCOBJ	+= png.obj
 endif
@@ -564,18 +568,18 @@ ifneq ($(MINIVHD), n)
  ifeq ($(MINIVHD_PATH), )
   MINIVHD_PATH	:= $(EXT_PATH)/minivhd
  endif
+ OPTS		+= -I$(MINIVHD_PATH)/include
  ifeq ($(MINIVHD), d)
   OPTS		+= -DUSE_MINIVHD=2
  else
   OPTS		+= -DUSE_MINIVHD=1
- endif
- OPTS		+= -I$(MINIVHD_PATH)/include
- LIBS		+= -LIBPATH:$(MINIVHD_PATH)/lib/$(ARCH)
- ifeq ($(MINIVHD), y)
-  LIBS		+= minivhd.lib
- endif
- ifeq ($(MINIVHD), s)
-  LIBS		+= -lminivhd_s.lib
+  LIBS		+= -LIBPATH:$(MINIVHD_PATH)/lib/$(ARCH)
+  ifeq ($(MINIVHD), y)
+   LIBS		+= minivhd.lib
+  endif
+  ifeq ($(MINIVHD), s)
+   LIBS		+= -lminivhd_s.lib
+  endif
  endif
 endif
 
@@ -587,18 +591,18 @@ ifneq ($(ZLIB), n)
  ifeq ($(ZLIB_PATH), )
   ZLIB_PATH	:= $(EXT_PATH)/zlib
  endif
+ OPTS		+= -I$(ZLIB_PATH)/include
  ifeq ($(ZLIB), d)
   OPTS		+= -DUSE_ZLIB=2
  else
   OPTS		+= -DUSE_ZLIB=1
- endif
- OPTS		+= -I$(ZLIB_PATH)/include
- LIBS		+= -LIBPATH:$(ZLIB_PATH)/lib/$(ARCH)
- ifeq ($(ZLIB), y)
-  LIBS		+= zlib.lib
- endif
- ifeq ($(ZLIB), s)
-  LIBS		+= zlib_static.lib
+  LIBS		+= -LIBPATH:$(ZLIB_PATH)/lib/$(ARCH)
+  ifeq ($(ZLIB), y)
+   LIBS		+= zlib.lib
+  endif
+  ifeq ($(ZLIB), s)
+   LIBS		+= zlib_static.lib
+  endif
  endif
 endif
 

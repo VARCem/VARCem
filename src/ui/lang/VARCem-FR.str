@@ -8,7 +8,7 @@
  *
  *		String definitions for "French (France)" language.
  *
- * Version:	@(#)VARCem-FR.str	1.0.15	2021/03/19
+ * Version:	@(#)VARCem-FR.str	1.0.15	2021/03/26
  *
  * Authors:	Altheos, <altheos@varcem.com>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
@@ -222,6 +222,8 @@
 #define  STR_3425	"Type de réseau:"
 #define  STR_3426	"Interface PCap:"
 #define  STR_3427	"Carte réseau:"
+#define  STR_3428	"Tunnel Server:"
+#define  STR_3429	"Port:"
 
 /* UI dialog: Settings (Ports, 3450.) */
 #define  STR_3450	"Port de jeu"

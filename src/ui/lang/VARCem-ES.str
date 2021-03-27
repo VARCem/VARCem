@@ -8,7 +8,7 @@
  *
  *		String definitions for "Spanish (Spain, Normal Sort)" language.
  *
- * Version:	@(#)VARCem-ES.str	1.0.13	2021/03/19
+ * Version:	@(#)VARCem-ES.str	1.0.13	2021/03/26
  *
  * Authors:	Natalia Portillo, <claunia@claunia.com>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
@@ -222,6 +222,8 @@
 #define  STR_3425	"Tipo de red:"
 #define  STR_3426	"Dispositivo PCap:"
 #define  STR_3427	"Adaptador de red:"
+#define  STR_3428	"Tunnel Server:"
+#define  STR_3429	"Port:"
 
 /* UI dialog: Settings (Ports, 3450.) */
 #define  STR_3450	"Dispositivos de juegos"

@@ -8,7 +8,7 @@
  *
  *		String definitions for "Portuguese (Brazil)" language.
  *
- * Version:	@(#)VARCem-PT_BR.str	1.0.2	2021/03/23
+ * Version:	@(#)VARCem-PT_BR.str	1.0.2	2021/03/26
  *
  * Author:	Altieres Lima da Silva, <altieres.lima@gmail.com>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
@@ -222,6 +222,8 @@
 #define  STR_3425	"Tipo de rede:"
 #define  STR_3426	"Dispositivo PCap:"
 #define  STR_3427	"Adaptador de rede:"
+#define  STR_3428	"Tunnel Server:"
+#define  STR_3429	"Port:"
 
 /* UI dialog: Settings (Ports, 3450.) */
 #define  STR_3450	"Porta de jogo"

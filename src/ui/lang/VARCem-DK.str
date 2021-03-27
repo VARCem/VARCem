@@ -8,7 +8,7 @@
  *
  *		String definitions for "Danish (Denmark)" language.
  *
- * Version:	@(#)VARCem-DK.str	1.0.1	2021/03/19
+ * Version:	@(#)VARCem-DK.str	1.0.1	2021/03/26
  *
  * Authors:	Nicolaj Larsen, <nicolajlarsen143@gmail.com>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
@@ -222,6 +222,8 @@
 #define STR_3425	"Netværkstype:"
 #define STR_3426	"PCap-enhed:"
 #define STR_3427	"Netværksadapter:"
+#define STR_3428	"Tunnel Server:"
+#define STR_3429	"Port:"
 
 /* UI dialog: Settings (Ports, 3450.) */
 #define STR_3450	"Spilport"

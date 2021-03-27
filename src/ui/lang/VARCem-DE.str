@@ -8,7 +8,7 @@
  *
  *		String definitions for "German (Germany)" language.
  *
- * Version:	@(#)VARCem-DE.str	1.0.14	2021/03/19
+ * Version:	@(#)VARCem-DE.str	1.0.14	2021/03/26
  *
  * Authors:	Michael Drüing, <michael@drueing.de>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
@@ -230,8 +230,10 @@
 
 /* UI dialog: Settings (Network, 3425.) */
 #define  STR_3425	"Netzwerktyp:"
-#define STR_3426	"PCap Gerät:"
+#define  STR_3426	"PCap Gerät:"
 #define  STR_3427	"Netzwerkadapter:"
+#define  STR_3428	"Tunnel Server:"
+#define  STR_3429	"Port:"
 
 
 /* UI dialog: Settings (Ports, 3450.) */

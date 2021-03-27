@@ -8,7 +8,7 @@
  *
  *		String definitions for "English (United States)" language.
  *
- * Version:	@(#)VARCem-PT.str	1.0.1	2021/03/19
+ * Version:	@(#)VARCem-PT.str	1.0.1	2021/03/26
  *
  * Authors:	José Alves, <jealves@varcem.com>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
@@ -221,6 +221,8 @@
 #define  STR_3425	"Tipo de rede:"
 #define  STR_3426	"Dispositivo PCap:"
 #define  STR_3427	"Adaptador de rede:"
+#define  STR_3428	"Tunnel Server:"
+#define  STR_3429	"Port:"
 
 /* UI dialog: Settings (Ports, 3450.) */
 #define  STR_3450	"Porta Game"

@@ -8,7 +8,7 @@
  *
  *		String definitions for "Italian (Italy)" language.
  *
- * Version:	@(#)VARCem-IT.str	1.0.8	2021/03/19
+ * Version:	@(#)VARCem-IT.str	1.0.8	2021/03/26
  *
  * Authors:	Miran Grca, <mgrca8@gmail.com>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
@@ -222,6 +222,8 @@
 #define  STR_3425	"Tipo di rete:"
 #define  STR_3426	"Dispositivo PCap:"
 #define  STR_3427	"Scheda di rete:"
+#define  STR_3428	"Tunnel Server:"
+#define  STR_3429	"Port:"
 
 /* UI dialog: Settings (Ports, 3450.) */
 #define  STR_3450	"Gameport"

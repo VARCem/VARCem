@@ -8,7 +8,7 @@
  *
  *		String definitions for "Dutch (Netherlands)" language.
  *
- * Version:	@(#)VARCem-DU.str	1.0.13	2021/03/19
+ * Version:	@(#)VARCem-DU.str	1.0.13	2021/03/26
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -220,6 +220,8 @@
 #define  STR_3425	"Soort Netwerk:"
 #define  STR_3426	"PCap apparaat:"
 #define  STR_3427	"Netwerkadapter:"
+#define  STR_3428	"Tunnel Server:"
+#define  STR_3429	"Poort:"
 
 /* UI dialog: Settings (Ports, 3450.) */
 #define  STR_3450	"Game poort"

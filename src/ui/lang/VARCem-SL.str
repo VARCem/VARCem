@@ -8,7 +8,7 @@
  *
  *		String definitions for "Slovenian (Slovenia)" language.
  *
- * Version:	@(#)VARCem-SL.str	1.0.8	2021/03/19
+ * Version:	@(#)VARCem-SL.str	1.0.8	2021/03/26
  *
  * Authors:	David Simunic, <simunic.david@outlook.com>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
@@ -222,6 +222,8 @@
 #define  STR_3425	"Tip omrežja:"
 #define  STR_3426	"PCap naprava:"
 #define  STR_3427	"Omrežna kartica:"
+#define  STR_3428	"Tunnel Server:"
+#define  STR_3429	"Port:"
 
 /* UI dialog: Settings (Ports, 3450.) */
 #define  STR_3450	"Igralna vrata"

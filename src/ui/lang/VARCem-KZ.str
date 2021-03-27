@@ -8,7 +8,7 @@
  *
  *		String definitions for "Kazakh (Kazakhstan)" language.
  *
- * Version:	@(#)VARCem-KZ.str	1.0.6	2021/03/19
+ * Version:	@(#)VARCem-KZ.str	1.0.6	2021/03/26
  *
  * Authors:	Arbars Zagadkin, <arbars.zagadkin@mail.ru>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
@@ -221,6 +221,8 @@
 #define  STR_3425	"Тораптың түрі:"
 #define  STR_3426	"PCap құрылғы:"
 #define  STR_3427	"Тораптық адаптер:"
+#define  STR_3428	"Tunnel Server:"
+#define  STR_3429	"Port:"
 
 /* UI dialog: Settings (Ports, 3450.) */
 #define  STR_3450	"Ойындық порт"

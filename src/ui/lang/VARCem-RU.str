@@ -8,7 +8,7 @@
  *
  *		String definitions for "Russian (Russia)" language.
  *
- * Version:	@(#)VARCem-RU.str	1.0.18	2021/03/19
+ * Version:	@(#)VARCem-RU.str	1.0.18	2021/03/26
  *
  * Authors:	Tarlabnor, <tarlabnor@varcem.com>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
@@ -221,6 +221,8 @@
 #define  STR_3425	"Тип сети:"
 #define  STR_3426	"Устройство PCap:"
 #define  STR_3427	"Сетевой адаптер:"
+#define  STR_3428	"Tunnel Server:"
+#define  STR_3429	"Port:"
 
 /* UI dialog: Settings (Ports, 3450.) */
 #define  STR_3450	"Игровой порт"

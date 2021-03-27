@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows systems using the MinGW32 environment.
 #
-# Version:	@(#)Makefile.minGW	1.0.104	2021/03/26
+# Version:	@(#)Makefile.minGW	1.0.105	2021/03/26
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -1056,7 +1056,7 @@ VARCem.res:	VARCem.rc VARCem.mpp
 
 $(PROG).exe:	VARCem.res $(OBJ)
 		@echo Linking $@ ..
-		$(CC) $(LFLAGS) -o $@ $(OBJ) $< $(LIBS)
+		@$(CC) $(LFLAGS) -o $@ $(OBJ) $< $(LIBS)
 ifneq ($(DEBUG), y)
 		@$(STRIP) $@
 endif

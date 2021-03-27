@@ -8,7 +8,7 @@
  *
  *		String definitions for "Korean (South Korea)" language.
  *
- * Version:	@(#)VARCem-KR.str	1.0.13	2021/03/19
+ * Version:	@(#)VARCem-KR.str	1.0.13	2021/03/26
  *
  * Authors:	Yeong Uk Jo, <greatpsycho@yahoo.com>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
@@ -222,6 +222,8 @@
 #define  STR_3425	"네트워크 형식:"
 #define  STR_3426	"PCap 장치:"
 #define  STR_3427	"네트워크 어댑터:"
+#define  STR_3428	"Tunnel Server:"
+#define  STR_3429	"Port:"
 
 /* UI dialog: Settings (Ports, 3450.) */
 #define  STR_3450	"게임 포트"
