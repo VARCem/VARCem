@@ -537,10 +537,10 @@ ifneq ($(SDL), n)
  OPTS		+= -DUSE_SDL=1
  LIBS		+= -L$(SDL_PATH)/lib/$(ARCH)
  ifeq ($(SDL), y)
-  LIBS		+= -lsdl2.dll
+  LIBS		+= -lSDL2.dll
  endif
  ifeq ($(SDL), s)
-  LIBS		+= -lsdl2
+  LIBS		+= -lSDL2
  endif
  SDLOBJ		:= win_sdl.o
 endif

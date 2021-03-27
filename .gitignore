@@ -1,33 +1,29 @@
+src/cpu.new
+src/done
 # Used by GIT.
 .gitignore
 # Used by Code::Blocks
-src/win/codeblocks/*
-# Used by MSVC.
+src/win/codeblocks
 src/win/.depends*
-src/win/.vs/
-src/win/vc*/Debug/
-src/win/vc*/Release/
+# Used by MSVC.
+src/win/.vs
+src/win/vc*/Debug
+src/win/vc*/Release
 # Used by MinGW
-src/win/mingw/.depends
+src/win/.depends-*
 # Used by the UNIX backends.
 src/unix
-src/unix/.depends*
-src/unix/*
+src/unix/.depends-*
 # Used by the WxWidgets backend.
 src/wx
-src/wx/*
 # Used by the Qt backend.
 src/qt
-src/qt/*
 # Standard folders.
 roms
-roms/*
 vm
-vm/*
 # Local stuff, unsorted etc.
 src/Makefile
 src/waltje
-src/waltje/*
 # Other files.
 src/*.obj
 src/*.d
@@ -35,3 +31,6 @@ src/*.o
 src/*.exe
 src/*.res
 src/*.map
+contrib/*/.vs
+contrib/*/[Bb]in
+contrib/*/[Oo]bj
