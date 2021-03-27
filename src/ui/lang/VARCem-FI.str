@@ -222,8 +222,8 @@
 #define  STR_3425	"Verkkotyyppi:"
 #define  STR_3426	"PCap-laite:"
 #define  STR_3427	"Verkkoadapteri:"
-#define  STR_3428	"Tunnel Server:"
-#define  STR_3429	"Port:"
+#define  STR_3428	"Tunnelipalvelin:"
+#define  STR_3429	"Portti:"
 
 /* UI dialog: Settings (Ports, 3450.) */
 #define  STR_3450	"Peliportti"
