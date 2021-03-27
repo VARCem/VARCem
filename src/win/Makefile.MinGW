@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows systems using the MinGW32 environment.
 #
-# Version:	@(#)Makefile.minGW	1.0.104	2021/03/24
+# Version:	@(#)Makefile.minGW	1.0.104	2021/03/26
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -162,23 +162,19 @@ ifeq ($(CROSS), y)
 
  # Cross-compiling (under Linux), select proper version.
  ifeq ($(X64), y)
-  MINGW		:= x86_64-w64-mingw32-
- else
-  MINGW		:= i686-w64-mingw32-
- endif
-
- ifeq ($(X64), y)
-  CPP		:= $(CROSS_PATH)$(MINGW)g++ -m64
-  CC		:= $(CROSS_PATH)$(MINGW)gcc -m64
+  MINGW		:= $(CROSS_PATH)x86_64-w64-mingw32-
+  CPP		:= $(MINGW)g++ -m64
+  CC		:= $(MINGW)gcc -m64
   ARCH		:= x64
  else
-  CPP		:= $(CROSS_PATH)$(MINGW)g++ -m32
-  CC		:= $(CROSS_PATH)$(MINGW)gcc -m32
+  MINGW		:= $(CROSS_PATH)i686-w64-mingw32-
+  CPP		:= $(MINGW)g++ -m32
+  CC		:= $(MINGW)gcc -m32
   ARCH		:= x86
  endif
- PREPROC	:= $(CROSS_PATH)$(MINGW)cpp -P
- WINDRES	:= $(CROSS_PATH)$(MINGW)windres
- STRIP		:= $(CROSS_PATH)$(MINGW)strip
+ PREPROC	:= $(MINGW)cpp -P
+ WINDRES	:= $(MINGW)windres
+ STRIP		:= $(MINGW)strip
  ifndef CAT
   CAT		:= cat
  endif
@@ -229,7 +225,7 @@ OPTS		:= $(EXTRAS) $(STUFF) \
 		   -D_CRT_NON_CONFORMING_SWPRINTFS \
 		   -D__USE_MINGW_ANSI_STDIO_X
 RFLAGS		:= --input-format=rc -O coff
-LDFLAGS		:=
+LFLAGS		:=
 O		:= .o
 
 # Options fow Windows, X86.
@@ -296,7 +292,7 @@ else
  endif
 endif
 ifeq ($(PROFILER), y)
- LDFLAGS	+= -Xlinker -Map=$(PROG).map
+ LFLAGS		+= -Xlinker -Map=$(PROG).map
 endif
 ifeq ($(LOGGING), y)
  OPTS		+= -D_LOGGING
@@ -353,18 +349,18 @@ ifneq ($(SLIRP), n)
  ifeq ($(SLIRP_PATH), )
   SLIRP_PATH	:= $(EXT_PATH)/slirp
  endif
+ OPTS		+= -I$(SLIRP_PATH)/include
  ifeq ($(SLIRP), d)
   OPTS		+= -DUSE_SLIRP=2
  else
   OPTS		+= -DUSE_SLIRP=1
- endif
- OPTS		+= -I$(SLIRP_PATH)/include
- LIBS		+= -L$(SLIRP_PATH)/lib/$(ARCH)
- ifeq ($(SLIRP), y)
-  LIBS		+= -lslirp.dll
- endif
- ifeq ($(SLIRP), s)
-  LIBS		+= -lslirp
+  LIBS		+= -L$(SLIRP_PATH)/lib/$(ARCH)
+  ifeq ($(SLIRP), y)
+   LIBS		+= -lslirp.dll
+  endif
+  ifeq ($(SLIRP), s)
+   LIBS		+= -lslirp
+  endif
  endif
  MISCOBJ	+= net_slirp.o
 endif
@@ -377,18 +373,18 @@ ifneq ($(PCAP), n)
  ifeq ($(PCAP_PATH), )
   PCAP_PATH	:= $(EXT_PATH)/pcap
  endif
+ OPTS		+= -I$(PCAP_PATH)/include
  ifeq ($(PCAP), d)
   OPTS		+= -DUSE_PCAP=2
  else
   OPTS		+= -DUSE_PCAP=1
- endif
- OPTS		+= -I$(PCAP_PATH)/include
- LIBS		+= -L$(PCAP_PATH)/lib/$(ARCH)
- ifeq ($(PCAP), y)
-  LIBS		+= -lwinpcap.dll
- endif
- ifeq ($(PCAP), s)
-  LIBS		+= -lwinpcap
+  LIBS		+= -L$(PCAP_PATH)/lib/$(ARCH)
+  ifeq ($(PCAP), y)
+   LIBS		+= -lwinpcap.dll
+  endif
+  ifeq ($(PCAP), s)
+   LIBS		+= -lwinpcap
+  endif
  endif
  MISCOBJ	+= net_pcap.o
 endif
@@ -401,19 +397,19 @@ ifneq ($(UDP), n)
  ifeq ($(UDP_PATH), )
   UDP_PATH	:= $(EXT_PATH)/udplink
  endif
+ OPTS		+= -I$(UDP_PATH)/include
  ifeq ($(UDP), d)
   OPTS		+= -DUSE_UDPLINK=2
  else
   OPTS		+= -DUSE_UDPLINK=1
- endif
- OPTS		+= -I$(UDP_PATH)/include
- LIBS		+= -L$(UDP_PATH)/lib/$(ARCH)
- ifeq ($(UDP), y)
-  LIBS		+= -ludplink.dll
- endif
- ifeq ($(UDP), s)
-  LIBS		+= -ludplink
-  ZLIB_NEEDED	:= y
+  LIBS		+= -L$(UDP_PATH)/lib/$(ARCH)
+  ifeq ($(UDP), y)
+   LIBS		+= -ludplink.dll
+  endif
+  ifeq ($(UDP), s)
+   LIBS		+= -ludplink
+   ZLIB_NEEDED	:= y
+  endif
  endif
  MISCOBJ	+= net_udplink.o
 endif
@@ -426,19 +422,19 @@ ifneq ($(VNS), n)
  ifeq ($(VNS_PATH), )
   VNS_PATH	:= $(EXT_PATH)/vns
  endif
+ OPTS		+= -I$(VNS_PATH)/include
  ifeq ($(VNS), d)
   OPTS		+= -DUSE_VNS=2
  else
   OPTS		+= -DUSE_VNS=1
- endif
- OPTS		+= -I$(VNS_PATH)/include
- LIBS		+= -L$(VNS_PATH)/lib/$(ARCH)
- ifeq ($(VNS), y)
-  LIBS		+= -lvns.dll
- endif
- ifeq ($(VNS), s)
-  LIBS		+= -lvns
-  ZLIB_NEEDED	:= y
+  LIBS		+= -L$(VNS_PATH)/lib/$(ARCH)
+  ifeq ($(VNS), y)
+   LIBS		+= -lvns.dll
+  endif
+  ifeq ($(VNS), s)
+   LIBS		+= -lvns
+   ZLIB_NEEDED	:= y
+  endif
  endif
  MISCOBJ	+= net_vns.o
 endif
@@ -490,18 +486,18 @@ ifneq ($(MUNT), n)
  ifeq ($(MUNT_PATH), )
   MUNT_PATH	:= $(EXT_PATH)/munt
  endif
+ OPTS		+= -I$(MUNT_PATH)/include
  ifeq ($(MUNT), d)
   OPTS		+= -DUSE_MUNT=2
  else
   OPTS		+= -DUSE_MUNT=1
- endif
- OPTS		+= -I$(MUNT_PATH)/include
- LIBS		+= -L$(MUNT_PATH)/lib/$(ARCH)
- ifeq ($(MUNT), y)
-  LIBS		+= -lmunt.dll
- endif
- ifeq ($(MUNT), s)
-  LIBS		+= -lmunt
+  LIBS		+= -L$(MUNT_PATH)/lib/$(ARCH)
+  ifeq ($(MUNT), y)
+   LIBS		+= -lmunt.dll
+  endif
+  ifeq ($(MUNT), s)
+   LIBS		+= -lmunt
+  endif
  endif
 endif
 
@@ -512,21 +508,21 @@ endif
 ifneq ($(RESID), n)
  ifeq ($(RESID_PATH), )
   RESID_PATH	:= $(EXT_PATH)/resid
-  MISCOBJ	+= snd_ssi2001.o
  endif
+ OPTS		+= -I$(RESID_PATH)/include
  ifeq ($(RESID), d)
   OPTS		+= -DUSE_RESID=2
  else
   OPTS		+= -DUSE_RESID=1
+  LIBS		+= -L$(RESID_PATH)/lib/$(ARCH)
+  ifeq ($(RESID), y)
+   LIBS		+= -lresid.dll
+  endif
+  ifeq ($(RESID), s)
+   LIBS		+= -lresid
+  endif
  endif
- OPTS		+= -I$(RESID_PATH)/include
- LIBS		+= -L$(RESID_PATH)/lib/$(ARCH)
- ifeq ($(RESID), y)
-  LIBS		+= -lresid.dll
- endif
- ifeq ($(RESID), s)
-  LIBS		+= -lresid
- endif
+ MISCOBJ	+= snd_ssi2001.o
 endif
 
 # SDL: N=no, Y=yes,linked, D=yes,dynamic, S=yes,static
@@ -537,14 +533,18 @@ ifneq ($(SDL), n)
  ifeq ($(SDL_PATH), )
   SDL_PATH	:= $(EXT_PATH)/sdl
  endif
- OPTS		+= -DUSE_SDL
  OPTS		+= -I$(SDL_PATH)/include
- LIBS		+= -L$(SDL_PATH)/lib/$(ARCH)
- ifeq ($(SDL), y)
-  LIBS		+= -lsdl2.dll
- endif
- ifeq ($(SDL), s)
-  LIBS		+= -lsdl2
+ ifeq ($(SDL), d)
+  OPTS		+= -DUSE_SDL=2
+ else
+  OPTS		+= -DUSE_SDL=1
+  LIBS		+= -L$(SDL_PATH)/lib/$(ARCH)
+  ifeq ($(SDL), y)
+   LIBS		+= -lsdl2.dll
+  endif
+  ifeq ($(SDL), s)
+   LIBS		+= -lsdl2
+  endif
  endif
  SDLOBJ		:= win_sdl.o
 endif
@@ -557,19 +557,19 @@ ifneq ($(VNC), n)
  ifeq ($(VNC_PATH), )
   VNC_PATH	:= $(EXT_PATH)/vnc
  endif
+ OPTS		+= -I$(VNC_PATH)/include
  ifeq ($(VNC), d)
   OPTS		+= -DUSE_VNC=2
  else
   OPTS		+= -DUSE_VNC=1
- endif
- OPTS		+= -I$(VNC_PATH)/include
- LIBS		+= -L$(VNC_PATH)/lib/$(ARCH)
- ifeq ($(VNC), y)
-  LIBS		+= -lvncserver.dll
- endif
- ifeq ($(VNC), s)
-  LIBS		+= -lvncserver -lz -static -lpthread
-  ZLIB_NEEDED	:= y
+  LIBS		+= -L$(VNC_PATH)/lib/$(ARCH)
+  ifeq ($(VNC), y)
+   LIBS		+= -lvncserver.dll
+  endif
+  ifeq ($(VNC), s)
+   LIBS		+= -lvncserver -lz -static -lpthread
+   ZLIB_NEEDED	:= y
+  endif
  endif
  MISCOBJ	+= ui_vnc.o ui_vnc_keymap.o
 endif
@@ -582,18 +582,18 @@ ifneq ($(RDP), n)
  ifeq ($(RDP_PATH), )
   RDP_PATH	:= $(EXT_PATH)/rdp
  endif
+ OPTS		+= -I$(RDP_PATH)/include
  ifeq ($(RDP), d)
   OPTS		+= -DUSE_RDP=2
  else
   OPTS		+= -DUSE_RDP=1
- endif
- OPTS		+= -I$(RDP_PATH)/include
- LIBS		+= -L$(RDP_PATH)/lib/$(ARCH)
- ifeq ($(RDP), y)
-  LIBS		+= -lrdp.dll
- endif
- ifeq ($(RDP), s)
-  LIBS		+= -lrdp
+  LIBS		+= -L$(RDP_PATH)/lib/$(ARCH)
+  ifeq ($(RDP), y)
+   LIBS		+= -lrdp.dll
+  endif
+  ifeq ($(RDP), s)
+   LIBS		+= -lrdp
+  endif
  endif
  MISCOBJ	+= rdp.o
 endif
@@ -606,20 +606,20 @@ ifneq ($(PNG), n)
  ifeq ($(PNG_PATH), )
   PNG_PATH	:= $(EXT_PATH)/png
  endif
+ OPTS		+= -I$(PNG_PATH)/include
  ifeq ($(PNG), d)
   OPTS		+= -DUSE_LIBPNG=2
  else
   OPTS		+= -DUSE_LIBPNG=1
- endif
- OPTS		+= -I$(PNG_PATH)/include
- LIBS		+= -L$(PNG_PATH)/lib/$(ARCH)
- ifeq ($(PNG), y)
-  # FIXME: should be -lpng.dll
-  LIBS		+= -lpng
- endif
- ifeq ($(PNG), s)
-  LIBS		+= -lpng -lz
-  ZLIB_NEEDED	:= y
+  LIBS		+= -L$(PNG_PATH)/lib/$(ARCH)
+  ifeq ($(PNG), y)
+   # FIXME: should be -lpng.dll
+   LIBS		+= -lpng
+  endif
+  ifeq ($(PNG), s)
+   LIBS		+= -lpng -lz
+   ZLIB_NEEDED	:= y
+  endif
  endif
  MISCOBJ	+= png.o
 endif
@@ -632,18 +632,18 @@ ifneq ($(MINIVHD), n)
  ifeq ($(MINIVHD_PATH), )
   MINIVHD_PATH	:= $(EXT_PATH)/minivhd
  endif
+ OPTS		+= -I$(MINIVHD_PATH)/include
  ifeq ($(MINIVHD), d)
   OPTS		+= -DUSE_MINIVHD=2
  else
   OPTS		+= -DUSE_MINIVHD=1
- endif
- OPTS		+= -I$(MINIVHD_PATH)/include
- LIBS		+= -L$(MINIVHD_PATH)/lib/$(ARCH)
- ifeq ($(MINIVHD), y)
-  LIBS		+= -lminivhd.dll
- endif
- ifeq ($(MINIVHD), s)
-  LIBS		+= -lminivhd
+  LIBS		+= -L$(MINIVHD_PATH)/lib/$(ARCH)
+  ifeq ($(MINIVHD), y)
+   LIBS		+= -lminivhd.dll
+  endif
+  ifeq ($(MINIVHD), s)
+   LIBS		+= -lminivhd
+  endif
  endif
 endif
 
@@ -674,18 +674,18 @@ ifneq ($(ZLIB), n)
  ifeq ($(ZLIB_PATH), )
   ZLIB_PATH	:= $(EXT_PATH)/zlib
  endif
+ OPTS		+= -I$(ZLIB_PATH)/include
  ifeq ($(ZLIB), d)
   OPTS		+= -DUSE_ZLIB=2
  else
   OPTS		+= -DUSE_ZLIB=1
- endif
- OPTS		+= -I$(ZLIB_PATH)/include
- LIBS		+= -L$(ZLIB_PATH)/lib/$(ARCH)
- ifeq ($(ZLIB), y)
-  LIBS		+= -lz
- endif
- ifeq ($(ZLIB), s)
-  LIBS		+= -lz_static
+  LIBS		+= -L$(ZLIB_PATH)/lib/$(ARCH)
+  ifeq ($(ZLIB), y)
+   LIBS		+= -lz
+  endif
+  ifeq ($(ZLIB), s)
+   LIBS		+= -lz_static
+  endif
  endif
 endif
 
@@ -1047,7 +1047,7 @@ $(RESDLL).res:	$(RESDLL).rc VARCem-common.rc
 
 $(RESDLL).dll:	$(RESDLL).res
 		@echo Linking $@ ..
-		$(CC) $(LDFLAGS) -shared -o $@ $<
+		$(CC) $(LFLAGS) -shared -o $@ $<
 		@strip --strip-unneeded $@
 		@-rm $(RESDLL).rc
 
@@ -1059,7 +1059,7 @@ VARCem.res:	VARCem.rc VARCem.mpp
 
 $(PROG).exe:	VARCem.res $(OBJ)
 		@echo Linking $@ ..
-		$(CC) $(LDFLAGS) -o $@ $(OBJ) $< $(LIBS)
+		$(CC) $(LFLAGS) -o $@ $(OBJ) $< $(LIBS)
 ifneq ($(DEBUG), y)
 		@$(STRIP) $@
 endif
@@ -1070,7 +1070,7 @@ pcap_if.res:	pcap_if.rc
 
 $(NETIF).exe:	pcap_if.o win_dynld.o pcap_if.res
 		@echo Linking $(NETIF).exe ..
-		@$(CC) $(LDFLAGS) -o $@ \
+		@$(CC) $(LFLAGS) -o $@ \
 			pcap_if.o win_dynld.o pcap_if.res
 ifneq ($(DEBUG), y)
 		@$(STRIP) $(NETIF).exe
