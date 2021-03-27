@@ -9,7 +9,7 @@
 #
 #		Build script for the Travis CI remote builder service.
 #
-# Version:	@(#).travis-build.sh	1.0.10	2021/03/24
+# Version:	@(#).travis-build.sh	1.0.11	2021/03/26
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -46,7 +46,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
     # Define the build options here.
-    OPTS="SDL=d VNC=d PNG=d"
+    OPTS="VNC=d VNS=n RDP=n CHD=n"
 
     if [ "x${DEV_BUILD}" = "xy" ]; then
 	TARGET="win-${TRAVIS_BUILD_NUMBER}_dev-x86"

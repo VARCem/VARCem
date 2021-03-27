@@ -525,26 +525,22 @@ ifneq ($(RESID), n)
  MISCOBJ	+= snd_ssi2001.o
 endif
 
-# SDL: N=no, Y=yes,linked, D=yes,dynamic, S=yes,static
+# SDL (always dynamic)
 ifndef SDL
- SDL		:= n
+ SDL		:= y
 endif
 ifneq ($(SDL), n)
  ifeq ($(SDL_PATH), )
   SDL_PATH	:= $(EXT_PATH)/sdl
  endif
  OPTS		+= -I$(SDL_PATH)/include
- ifeq ($(SDL), d)
-  OPTS		+= -DUSE_SDL=2
- else
-  OPTS		+= -DUSE_SDL=1
-  LIBS		+= -L$(SDL_PATH)/lib/$(ARCH)
-  ifeq ($(SDL), y)
-   LIBS		+= -lsdl2.dll
-  endif
-  ifeq ($(SDL), s)
-   LIBS		+= -lsdl2
-  endif
+ OPTS		+= -DUSE_SDL=1
+ LIBS		+= -L$(SDL_PATH)/lib/$(ARCH)
+ ifeq ($(SDL), y)
+  LIBS		+= -lsdl2.dll
+ endif
+ ifeq ($(SDL), s)
+  LIBS		+= -lsdl2
  endif
  SDLOBJ		:= win_sdl.o
 endif
@@ -600,7 +596,7 @@ endif
 
 # PNG: N=no, Y=yes,linked, D=yes,dynamic, S=yes,static
 ifndef PNG
- PNG		:= n
+ PNG		:= d
 endif
 ifneq ($(PNG), n)
  ifeq ($(PNG_PATH), )
