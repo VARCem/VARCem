@@ -8,7 +8,7 @@
  *
  *		String definitions for "Portuguese (Brazil)" language.
  *
- * Version:	@(#)VARCem-PT_BR.str	1.0.2	2021/03/26
+ * Version:	@(#)VARCem-PT_BR.str	1.0.3	2021/03/28
  *
  * Author:	Altieres Lima da Silva, <altieres.lima@gmail.com>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
@@ -48,7 +48,7 @@
  */
 
 /* Main application strings (2000) - DO NOT TRANSLATE! */
-#define STR_VERSION	1,0,2
+#define STR_VERSION	1,0,3
 #define STR_AUTHOR	"Altieres Lima da Silva"
 #define STR_EMAIL	"altieres.lima@gmail.com"
 #define STR_NAME	"VARCem"
@@ -222,8 +222,8 @@
 #define  STR_3425	"Tipo de rede:"
 #define  STR_3426	"Dispositivo PCap:"
 #define  STR_3427	"Adaptador de rede:"
-#define  STR_3428	"Tunnel Server:"
-#define  STR_3429	"Port:"
+#define  STR_3428	"Servidor de túnel:"
+#define  STR_3429	"Porta:"
 
 /* UI dialog: Settings (Ports, 3450.) */
 #define  STR_3450	"Porta de jogo"
