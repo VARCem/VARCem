@@ -8,9 +8,9 @@
  *
  *		String definitions for "Russian (Russia)" language.
  *
- * Version:	@(#)VARCem-RU.str	1.0.18	2021/03/26
+ * Version:	@(#)VARCem-RU.str	1.0.19	2021/03/28
  *
- * Authors:	Tarlabnor, <tarlabnor@varcem.com>
+ * Authors:	Evgeny Zaretsky, <tarlabnor@varcem.com>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
  *
  *		Copyright 2017-2021 Fred N. van Kempen.
@@ -47,8 +47,8 @@
  */
 
 /* Main application strings (2000) - DO NOT TRANSLATE! */
-#define STR_VERSION	1,0,18
-#define STR_AUTHOR	"Tarlabnor"
+#define STR_VERSION	1,0,19
+#define STR_AUTHOR	"Evgeny Zaretsky"
 #define STR_EMAIL	"tarlabnor@varcem.com"
 #define STR_NAME	"VARCem"
 #define STR_TITLE	"Virtual ARchaeological Computer EMulator"
@@ -126,9 +126,9 @@
 #define STR_OPEN_WRITE	"Невозможно открыть файл на запись"
 #define STR_DEVCONF_1	"Конфигурация"
 #define STR_DEVCONF_2	"Устройство:"
-#define STR_VHD_TYPE	"VHD Type:"
-#define STR_PARENT_NAME	"VHD Parent:"
-#define STR_BLK_SIZE    "Block size:"
+#define STR_VHD_TYPE	"Тип VHD:"
+#define STR_PARENT_NAME	"Родительский VHD:"
+#define STR_BLK_SIZE    "Размер блока:"
 
 
 /* UI dialog: About (3200.) */
@@ -221,8 +221,8 @@
 #define  STR_3425	"Тип сети:"
 #define  STR_3426	"Устройство PCap:"
 #define  STR_3427	"Сетевой адаптер:"
-#define  STR_3428	"Tunnel Server:"
-#define  STR_3429	"Port:"
+#define  STR_3428	"Туннельный сервер:"
+#define  STR_3429	"Порт:"
 
 /* UI dialog: Settings (Ports, 3450.) */
 #define  STR_3450	"Игровой порт"
@@ -260,13 +260,13 @@
 #define  STR_3517	"IDE"
 #define  STR_3518	"SCSI"
 #define  STR_3519	"USB"
-#define  STR_3520	"Fixed"
-#define  STR_3521	"Sparse"
-#define  STR_3522	"Differencing"
-#define  STR_3523	"Parent and child disk timestamps do not match : fix it ?"
-#define  STR_3524	"Could not fix VHD timestamp"
-#define  STR_3540	"Small blocks (512 KB)"
-#define  STR_3541	"Large blocks (2 MB)"
+#define  STR_3520	"Фиксированный"
+#define  STR_3521	"Разреженный"
+#define  STR_3522	"Разностный"
+#define  STR_3523	"Временные метки родительского и дочернего диска не совпадают : исправить ?"
+#define  STR_3524	"Невозможно исправить временную метку VHD"
+#define  STR_3540	"Маленькие блоки (512 KB)"
+#define  STR_3541	"Большие блоки (2 MB)"
 
 /* UI dialog: Settings (Add Hard Disk, 3525.) */
 #define  STR_3525	"Добавить жёсткий диск"
