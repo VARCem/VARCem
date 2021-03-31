@@ -8,7 +8,7 @@
  *
  *		String definitions for "German (Germany)" language.
  *
- * Version:	@(#)VARCem-DE.str	1.0.14	2021/03/26
+ * Version:	@(#)VARCem-DE.str	1.0.15	2021/03/31
  *
  * Authors:	Michael Drüing, <michael@drueing.de>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
@@ -127,9 +127,9 @@
 #define STR_OPEN_WRITE	"Konnte die Datei nicht zum Schreiben öffnen"
 #define STR_DEVCONF_1	"Konfiguration"
 #define STR_DEVCONF_2	"Gerät:"
-#define STR_VHD_TYPE	"VHD Type:"
-#define STR_PARENT_NAME	"VHD Parent:"
-#define STR_BLK_SIZE    "Block size:"
+#define STR_VHD_TYPE	"VHD Typ:"
+#define STR_PARENT_NAME	"Übergeordnete VHD:"
+#define STR_BLK_SIZE    "Blockgröße:"
 
 
 /* UI dialog: About (3200.) */
@@ -162,18 +162,18 @@
 #define  STR_3279	"1% langsamere U/min"
 #define  STR_3280	"1,5% langsamere U/min"
 #define  STR_3281	"2% langsamere U/min"
-#define  STR_3282	"160 KB"
-#define  STR_3283	"180 KB"
-#define  STR_3284	"320 KB"
-#define  STR_3285	"360 KB"
-#define  STR_3286	"640 KB"
-#define  STR_3287	"720 KB"
-#define  STR_3288	"1.2 MB"
-#define  STR_3289	"1.25 MB"
-#define  STR_3290	"1.44 MB"
-#define  STR_3291	"DMF (1KB Cluster)"
-#define  STR_3292	"DMF (2KB Cluster)"
-#define  STR_3293	"2.88 MB"
+#define  STR_3282	"160 KiB"
+#define  STR_3283	"180 KiB"
+#define  STR_3284	"320 KiB"
+#define  STR_3285	"360 KiB"
+#define  STR_3286	"640 KiB"
+#define  STR_3287	"720 KiB"
+#define  STR_3288	"1.2 MiB"
+#define  STR_3289	"1.25 MiB"
+#define  STR_3290	"1.44 MiB"
+#define  STR_3291	"DMF (1KiB Cluster)"
+#define  STR_3292	"DMF (2KiB Cluster)"
+#define  STR_3293	"2.88 MiB"
 #define  STR_3294	"ZIP 100"
 #define  STR_3295	"ZIP 250"
 
@@ -225,7 +225,7 @@
 #define  STR_3400	"Soundkarte:"
 #define  STR_3401	"MIDI Ausgabegerät:"
 #define  STR_3402	"Eigenständiges MPU-401"
-#define  STR_3403	"FLOAT32 Soundausgabe benutzen"
+#define  STR_3403	"FLOAT32 Soundausgabe verwenden"
 
 
 /* UI dialog: Settings (Network, 3425.) */
@@ -237,7 +237,7 @@
 
 
 /* UI dialog: Settings (Ports, 3450.) */
-#define  STR_3450	"Gameport"
+#define  STR_3450	"Joystickport"
 #define  STR_3451	"Parallelport 1"
 #define  STR_3452	"Parallelport 2"
 #define  STR_3453	"Parallelport 3"
@@ -277,10 +277,10 @@
 #define  STR_3520	"Fixed"
 #define  STR_3521	"Sparse"
 #define  STR_3522	"Differencing"
-#define  STR_3523	"Parent and child disk timestamps do not match : fix it ?"
-#define  STR_3524	"Could not fix VHD timestamp"
-#define  STR_3540	"Small blocks (512 KB)"
-#define  STR_3541	"Large blocks (2 MB)"
+#define  STR_3523	"Zeitstempel der Disk stimmt nicht mit der übergeordneten Disk überein. Korrigieren?"
+#define  STR_3524	"VHD Zeitstempel konnte nicht korrigiert werden"
+#define  STR_3540	"Kleine Blöcke (512 KB)"
+#define  STR_3541	"Große Blöcke (2 MB)"
 
 /* UI dialog: Settings (Add Hard Disk, 3525.) */
 #define  STR_3525	"Festplatte hinzufügen"
@@ -296,7 +296,7 @@
 #define  STR_3535	"HDI oder HDX Abbilder mit einer Sektorgröße ungleich 512 Bytes wird nicht unterstützt"
 #define  STR_3536	"Festplattenabbilder\0*.hd?;*.im?;*.vhd\0Alle Dateien\0*.*\0"
 #define  STR_3537	"Denken Sie daran, die neue Festplatte zu partitionieren und zu formatieren"
-#define  STR_3538	"Hard disk images\0*.vhd\0"
+#define  STR_3538	"Festplatten-Abbilder\0*.vhd\0"
 
 
 /* UI dialog: Settings (Floppy Drives, 3550.) */
@@ -365,7 +365,7 @@
 #define STR_VIEW	"&Ansicht"
 #define  STR_4011	"&Veränderbare Fenstergröße"
 #define  STR_4012	"&Größe und Position speichern"
-#define  STR_4013	"&Vollbildmodus\tStrg+Alt+Bild Auf"
+#define  STR_4013	"&Vollbildmodus\tSTRG+ALT+BILD AUF"
 #define  STR_4014	"&Rechtes STRG ist linkes ALT"
 
 /* UI menu: View > Renderer (4020.) */
@@ -394,7 +394,7 @@
 #define  STR_4054	"Kontrast für Monochromanzeige ändern"
 
 /* UI menu: Display > Display Type (4060.) */
-#define STR_DISPTYPE	"Display &type"
+#define STR_DISPTYPE	"Monitor&typ"
 #define  STR_4061	"RGB &Farbmonitor"
 #define  STR_4062	"&Graustufenmonitor"
 #define  STR_4063	"&Bernsteinmonitor"
@@ -413,8 +413,8 @@
 #define  STR_4081	"&Einstellungen"
 #define  STR_4082	"S&prache"
 #define	 STR_4083	"P&rotokollierung"
-#define  STR_4084	"Log Breakpoint"
-#define  STR_4085	"Toggle %s logging"
+#define  STR_4084	"Haltepunkte protokollieren"
+#define  STR_4085	"Protokollierung für %s ein/ausschalten"
 #define  STR_4086	"Konfigurationsdatei &laden"
 #define  STR_4087	"Konfigurationsdatei &speichern"
 #define  STR_4088	"&Bildschirmfoto speichern"
