@@ -13,7 +13,7 @@
  * Authors:	David Hrdlička, <hrdlickadavid@outlook.com>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
  *
- *		Copyright 2018 David Hrdlička.
+ *		Copyright 2018-2021 David Hrdlička.
  *		Copyright 2017-2021 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
@@ -66,7 +66,7 @@
 #define STR_2200	"Nebylo možné načíst klávesové zkratky."
 #define STR_2201	"Nebylo možné zaregistrovat nezpracovaný vstup."
 #define STR_2202	"Selhalo nastavení PCap, jelikož jej nebylo možno inicializovat"
-#define STR_2203	"Nebyla nalezena žádná PCap zařízení."
+#define STR_2203	"Nebylo nalezeno žádné PCap zařízení."
 #define STR_2204	"Neplatné PCap zařížení"
 #define STR_2205	"Nebylo možné načíst %s. Ověřte, zda je následující soubor\nve složce s programem:\n\n%s"
 
@@ -74,18 +74,18 @@
 /* Application error messages (2300.) */
 #define STR_2300	"Systém nemá žádnou dostupnou paměť!"
 #define STR_2301	"Nebyly nalezeny žádné použitelné ROM obrazy."
-#define STR_2302	"Nebyla nalezena žádná platná konfigurace.\n\nWould you like to enter the Settings dialog to create one?"
+#define STR_2302	"Nebyla nalezena žádná platná konfigurace.\n\nChcete otevřít Nastavení a vytvořit ji?"
 #define STR_2303	"Použitá %ls:\n\n  %s\n\nnení dostupná.\n\nChcete otevřít Nastavení?"
 #define STR_2304	"Zvolený renderer:\n\n  %s\n\nnení dostupný. Chcete použít výchozí renderer?"
 #define STR_2305	"Nejdřív je nutno uložit nastavení!"
 #define STR_2306	"Chyba při vytváření rastrového obrázku: %ls"
-#define STR_2307	"USB není zatím podporováno."
+#define STR_2307	"USB zatím není podporováno."
 
 
 /* Application messages (2400.) */
 #define STR_2400	"Opravdu chcete uložit toto nastavení?\n\n(Může vyžadovat restart.)"
 #define STR_2401	"Změny byly uloženy, nyní prosím restartujte emulátor."
-#define STR_2402	"Podpora zvoleného zařízení:\n\n  %s\n\nve VARCem je nedokončená a toto zařízení tak může způsobovat potíže.\n\nOpravdu jej chcete povolit?"
+#define STR_2402	"Podpora zvoleného zařízení:\n\n  %s\n\nve VARCem není dokončená a toto zařízení tak může způsobovat potíže.\n\nOpravdu jej chcete povolit?"
 #define STR_2403	"Klikněte pro zachycení kurzoru"
 #define STR_2404	"Stiskněte F8+F12 pro uvolnění kurzoru"
 #define STR_2405	"Stiskněte F8+F12 nebo prostřední tlačítko myši pro uvolnění kurzoru"
@@ -127,9 +127,9 @@
 #define STR_OPEN_WRITE	"Nebylo možné otevřít soubor pro zápis"
 #define STR_DEVCONF_1	"Konfigurace"
 #define STR_DEVCONF_2	"Zařízení:"
-#define STR_VHD_TYPE	"VHD Type:"
-#define STR_PARENT_NAME	"VHD Parent:"
-#define STR_BLK_SIZE    "Block size:"
+#define STR_VHD_TYPE	"Druh VHD:"
+#define STR_PARENT_NAME	"Nadřazené VHD:"
+#define STR_BLK_SIZE    "Velikost bloku:"
 
 
 /* UI dialog: About (3200.) */
@@ -202,7 +202,7 @@
 
 /* UI dialog: Settings (Video, 3350.) */
 #define  STR_3350	"Grafická karta:"
-#define  STR_3351	"Voodoo Graphics"
+#define  STR_3351	"Grafika Voodoo"
 
 /* UI dialog: Settings (Input, 3375.) */
 #define  STR_3375	"Myš:"
@@ -215,7 +215,7 @@
 /* UI dialog: Settings (Sound, 3400.) */
 #define  STR_3400	"Zvuková karta:"
 #define  STR_3401	"Zařízení pro výstup MIDI:"
-#define  STR_3402	"Samostatný MPU-401"
+#define  STR_3402	"Samostatné MPU-401"
 #define  STR_3403	"Použít FLOAT32 sound"
 
 /* UI dialog: Settings (Network, 3425.) */
@@ -239,8 +239,8 @@
 #define  STR_3477	"Terciární IDE"
 #define  STR_3478	"Kvartérní IDE"
 #define  STR_3479	"Zařízení ISABugger"
-#define  STR_3480	"ISA Memory Expansion"
-#define  STR_3481	"ISA Clock/RTC Card"
+#define  STR_3480	"ISA rozšíření paměti"
+#define  STR_3481	"ISA hodiny reálného času"
 
 /* UI dialog: Settings (Hard Disks, 3500.) */
 #define  STR_3500	"Pevné disky:"
@@ -261,13 +261,13 @@
 #define  STR_3517	"IDE"
 #define  STR_3518	"SCSI"
 #define  STR_3519	"USB"
-#define  STR_3520	"Fixed"
-#define  STR_3521	"Sparse"
-#define  STR_3522	"Differencing"
-#define  STR_3523	"Parent and child disk timestamps do not match : fix it ?"
-#define  STR_3524	"Could not fix VHD timestamp"
-#define  STR_3540	"Small blocks (512 KB)"
-#define  STR_3541	"Large blocks (2 MB)"
+#define  STR_3520	"Pevná velikost"
+#define  STR_3521	"Dynamicky se zvětšující"
+#define  STR_3522	"Rozdílový"
+#define  STR_3523	"Časové razítko nadřazeného disku se liší od podřazeného disku. Chcete jej opravit?"
+#define  STR_3524	"Nebylo možné opravit časové razítko VHD disku"
+#define  STR_3540	"Malé bloky (po 512 KB)"
+#define  STR_3541	"Velké bloky (po 2 MB)"
 
 /* UI dialog: Settings (Add Hard Disk, 3525.) */
 #define  STR_3525	"Přidat pevný disk"
@@ -313,7 +313,7 @@
 #define STR_3905	"N&ačíst obraz..."
 #define STR_3906	"&Znovu načíst předchozí obraz"
 #define STR_3907	"&Vyjmout"
-#define STR_3908	"&Notify disk change"
+#define STR_3908	"Upozor&nit na změnu disku"
 
 #define STR_3910	"Disketa %i (%s): %ls"
 #define STR_3911	"Všechny obrazy\0*.0??;*.1??;*.360;*.720;*.86f;*.bin;*.cq?;*.dsk;*.flp;*.hdm;*.im?;*.json;*.td0;*.*fd?;*.xdf\0Pokročilé sektorové obrazy\0*.imd;*.json;*.td0\0Základní sektorové obrazy\0*.0??;*.1??;*.360;*.720;*.bin;*.cq?;*.dsk;*.flp;*.hdm;*.im?;*.xdf;*.*fd?\0Obrazy magnetického toku\0*.fdi\0Obrazy povrchu\0*.86f\0Všechny soubory\0*.*\0"
@@ -406,7 +406,7 @@
 
 /* UI menu: Help (4090.) */
 #define STR_HELP	"Ná&pověda"
-#define  STR_4091	"&O VARCem"
+#define  STR_4091	"&O programu..."
 
 
 /* End of file. */
