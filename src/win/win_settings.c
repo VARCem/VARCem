@@ -74,6 +74,7 @@
 #include "../devices/scsi/scsi_device.h"
 #include "../devices/cdrom/cdrom.h"
 #include "../devices/disk/zip.h"
+#include "../devices/disk/mo.h"
 #include "../devices/network/network.h"
 #include "../devices/sound/sound.h"
 #include "../devices/sound/midi.h"
@@ -91,6 +92,7 @@ static int	temp_fdd_types[FDD_NUM],
 static hard_disk_t temp_hdd[HDD_NUM];
 static cdrom_t temp_cdrom_drives[CDROM_NUM];
 static zip_drive_t temp_zip_drives[ZIP_NUM];
+static mo_drive_t temp_mo_drives[MO_NUM];
 
 
 static HWND	hwndParentDialog,
@@ -364,8 +366,8 @@ show_child(HWND hwndParent, DWORD child_id)
 
 	case PAGE_MAGNETO_OPTICAL_DEVICES:
 	    hwndChildDialog = CreateDialog(plat_lang_dll(),
-		(LPCWSTR)DLG_CFG_IOMEGA_DEVICES,
-		hwndParent, iomega_devices_proc);
+		(LPCWSTR)DLG_CFG_MO_DEVICES,
+		hwndParent, mo_devices_proc);
 	    break;
 
 	default:

@@ -9,7 +9,7 @@
  *		Implementation of a generic Magneto-Optical Disk drive
  *		commands, for both ATAPI and SCSI usage.
  *
- * Version:	@(#)mo.h	1.0.0	2020/03/27
+ * Version:	@(#)mo.h	1.0.1	2020/03/27
  *
  * Authors:	Natalia Portillo <claunia@claunia.com>
  *          Fred N. van Kempen, <decwiz@yahoo.com>
@@ -56,10 +56,11 @@
 #include "../disk/hdc_ide.h"
 #include "mo.h"
 
-#include <corecrt_io.h>
+//#include <corecrt_io.h>
 
 #ifdef _WIN32
 #include <windows.h>
+#include <io.h>
 #else
 #include <unistd.h>
 #endif
@@ -2311,7 +2312,7 @@ pclog(0,"MO: attaching to SCSI device %d:%d\n", dev->drv->bus_id.scsi.id, dev->d
 		break;
 
 	case MO_BUS_ATAPI:
-pclog(0,"MO: attaching to IDE device %d\n", dev->drv->bus_id.ide_channel);
+    	DEBUG(0,"MO: attaching to IDE device %d\n", dev->drv->bus_id.ide_channel);
 		id = ide_drives[dev->drv->bus_id.ide_channel];
 
 		/*
@@ -2321,7 +2322,7 @@ pclog(0,"MO: attaching to IDE device %d\n", dev->drv->bus_id.ide_channel);
 		 */
 		if (id == NULL) break;
 
-		id->p = dev;
+		id->sc = dev;
 		id->get_max = get_max;
 		id->get_timings = get_timings;
 		id->identify = do_identify;

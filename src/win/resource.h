@@ -58,6 +58,7 @@
 #define  DLG_CFG_FLOPPY		1040	/* sub-dialog of config */
 #define  DLG_CFG_MMC_DEVICES	1041	/* sub-dialog of config */
 #define  DLG_CFG_IOMEGA_DEVICES	1042	/* sub-dialog of config */
+#define  DLG_CFG_MO_DEVICES		1043	/* sub-dialog of config */
 
 /* Static text label IDs. */
 #define IDT_1700		1700	/* Language: */
@@ -118,7 +119,7 @@
 #define IDT_1765		1765	/* ISAMEM #3: */
 #define IDT_1766		1766	/* ISAMEM #4: */
 #define IDT_1767		1767	/* ISARTC: */
-/* 1768 unused */
+#define IDT_1768		1768	/* Magneto-optical drives: */
 #define IDT_1769		1769	/* VHD Block Size: */
 #define IDT_1770		1770	/* UDP server */
 #define IDT_1771		1771	/* UDP server port */
@@ -259,6 +260,11 @@
 #define IDC_COMBO_ZIP_CHANNEL_IDE 1194
 #define IDC_CHECK250		1195
 #define IDC_COMBO_CD_SPEED	1196
+#define IDC_LIST_MO_DRIVES	1300
+#define IDC_COMBO_MO_BUS	1301
+#define IDC_COMBO_MO_ID		1302
+#define IDC_COMBO_MO_LUN	1304
+#define IDC_COMBO_MO_CHANNEL_IDE 1305
 
 #define IDC_SLIDER_GAIN		1200	/* sound gain dialog */
 

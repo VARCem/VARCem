@@ -187,7 +187,9 @@
 #define STR_3316	"Other peripherals"
 #define STR_3317	"Hard disks"
 #define STR_3318	"Floppy drives"
-#define STR_3319	"Other removable devices"
+#define STR_3319	"CD/DVD devices"
+#define STR_3320	"IOMEGA devices"
+#define STR_3321	"Magneto-optical devices"
 
 /* UI dialog: Settings (Machine, 3325.) */
 #define  STR_3325	"Machine:"
@@ -306,6 +308,7 @@
 #define  STR_3580	"ATAPI"
 #define  STR_3581	"SCSI"
 #define  STR_3582	"USB"
+#define  STR_3583	"Magneto-optical drives:"
 
 
 /* UI: Status Bar (3900.) */
