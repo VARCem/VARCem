@@ -8,7 +8,7 @@
  *
  *		Implementation of the ALi-based machines.
  *
- * Version:	@(#)m_ali.c	1.0.11	2020/01/23
+ * Version:	@(#)m_ali.c	1.0.12	2021/04/04
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -80,7 +80,7 @@ common_init(const device_t *info, void *arg)
 static const machine_t ami486_info = {
     MACHINE_ISA | MACHINE_VLB | MACHINE_AT | MACHINE_HDC,
     0,
-    1, 32, 1, 64, 0,
+    1, 32, 1, 128, 0,
     {{"Intel",cpus_i486},{"AMD",cpus_Am486},{"Cyrix",cpus_Cx486}}
 };
 
@@ -99,7 +99,7 @@ const device_t m_ali1429_ami = {
 static const machine_t win486_info = {
     MACHINE_ISA | MACHINE_VLB | MACHINE_AT | MACHINE_HDC,
     0,
-    1, 32, 1, 64, 0,
+    1, 32, 1, 128, 0,
     {{"Intel",cpus_i486},{"AMD",cpus_Am486},{"Cyrix",cpus_Cx486}}
 };
 
