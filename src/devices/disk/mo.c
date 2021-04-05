@@ -68,8 +68,8 @@
 /* Bits of 'status' */
 #define ERR_STAT		0x01
 #define DRQ_STAT		0x08 /* Data request */
-#define DSC_STAT                0x10
-#define SERVICE_STAT            0x10
+#define DSC_STAT		0x10
+#define SERVICE_STAT	0x10
 #define READY_STAT		0x40
 #define BUSY_STAT		0x80
 
@@ -2172,7 +2172,7 @@ static void
 mo_identify(ide_t *ide, int ide_has_dma)
 {
     char model[40];
-    mo_t* mo = (mo_t*)ide->p;
+    mo_t* mo = (mo_t*)ide->sc;
 
     memset(model, 0, 40);
     snprintf(model, 40, "%s %s", mo_drive_types[mo_drives[mo->id].type].vendor, mo_drive_types[mo_drives[mo->id].type].model);
