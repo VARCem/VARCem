@@ -423,5 +423,11 @@
 #define STR_HELP	"&Help"
 #define  STR_4091	"&About VARCem"
 
+/* Status bar for magneto-optical (4100.) */
+#define STR_4100	"3.5\x22 128Mb M.O. (ISO 10090)"
+#define STR_4101	"3.5\x22 230Mb M.O. (ISO 13963)"
+#define STR_4102	"3.5\x22 640Mb M.O. (ISO 15498)"
+#define STR_4103	"3.5\x22 1.3Gb M.O. (GigaMO)"
+#define STR_4104	"3.5\x22 2.3Gb M.O. (GigaMO 2)"
 
 /* End of file. */

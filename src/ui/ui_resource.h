@@ -608,8 +608,14 @@
 #define IDS_HELP	4090		/* "&Help" */
 #define IDS_4091	4091		/* "&About VARCem" */
 
+/* UI dialog: New Image for M.O. (4100.) */
+#define IDS_4100	4100 /* "3.5\x22 128Mb M.O. (ISO 10090)" */
+#define IDS_4101	4101 /* "3.5\x22 230Mb M.O. (ISO 13963)" */
+#define IDS_4102	4102 /* "3.5\x22 640Mb M.O. (ISO 15498)" */
+#define IDS_4103	4103 /* "3.5\x22 1.3Gb M.O. (GigaMO)" */
+#define IDS_4104	4104 /* "3.5\x22 2.3Gb M.O. (GigaMO 2)" */
 
-#define IDS_END		4100		/* end of string IDs */
+#define IDS_END		4200		/* end of string IDs */
 
 
 #endif	/*EMU_UI_RESOURCE_H*/

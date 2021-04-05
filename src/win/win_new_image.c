@@ -55,6 +55,7 @@
 
 static wchar_t	fd_file_name[512];
 static int	is_zip;
+static int	is_mo;
 static int	drive_id, sb_part;
 static int	file_type = 0;		/* 0 = IMG, 1 = Japanese FDI, 2 = 86F */
 
@@ -81,6 +82,8 @@ static void
 dlg_init(HWND hdlg)
 {
     int i, zip_types;
+    // TODO: MO types as a list in mo.c
+    int  mo_types = 5;
     HWND h;
 
     h = GetDlgItem(hdlg, IDC_COMBO_DISK_SIZE);
@@ -88,6 +91,9 @@ dlg_init(HWND hdlg)
 	zip_types = zip_drives[drive_id].is_250 ? 2 : 1;
 	for (i = 0; i < zip_types; i++)
                 SendMessage(h, CB_ADDSTRING, 0, win_string(IDS_3282 + 12 + i));
+    } else if (is_mo) {
+    	for (i = 0; i < mo_types; i++)
+    		SendMessage(h, CB_ADDSTRING, 0, win_string(IDS_4100 + i));    
     } else {
 	for (i = 0; i < 12; i++)
                 SendMessage(h, CB_ADDSTRING, 0, win_string(IDS_3282 + i));
@@ -158,12 +164,16 @@ dlg_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 				} else {
 					if (is_zip)
 						ret = zip_create_image(fd_file_name, disk_size, file_type);
+    				//else if (is_mo)
+					//	ret = mo_create_image(fd_file_name, disk_size);
 					else
 						ret = floppy_create_image(fd_file_name, disk_size, file_type);
 				}
 				if (ret) {
 					if (is_zip)
 						ui_zip_mount(drive_id, sb_part, 0, fd_file_name);
+					else if (is_mo)
+						ui_mo_mount(drive_id, sb_part, 0, fd_file_name);
 					else
 						ui_floppy_mount(drive_id, sb_part, 0, fd_file_name);
 				} else {
@@ -178,12 +188,12 @@ dlg_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 				return TRUE;
 
 			case IDC_CFILE:
-	                        if (dlg_file_ex(hdlg, get_string(is_zip ? IDS_3952 : IDS_3912), NULL, temp_path, DLG_FILE_SAVE)) {
+	                        if (dlg_file_ex(hdlg, get_string(is_zip ? IDS_3952 : is_mo ? IDS_3982 : IDS_3912), NULL, temp_path, DLG_FILE_SAVE)) {
 					if (! wcschr(temp_path, L'.')) {
 						if (wcslen(temp_path) && (wcslen(temp_path) <= 256)) {
 							twcs = &temp_path[wcslen(temp_path)];
 							twcs[0] = L'.';
-							if (is_zip) {
+							if (is_zip || is_mo) {
 								twcs[1] = L'i';
 								twcs[2] = L'm';
 								twcs[3] = L'g';
@@ -221,15 +231,17 @@ dlg_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 							file_type = 1;
 						else
 							file_type = 0;
-					} else {
-						if (((wcs_len >= 4) && !wcsicmp(ext, L".FDI")))
+					} else if (is_mo)
+                        file_type = 0;
+                    else {
+                        if (((wcs_len >= 4) && !wcsicmp(ext, L".FDI")))
 							file_type = 1;
 						else if ((((wcs_len >= 4) && !wcsicmp(ext, L".86F")) || (filterindex == 3)))
 							file_type = 2;
 						else
 							file_type = 0;
-					}
-					h = GetDlgItem(hdlg, IDT_1751);
+                    }
+                    h = GetDlgItem(hdlg, IDT_1751);
 					if (file_type == 2) {
 						EnableWindow(h, TRUE);
 						ShowWindow(h, SW_SHOW);
@@ -263,9 +275,10 @@ break;
 
 
 void
-dlg_new_image(int drive, int part, int zip)
+dlg_new_image(int drive, int part, int zip, int mo)
 {
     is_zip = zip;
+    is_mo = mo;
     drive_id = drive;
     sb_part = part;
 

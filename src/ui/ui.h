@@ -192,7 +192,7 @@ extern void	sb_menu_set_item(int part, int idm, int val);
 extern void	dlg_about(void);
 extern void	dlg_localize(void);
 extern int	dlg_settings(int ask);
-extern void     dlg_new_image(int drive, int part, int is_zip);
+extern void     dlg_new_image(int drive, int part, int is_zip, int is_mo);
 extern void	dlg_sound_gain(void);
 extern int      dlg_file(const wchar_t *filt, const wchar_t *ifn,
 			 wchar_t *fn, int save);
