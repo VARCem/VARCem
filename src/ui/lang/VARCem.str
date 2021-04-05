@@ -344,6 +344,10 @@
 #define STR_3960	"Network (%s)"
 #define STR_3970	"Sound (%s)"
 
+#define STR_3980	"MO %i (%ls): %ls"
+#define STR_3981	"MO images\0*.im?\0All files\0*.*\0"
+#define STR_3982	"MO images\0*.im?\0"
+
 
 /* UI menu: Action (4000.) */
 #define STR_ACTION	"&Action"
