@@ -9,7 +9,7 @@
  *		Implementation of the NEC uPD-765 and compatible floppy disk
  *		controller.
  *
- * Version:	@(#)fdc.c	1.0.28	2021/03/16
+ * Version:	@(#)fdc.c	1.0.29	2021/04/06
  *
  * Authors:	Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -2319,6 +2319,16 @@ const device_t fdc_xt_amstrad_device = {
     "PC/XT Floppy Drive Controller (Amstrad)",
     0,
     FDC_FLAG_DISKCHG_ACTLOW | FDC_FLAG_AMSTRAD,
+    NULL,
+    fdc_init, fdc_close, fdc_reset,
+    NULL, NULL, NULL, NULL,
+    NULL
+};
+
+const device_t fdc_xt_tandy_device = {
+    "PC/XT Floppy Drive Controller (Tandy)",
+    0,
+    FDC_FLAG_AMSTRAD,
     NULL,
     fdc_init, fdc_close, fdc_reset,
     NULL, NULL, NULL, NULL,

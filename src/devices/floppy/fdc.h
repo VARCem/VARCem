@@ -8,7 +8,7 @@
  *
  *		Definitions for the floppy disk	controller driver.
  *
- * Version:	@(#)fdc.h	1.0.10	2021/03/16
+ * Version:	@(#)fdc.h	1.0.11	2021/04/06
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -114,6 +114,7 @@ typedef struct {
 #ifdef EMU_DEVICE_H
 extern const device_t	fdc_xt_device;
 extern const device_t	fdc_xt_amstrad_device;
+extern const device_t   fdc_xt_tandy_device;
 extern const device_t	fdc_toshiba_device;
 extern const device_t	fdc_dp8473_device;
 extern const device_t	fdc_pcjr_device;

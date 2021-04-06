@@ -8,7 +8,7 @@
  *
  *		Emulation of Tandy models 1000, 1000HX and 1000SL2.
  *
- * Version:	@(#)m_tandy1000.c	1.0.25	2021/03/18
+ * Version:	@(#)m_tandy1000.c	1.0.26	2021/04/06
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1197,7 +1197,7 @@ tandy_init(const device_t *info, void *arg)
     kbd = device_add(&keyboard_tandy_device);
     keyboard_set_table(scancode_tandy);
 
-    device_add(&fdc_xt_device);
+    device_add(&fdc_xt_tandy_device);
 
     switch(dev->type) {
 	case 0:		/* Tandy 1000 */
