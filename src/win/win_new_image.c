@@ -49,13 +49,13 @@
 #include "../plat.h"
 #include "../devices/scsi/scsi_device.h"
 #include "../devices/disk/zip.h"
+#include "../devices/disk/mo.h"
 #include "win.h"
 #include "resource.h"
 
 
 static wchar_t	fd_file_name[512];
-static int	is_zip;
-static int	is_mo;
+static int	is_zip, is_mo;
 static int	drive_id, sb_part;
 static int	file_type = 0;		/* 0 = IMG, 1 = Japanese FDI, 2 = 86F */
 
@@ -82,9 +82,8 @@ static void
 dlg_init(HWND hdlg)
 {
     int i, zip_types;
-    // TODO: MO types as a list in mo.c
-    int  mo_types = 5;
     HWND h;
+    WCHAR temp[255];
 
     h = GetDlgItem(hdlg, IDC_COMBO_DISK_SIZE);
     if (is_zip) {
@@ -92,8 +91,12 @@ dlg_init(HWND hdlg)
 	for (i = 0; i < zip_types; i++)
                 SendMessage(h, CB_ADDSTRING, 0, win_string(IDS_3282 + 12 + i));
     } else if (is_mo) {
-    	for (i = 0; i < mo_types; i++)
-    		SendMessage(h, CB_ADDSTRING, 0, win_string(IDS_4100 + i));    
+    	for (i = 0; i < KNOWN_MO_TYPES; i++) {
+    		if (mo_drive_types[mo_drives[drive_id].type - 1].supported_media[i]) {
+				mbstowcs(temp, mo_types[i].name, sizeof_w(temp));
+				SendMessage(h, CB_ADDSTRING,0, (LPARAM)temp);
+			}
+		}
     } else {
 	for (i = 0; i < 12; i++)
                 SendMessage(h, CB_ADDSTRING, 0, win_string(IDS_3282 + i));
@@ -156,8 +159,10 @@ dlg_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 				disk_size = (int)SendMessage(h, CB_GETCURSEL, 0, 0);
 				if (is_zip)
 					disk_size += 12;
+				if (is_mo)
+                    disk_size += 15;
 
-				if (file_type == 2) {
+                if (file_type == 2) {
 					h = GetDlgItem(hdlg, IDC_COMBO_RPM_MODE);
 					rpm_mode = (int)SendMessage(h, CB_GETCURSEL, 0, 0);
 					ret = floppy_create_86f(fd_file_name, disk_size, rpm_mode);

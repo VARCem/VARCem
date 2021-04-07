@@ -609,4 +609,4 @@ mo_create_image(const wchar_t* fn, int8_t ds)
     fclose(f);
 
     return 1;
-}
+} 

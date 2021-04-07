@@ -346,7 +346,7 @@
 
 #define STR_3980	"MO %i (%ls): %ls"
 #define STR_3981	"MO images\0*.im?\0All files\0*.*\0"
-#define STR_3982	"MO images\0*.im?\0"
+#define STR_3982	"MO images\0*.im?;*.bin\0"
 
 
 /* UI menu: Action (4000.) */
@@ -433,6 +433,7 @@
 #define STR_4106	"5.25\x22 600Mb M.O."
 #define STR_4107	"5.25\x22 650Mb M.O."
 #define STR_4108	"5.25\x22 1Gb M.O."
-#define STR_4106	"5.25\x22 1.3Gb M.O."
+#define STR_4109	"5.25\x22 1.3Gb M.O."
+#define STR_4120	"Type :"
 
 /* End of file. */

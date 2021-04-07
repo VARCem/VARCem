@@ -192,9 +192,9 @@ extern void	sb_menu_set_item(int part, int idm, int val);
 extern void	dlg_about(void);
 extern void	dlg_localize(void);
 extern int	dlg_settings(int ask);
-extern void     dlg_new_image(int drive, int part, int is_zip, int is_mo);
+extern void	dlg_new_image(int drive, int part, int is_zip, int is_mo);
 extern void	dlg_sound_gain(void);
-extern int      dlg_file(const wchar_t *filt, const wchar_t *ifn,
+extern int	dlg_file(const wchar_t *filt, const wchar_t *ifn,
 			 wchar_t *fn, int save);
 
 /* Platform VidApi. */
@@ -214,7 +214,7 @@ extern void	vidapi_screenshot(void);
 extern int	floppy_create_86f(const wchar_t *, int8_t sz, int8_t rpm_mode);
 extern int	floppy_create_image(const wchar_t *, int8_t sz, int8_t is_fdi);
 extern int	zip_create_image(const wchar_t *, int8_t sz, int8_t is_zdi);
-extern int	mo_create_image(const wchar_t*, int8_t sz);
+extern int	mo_create_image(const wchar_t *, int8_t sz);
 
 #ifdef __cplusplus
 }

@@ -614,6 +614,13 @@
 #define IDS_4102	4102 /* "3.5\x22 640Mb M.O. (ISO 15498)" */
 #define IDS_4103	4103 /* "3.5\x22 1.3Gb M.O. (GigaMO)" */
 #define IDS_4104	4104 /* "3.5\x22 2.3Gb M.O. (GigaMO 2)" */
+#define IDS_4104	4104 /* "3.5\x22 2.3Gb M.O. (GigaMO 2)" */
+#define IDS_4105	4105    
+#define IDS_4106	4106    
+#define IDS_4107	4107    
+#define IDS_4108	4108
+#define IDS_4109 	4109
+#define IDS_4120	4120 // Type
 
 #define IDS_END		4200		/* end of string IDs */
 

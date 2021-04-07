@@ -9,7 +9,7 @@
  *		Implementation of a generic Magneto-Optical Disk drive
  *		commands, for both ATAPI and SCSI usage.
  *
- * Version:	@(#)mo.h	1.0.1	2020/03/27
+ * Version:	@(#)mo.h	1.0.2	2021/04/07
  *
  * Authors:	Natalia Portillo <claunia@claunia.com>
  *          Fred N. van Kempen, <decwiz@yahoo.com>
@@ -82,6 +82,8 @@
 int		mo_do_log = ENABLE_MO_LOG;
 #endif
 mo_drive_t	mo_drives[MO_NUM];
+
+char mo_model[64];
 
 
 /* Table of all SCSI commands and their flags. */
@@ -276,6 +278,21 @@ mo_log(int level, const char *fmt, ...)
 }
 #endif
 
+char 
+*mo_get_internal_name(int type)
+{
+	strcpy(mo_model, mo_drive_types[type].vendor);
+	strcat(mo_model, " ");
+	strcat(mo_model, mo_drive_types[type].model);
+    
+	return mo_model;
+}
+
+int
+mo_get_type(int drive)
+{
+    return mo_drives[drive].type;
+}
 
 static void
 set_callback(mo_t *dev)
@@ -1109,6 +1126,44 @@ buf_free(mo_t *dev)
 }
 
 
+static int
+mo_erase(mo_t *dev)
+{
+        int i;
+
+	if (! dev->sector_len) {
+		command_complete(dev);
+		return -1;
+	}
+
+	DEBUG("Erasing %i blocks starting from %i...\n", dev->sector_len, dev->sector_pos);
+
+	if (dev->sector_pos >= dev->drv->medium_size) {
+		DEBUG("MO %i: Trying to erase beyond the end of disk\n", dev->id);
+		lba_out_of_range(dev);
+		return 0;
+	}
+
+	buf_alloc(dev, dev->drv->sector_size);
+	memset(dev->buffer, 0, dev->drv->sector_size);
+
+	fseek(dev->drv->f, dev->drv->base + (dev->sector_pos * dev->drv->sector_size), SEEK_SET);
+
+	for (i = 0; i < dev->requested_blocks; i++) {
+		if (feof(dev->drv->f))
+			break;
+
+		fwrite(dev->buffer, 1, dev->drv->sector_size, dev->drv->f);
+	}
+
+	DEBUG("Erased %i bytes of blocks...\n", i * dev->drv->sector_size);
+
+	dev->sector_pos += i;
+	dev->sector_len -= i;
+
+	return 1;
+}
+
 static void
 do_command(void *p, uint8_t *cdb)
 {
@@ -1117,7 +1172,7 @@ do_command(void *p, uint8_t *cdb)
     int ret;
     int32_t len, max_len;
     int32_t alloc_length;
-    uint32_t i = 0;
+    //uint32_t i = 0;
     int size_idx, idx = 0;
     unsigned preamble_len;
     int32_t blen = 0;
@@ -1514,13 +1569,14 @@ do_command(void *p, uint8_t *cdb)
 			dev->buffer[1] = 0x80; /*Removable*/
 			dev->buffer[2] = (dev->drv->bus_type == MO_BUS_SCSI) ? 0x02 : 0x00; /*SCSI-2 compliant*/
 			dev->buffer[3] = (dev->drv->bus_type == MO_BUS_SCSI) ? 0x02 : 0x21;
-			dev->buffer[4] = 31;
-			if (dev->drv->bus_type == MO_BUS_SCSI) {
-				dev->buffer[6] = 1;	/* 16-bit transfers supported */
+			//dev->buffer[4] = 31;
+            dev->buffer[4] = 0;
+            if (dev->drv->bus_type == MO_BUS_SCSI) {
+                dev->buffer[6] = 1;	/* 16-bit transfers supported */
 				dev->buffer[7] = 0x20;	/* Wide bus supported */
-			}
+            }
 
-			ide_padstr8(dev->buffer + 8, 8, mo_drive_types[dev->drv->type].vendor); /* Vendor */
+            ide_padstr8(dev->buffer + 8, 8, mo_drive_types[dev->drv->type].vendor); /* Vendor */
 			ide_padstr8(dev->buffer + 16, 16, mo_drive_types[dev->drv->type].model); /* Product */
 			ide_padstr8(dev->buffer + 32, 4, mo_drive_types[dev->drv->type].revision); /* Revision */
 			idx = 36;
@@ -1534,7 +1590,7 @@ do_command(void *p, uint8_t *cdb)
 			}
 		}
 
-atapi_out:
+//atapi_out:
 		dev->buffer[size_idx] = idx - preamble_len;
 		len=idx;
 
@@ -2233,6 +2289,7 @@ get_timings(int ide_has_dma, int type)
 		break;
 
 	default:
+    	ret = 0;
 		break;
     }
 
@@ -2286,8 +2343,8 @@ drive_reset(int c)
 
     dev = (mo_t *)mo_drives[c].priv;
     if (dev == NULL) {
-	dev = (mo_t *)mem_alloc(sizeof(mo_t));
-	mo_drives[c].priv = dev;
+    	dev = (mo_t *)mem_alloc(sizeof(mo_t));
+     	mo_drives[c].priv = dev;
     }
     memset(dev, 0x00, sizeof(mo_t));
     dev->id = c;
@@ -2295,7 +2352,7 @@ drive_reset(int c)
 
     switch (mo_drives[c].bus_type) {
 	case MO_BUS_SCSI:
-pclog(0,"MO: attaching to SCSI device %d:%d\n", dev->drv->bus_id.scsi.id, dev->drv->bus_id.scsi.lun);
+    	DEBUG(0,"MO: attaching to SCSI device %d:%d\n", dev->drv->bus_id.scsi.id, dev->drv->bus_id.scsi.lun);
 		sd = &scsi_devices[dev->drv->bus_id.scsi.id][dev->drv->bus_id.scsi.lun];
 
 		sd->p = dev;
@@ -2618,42 +2675,3 @@ mo_format(mo_t *dev)
 	}
 #endif
 }
-
-static int
-mo_erase(mo_t *dev)
-{
-        int i;
-
-	if (! dev->sector_len) {
-		command_complete(dev);
-		return -1;
-	}
-
-	DEBUG("Erasing %i blocks starting from %i...\n", dev->sector_len, dev->sector_pos);
-
-	if (dev->sector_pos >= dev->drv->medium_size) {
-		DEBUG("MO %i: Trying to erase beyond the end of disk\n", dev->id);
-		lba_out_of_range(dev);
-		return 0;
-	}
-
-	buf_alloc(dev, dev->drv->sector_size);
-	memset(dev->buffer, 0, dev->drv->sector_size);
-
-	fseek(dev->drv->f, dev->drv->base + (dev->sector_pos * dev->drv->sector_size), SEEK_SET);
-
-	for (i = 0; i < dev->requested_blocks; i++) {
-		if (feof(dev->drv->f))
-			break;
-
-		fwrite(dev->buffer, 1, dev->drv->sector_size, dev->drv->f);
-	}
-
-	DEBUG("Erased %i bytes of blocks...\n", i * dev->drv->sector_size);
-
-	dev->sector_pos += i;
-	dev->sector_len -= i;
-
-	return 1;
-}
-

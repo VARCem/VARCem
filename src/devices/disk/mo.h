@@ -9,7 +9,7 @@
  *		Implementation of a generic Magneto-Optical Disk drive
  *		commands, for both ATAPI and SCSI usage.
  *
- * Version:	@(#)mo.h	1.0.0	2020/03/27
+ * Version:	@(#)mo.h	1.0.2	2021/04/07
  *
  * Authors:  Natalia Portillo, <claunia@claunia.com>
  *           Miran Grca, <mgrca8@gmail.com>
@@ -44,6 +44,14 @@
 
 #define MO_TIME		(5LL * 100LL * (1LL << TIMER_SHIFT))
 
+enum {
+    MO_BUS_DISABLED = 0,
+    MO_BUS_ATAPI,
+    MO_BUS_SCSI,
+    MO_BUS_USB
+};
+#define MO_BUS_MAX (MO_BUS_USB) /* USB exclusive */
+
 typedef struct {
     uint32_t	sectors;
     uint16_t	bytes_per_sector;
@@ -73,45 +81,39 @@ typedef struct
     char model[16];
     char revision[4];
     int8_t supported_media[KNOWN_MO_TYPES];
+    int8_t supported_bus[MO_BUS_MAX];
 } mo_drive_type_t;
 
-static const mo_drive_type_t mo_drive_types[22] = {
-    {"VARCEM", "MAGNETO OPTICAL", "1.00",{1, 1, 1, 1, 1, 1, 1, 1, 1, 1}},
-    {"FUJITSU", "M2512A", "1314",{1, 1, 0, 0, 0, 0, 0, 0, 0}},
-    {"FUJITSU", "M2513-MCC3064SS", "1.00",{1, 1, 1, 1, 0, 0, 0, 0, 0, 0}},
-    {"FUJITSU", "MCE3130SS", "0070",{1, 1, 1, 1, 1, 0, 0, 0, 0, 0}},
-    {"FUJITSU", "MCF3064SS", "0030",{1, 1, 1, 1, 0, 0, 0, 0, 0, 0}},
-    {"FUJITSU", "MCJ3230UB-S", "0040",{1, 1, 1, 1, 1, 1, 0, 0, 0, 0}},
-    {"HP", "S6300.65", "1.00",{0, 0, 0, 0, 0, 0, 1, 1, 0, 0}},
-    {"HP", "C1716C", "1.00",{0, 0, 0, 0, 0, 0, 1, 1, 0, 1}},
-    {"IBM", "0632AAA", "1.00",{0, 0, 0, 0, 0, 0, 1, 1, 0, 0}},
-    {"IBM", "0632CHC", "1.00",{0, 0, 0, 0, 0, 0, 1, 1, 0, 1}},
-    {"IBM", "0632CHX", "1.00",{0, 0, 0, 0, 0, 0, 1, 1, 0, 1}},
-    {"IBM", "MD3125A", "1.00",{1, 0, 0, 0, 0, 0, 0, 0, 0, 0}},
-    {"IBM", "MD3125B", "1.00",{1, 0, 0, 0, 0, 0, 0, 0, 0, 0}},
-    {"IBM", "MTA-3127", "1.00",{1, 0, 0, 0, 0, 0, 0, 0, 0, 0}},
-    {"IBM", "MTA-3230", "1.00",{1, 1, 0, 0, 0, 0, 0, 0, 0, 0}},
-    {"MATSHITA", "LF-3000", "1.00",{1, 0, 0, 0, 0, 0, 0, 0, 0, 0}},
-    {"MOST", "RMD-5100", "1.00",{1, 0, 0, 0, 0, 0, 0, 0, 0, 0}},
-    {"RICOH", "RO-5031E", "1.00",{0, 0, 0, 0, 0, 0, 1, 1, 0, 0}},
-    {"SONY", "SMO-C301", "1.00",{1, 0, 0, 0, 0, 0, 0, 0, 0, 0}},
-    {"SONY", "SMO-C501", "1.00",{0, 0, 0, 0, 0, 0, 1, 1, 0, 0}},
-    {"TEAC", "OD-3000", "1.00",{1, 0, 0, 0, 0, 0, 0, 0, 0, 0}},
-    {"TOSHIBA", "OD-D300", "1.00",{1, 0, 0, 0, 0, 0, 0, 0, 0, 0}},
+#define KNOWN_MO_VENDORS 22
+static const mo_drive_type_t mo_drive_types[KNOWN_MO_VENDORS] = {
+    {"VARCEM", "MAGNETO OPTICAL", "1.00", {1, 1, 1, 1, 1, 1, 1, 1, 1, 1}, {1, 1, 1}},
+    {"FUJITSU", "M2512A", "1314", {1, 1, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 0}},
+    {"FUJITSU", "M2513-MCC3064SS", "1.00", {1, 1, 1, 1, 0, 0, 0, 0, 0, 0}, {0, 1, 0}},
+    {"FUJITSU", "MCE3130SS", "0070", {1, 1, 1, 1, 1, 0, 0, 0, 0, 0}, {1, 1, 0}},
+    {"FUJITSU", "MCF3064SS", "0030", {1, 1, 1, 1, 0, 0, 0, 0, 0, 0}, {0, 1, 0}},
+    {"FUJITSU", "MCJ3230UB-S", "0040", {1, 1, 1, 1, 1, 1, 0, 0, 0, 0}, {0, 1, 0}},
+    {"HP", "S6300.65", "1.00", {0, 0, 0, 0, 0, 0, 1, 1, 0, 0}, {0, 1, 0}},
+    {"HP", "C1716C", "1.00", {0, 0, 0, 0, 0, 0, 1, 1, 0, 1}, {0, 1, 0}},
+    {"IBM", "0632AAA", "1.00", {0, 0, 0, 0, 0, 0, 1, 1, 0, 0}, {0, 1, 0}},
+    {"IBM", "0632CHC", "1.00", {0, 0, 0, 0, 0, 0, 1, 1, 0, 1}, {0, 1, 0}},
+    {"IBM", "0632CHX", "1.00", {0, 0, 0, 0, 0, 0, 1, 1, 0, 1}, {0, 1, 0}},
+    {"IBM", "MD3125A", "1.00", {1, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 0}},
+    {"IBM", "MD3125B", "1.00", {1, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 0}},
+    {"IBM", "MTA-3127", "1.00", {1, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 0}},
+    {"IBM", "MTA-3230", "1.00", {1, 1, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 0}},
+    {"MATSHITA", "LF-3000", "1.00", {1, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 0}},
+    {"MOST", "RMD-5100", "1.00", {1, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 0}},
+    {"RICOH", "RO-5031E", "1.00", {0, 0, 0, 0, 0, 0, 1, 1, 0, 0}, {0, 1, 0}},
+    {"SONY", "SMO-C301", "1.00", {1, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 0}},
+    {"SONY", "SMO-C501", "1.00", {0, 0, 0, 0, 0, 0, 1, 1, 0, 0}, {0, 1, 0}},
+    {"TEAC", "OD-3000", "1.00", {1, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 0}},
+    {"TOSHIBA", "OD-D300", "1.00", {1, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 0}},
 };
-
-enum {
-    MO_BUS_DISABLED = 0,
-    MO_BUS_ATAPI,
-    MO_BUS_SCSI,
-    MO_BUS_USB
-};
-#define MO_BUS_MAX	(MO_BUS_USB)	/* USB exclusive */
 
 
 typedef struct {
     int8_t	bus_type,		/* 0 = ATAPI, 1 = SCSI */
-		bus_mode,		/* Bit 0 = PIO suported;
+    		bus_mode,		/* Bit 0 = PIO suported;
 					   Bit 1 = DMA supportd. */
 		read_only,
 		ui_writeprot;
@@ -172,6 +174,9 @@ typedef struct {
 
 extern mo_drive_t	mo_drives[MO_NUM];
 
+extern char *	mo_get_internal_name(int type);
+
+extern int	mo_get_type(int drive);
 
 #ifdef __cplusplus
 extern "C" {
@@ -188,7 +193,6 @@ extern const char *mo_bus_to_string(int bus);
 extern int	       mo_load(mo_t *dev, const wchar_t *fn);
 extern void	       mo_close(void);
 extern void        mo_format(mo_t *dev);
-static int         mo_erase(mo_t* dev);
 #ifdef __cplusplus
 }
 #endif

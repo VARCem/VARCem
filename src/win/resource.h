@@ -123,6 +123,7 @@
 #define IDT_1769		1769	/* VHD Block Size: */
 #define IDT_1770		1770	/* UDP server */
 #define IDT_1771		1771	/* UDP server port */
+#define IDT_1781		1781	// MO Type:
 
 #define IDT_TITLE		1790	/* "VARCem for Plaform" */
 #define IDT_VERSION		1791	/* "version.." */
@@ -265,6 +266,7 @@
 #define IDC_COMBO_MO_ID		1302
 #define IDC_COMBO_MO_LUN	1304
 #define IDC_COMBO_MO_CHANNEL_IDE 1305
+#define IDC_COMBO_MO_TYPE	1306
 
 #define IDC_SLIDER_GAIN		1200	/* sound gain dialog */
 

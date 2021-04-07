@@ -8,14 +8,16 @@
  *
  *		Implementation of the "Magneto-optical Devices" dialog.
  *
- * Version:	@(#)win_settings_mo.h	1.0.1	2019/05/03
+ * Version:	@(#)win_settings_mo.h	1.0.2	2021/05/03
  *
  * Authors:     Natalia Portillo, <claunia@claunia.com>
  *              Fred N. van Kempen, <decwiz@yahoo.com>
+ *              Altheos, <altheos@varcem.com>
  *              Miran Grca, <mgrca8@gmail.com>
  *
  *		Copyright 2020      Natalia Portillo.
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
+ *		Copyright 2021      Altheos.
  *		Copyright 2016-2018 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -47,6 +49,27 @@
 
 static int mo_ignore_change = 0;
 static int modlv_current_sel;
+
+static int
+mo_combo_to_string(int id)
+{
+    if (id == 0)
+	return(IDS_DISABLED);
+
+    return(IDS_3580 + id - 1);
+}
+
+static void
+mo_id_to_combo(HWND h, int num)
+{
+    WCHAR temp[16];
+    int i;
+
+    for (i = 0; i < num; i++) {
+	swprintf(temp, sizeof_w(temp), L"%i", i);
+	SendMessage(h, CB_ADDSTRING, 0, (LPARAM)temp);
+    }
+}
 
 static void
 mo_track_init(void) {
@@ -102,7 +125,7 @@ mo_recalc_list(HWND hwndList) {
 
             case MO_BUS_ATAPI:
                 swprintf(temp, sizeof_w(temp), L"%ls (%01i:%01i)",
-                         get_string(combo_to_string(fsid)),
+                         get_string(mo_combo_to_string(fsid)),
                          temp_mo_drives[i].bus_id.ide_channel >> 1,
                          temp_mo_drives[i].bus_id.ide_channel & 1);
                 lvI.pszText = temp;
@@ -111,7 +134,7 @@ mo_recalc_list(HWND hwndList) {
 
             case MO_BUS_SCSI:
                 swprintf(temp, sizeof_w(temp), L"%ls (%02i:%02i)",
-                         get_string(combo_to_string(fsid)),
+                         get_string(mo_combo_to_string(fsid)),
                          temp_mo_drives[i].bus_id.scsi.id,
                          temp_mo_drives[i].bus_id.scsi.lun);
                 lvI.pszText = temp;
@@ -121,7 +144,18 @@ mo_recalc_list(HWND hwndList) {
         lvI.iItem = i;
         if (ListView_InsertItem(hwndList, &lvI) == -1)
             return FALSE;
-    }
+    
+    	lvI.iSubItem = 1;
+		if (fsid == MO_BUS_DISABLED)
+            swprintf(temp, sizeof_w(temp), L"%s", " ");
+		else
+            swprintf(temp, sizeof_w(temp), L"%s", mo_get_internal_name((temp_mo_drives[i].type)));
+    	lvI.pszText = temp;
+    	
+    lvI.iItem = i;
+    	if (ListView_SetItem(hwndList, &lvI) == -1)
+    		return FALSE;
+	}
 
     return TRUE;
 }
@@ -134,14 +168,14 @@ mo_init_columns(HWND hwndList) {
 
     lvc.iSubItem = 0;
     lvc.pszText = (LPTSTR)get_string(IDS_BUS);
-    lvc.cx = 342;
+    lvc.cx = 100;
     lvc.fmt = LVCFMT_LEFT;
     if (ListView_InsertColumn(hwndList, 0, &lvc) == -1)
         return FALSE;
 
     lvc.iSubItem = 1;
     lvc.pszText = (LPTSTR)get_string(IDS_TYPE);
-    lvc.cx = 50;
+    lvc.cx = 250;
     lvc.fmt = LVCFMT_LEFT;
     if (ListView_InsertColumn(hwndList, 1, &lvc) == -1)
         return FALSE;
@@ -155,7 +189,7 @@ mo_get_selected(HWND hdlg) {
     int  i, j = 0;
     HWND h;
 
-    for (i = 0; i < 6; i++) {  // FIXME: MO_NUM ?
+    for (i = 0; i < MO_NUM; i++) {
         h = GetDlgItem(hdlg, IDC_LIST_MO_DRIVES);
         j = ListView_GetItemState(h, i, LVIS_SELECTED);
         if (j)
@@ -174,38 +208,48 @@ mo_update_item(HWND hwndList, int i) {
     lvI.mask = LVIF_TEXT | LVIF_IMAGE | LVIF_STATE;
     lvI.stateMask = lvI.iSubItem = lvI.state = 0;
 
-    lvI.iSubItem = 0;
     lvI.iItem = i;
 
     fsid = temp_mo_drives[i].bus_type;
 
-    switch (fsid) {
-        case MO_BUS_DISABLED:
-        default:
-            lvI.pszText = (LPTSTR)get_string(IDS_DISABLED);
-            lvI.iImage = 0;
-            break;
+   	switch (fsid) {
+      	case MO_BUS_DISABLED:
+       	default:
+           	lvI.pszText = (LPTSTR)get_string(IDS_DISABLED);
+           	lvI.iImage = 0;
+           	break;
 
-        case MO_BUS_ATAPI:
-            swprintf(temp, sizeof_w(temp), L"%ls (%01i:%01i)",
-                     get_string(combo_to_string(fsid)),
-                     temp_mo_drives[i].bus_id.ide_channel >> 1,
-                     temp_mo_drives[i].bus_id.ide_channel & 1);
-            lvI.pszText = temp;
-            lvI.iImage = 1;
-            break;
+       	case MO_BUS_ATAPI:
+           	swprintf(temp, sizeof_w(temp), L"%ls (%01i:%01i)",
+                    	get_string(combo_to_string(fsid)),
+                    	temp_mo_drives[i].bus_id.ide_channel >> 1,
+                    	temp_mo_drives[i].bus_id.ide_channel & 1);
+           	lvI.pszText = temp;
+           	lvI.iImage = 1;
+           	break;
 
-        case MO_BUS_SCSI:
-            swprintf(temp, sizeof_w(temp), L"%ls (%02i:%02i)",
-                     get_string(combo_to_string(fsid)),
-                     temp_mo_drives[i].bus_id.scsi.id,
-                     temp_mo_drives[i].bus_id.scsi.lun);
-            lvI.pszText = temp;
-            lvI.iImage = 1;
-            break;
-    }
+       	case MO_BUS_SCSI:
+           	swprintf(temp, sizeof_w(temp), L"%ls (%02i:%02i)",
+                    	get_string(combo_to_string(fsid)),
+                    	temp_mo_drives[i].bus_id.scsi.id,
+                    	temp_mo_drives[i].bus_id.scsi.lun);
+            	lvI.pszText = temp;
+            	lvI.iImage = 1;
+            	break;
+    	}
     if (ListView_SetItem(hwndList, &lvI) == -1)
         return;
+    
+    lvI.iSubItem = 1;
+	if (fsid == MO_BUS_DISABLED)
+        swprintf(temp, sizeof_w(temp), L"%s", " ");
+	else
+        swprintf(temp, sizeof_w(temp), L"%s", mo_get_internal_name((temp_mo_drives[i].type)));
+	lvI.pszText = temp;
+
+    lvI.iItem = i;
+    if (ListView_SetItem(hwndList, &lvI) == -1)
+    	return;
 }
 
 static void
@@ -219,15 +263,21 @@ mo_add_locations(HWND hdlg) {
         SendMessage(h, CB_ADDSTRING, 0, win_string(combo_to_string(i)));
 
     h = GetDlgItem(hdlg, IDC_COMBO_MO_ID);
-    id_to_combo(h, 16);
+    mo_id_to_combo(h, 16);
 
     h = GetDlgItem(hdlg, IDC_COMBO_MO_LUN);
-    id_to_combo(h, 8);
+    mo_id_to_combo(h, 8);
 
     h = GetDlgItem(hdlg, IDC_COMBO_MO_CHANNEL_IDE);
     for (i = 0; i < 8; i++) {
         swprintf(temp, sizeof_w(temp), L"%01i:%01i", i >> 1, i & 1);
         SendMessage(h, CB_ADDSTRING, 0, (LPARAM)temp);
+    }
+    
+    h = GetDlgItem(hdlg, IDC_COMBO_MO_TYPE);
+	for (i = 0; i < (KNOWN_MO_VENDORS); i++) {
+		swprintf(temp, sizeof_w(temp), L"%s",mo_get_internal_name(i));
+		SendMessage(h, CB_ADDSTRING, 0, (LPARAM)temp);
     }
 }
 
@@ -255,6 +305,13 @@ mo_recalc_location_controls(HWND hdlg, int assign_id) {
     EnableWindow(h, FALSE);
     ShowWindow(h, SW_HIDE);
 
+    h = GetDlgItem(hdlg, IDT_1781);
+    EnableWindow(h, FALSE);
+    ShowWindow(h, SW_HIDE);    
+    h = GetDlgItem(hdlg, IDC_COMBO_MO_TYPE);
+    EnableWindow(h, FALSE);
+    ShowWindow(h, SW_HIDE);
+
     switch (bus) {
         case MO_BUS_ATAPI:
             h = GetDlgItem(hdlg, IDT_1756);
@@ -269,6 +326,14 @@ mo_recalc_location_controls(HWND hdlg, int assign_id) {
             EnableWindow(h, TRUE);
             SendMessage(h, CB_SETCURSEL,
                         temp_mo_drives[modlv_current_sel].bus_id.ide_channel, 0);
+			h = GetDlgItem(hdlg, IDT_1781);
+    		EnableWindow(h, TRUE);
+    		ShowWindow(h, SW_SHOW); 
+    		h = GetDlgItem(hdlg, IDC_COMBO_MO_TYPE);
+    		ShowWindow(h, SW_SHOW);
+    		EnableWindow(h, TRUE);
+    		SendMessage(h, CB_SETCURSEL,
+                        temp_mo_drives[modlv_current_sel].type, 0);     
             break;
 
         case MO_BUS_SCSI:
@@ -292,6 +357,14 @@ mo_recalc_location_controls(HWND hdlg, int assign_id) {
             EnableWindow(h, TRUE);
             SendMessage(h, CB_SETCURSEL,
                         temp_mo_drives[modlv_current_sel].bus_id.scsi.lun, 0);
+    		h = GetDlgItem(hdlg, IDT_1781);
+    		EnableWindow(h, TRUE);
+    		ShowWindow(h, SW_SHOW); 
+    		h = GetDlgItem(hdlg, IDC_COMBO_MO_TYPE);
+    		ShowWindow(h, SW_SHOW);
+    		EnableWindow(h, TRUE);
+    		SendMessage(h, CB_SETCURSEL,
+                        temp_mo_drives[modlv_current_sel].type, 0);     
             break;
     }
 }
@@ -323,7 +396,7 @@ mo_devices_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam) {
         case WM_INITDIALOG:
             mo_ignore_change = 1;
 
-            zdlv_current_sel = 0;
+            modlv_current_sel = 0;
             h = GetDlgItem(hdlg, IDC_LIST_MO_DRIVES);
             mo_init_columns(h);
             mo_image_list_init(h);
@@ -331,6 +404,9 @@ mo_devices_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam) {
             mo_add_locations(hdlg);
             h = GetDlgItem(hdlg, IDC_COMBO_MO_BUS);
             b = temp_mo_drives[modlv_current_sel].bus_type;
+            SendMessage(h, CB_SETCURSEL, b, 0);
+			h = GetDlgItem(hdlg, IDC_COMBO_MO_TYPE);    		
+ 			b = temp_mo_drives[modlv_current_sel].type;
             SendMessage(h, CB_SETCURSEL, b, 0);
             mo_recalc_location_controls(hdlg, 0);
             mo_ignore_change = 0;
@@ -359,7 +435,10 @@ mo_devices_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam) {
                 h = GetDlgItem(hdlg, IDC_COMBO_MO_BUS);
                 b = temp_mo_drives[modlv_current_sel].bus_type;
                 SendMessage(h, CB_SETCURSEL, b, 0);
-                mo_recalc_location_controls(hdlg, 0);
+                h = GetDlgItem(hdlg, IDC_COMBO_MO_TYPE);
+                b = temp_mo_drives[modlv_current_sel].type;
+                SendMessage(h, CB_SETCURSEL, b, 0);
+    			mo_recalc_location_controls(hdlg, 0);
             }
             mo_ignore_change = 0;
             break;
@@ -392,7 +471,7 @@ mo_devices_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam) {
 
                     mo_ignore_change = 1;
                     h = GetDlgItem(hdlg, IDC_COMBO_MO_ID);
-                    zip_untrack(zdlv_current_sel);
+                    mo_untrack(modlv_current_sel);
                     b = (int)SendMessage(h, CB_GETCURSEL, 0, 0);
                     temp_mo_drives[modlv_current_sel].bus_id.scsi.id = (uint8_t)b;
                     mo_track(modlv_current_sel);
@@ -416,7 +495,7 @@ mo_devices_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam) {
                     mo_ignore_change = 0;
                     return FALSE;
 
-                case IDC_COMBO_ZIP_CHANNEL_IDE:
+                case IDC_COMBO_MO_CHANNEL_IDE:
                     if (mo_ignore_change)
                         return FALSE;
 
@@ -425,11 +504,24 @@ mo_devices_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam) {
                     mo_untrack(modlv_current_sel);
                     b = (int)SendMessage(h, CB_GETCURSEL, 0, 0);
                     temp_mo_drives[modlv_current_sel].bus_id.ide_channel = (uint8_t)b;
-                    mo_track(modlv_current_sel);
-                    h = GetDlgItem(hdlg, IDC_LIST_MO_DRIVES);
+                    mo_track(modlv_current_sel);               
+    				h = GetDlgItem(hdlg, IDC_LIST_MO_DRIVES);
                     mo_update_item(h, modlv_current_sel);
                     mo_ignore_change = 0;
                     return FALSE;
+
+    			case IDC_COMBO_MO_TYPE:
+    				if (HIWORD(wParam) == CBN_SELCHANGE) {
+    					if (mo_ignore_change)
+    							return FALSE;
+    					mo_ignore_change = 1;
+    					h = GetDlgItem(hdlg, IDC_COMBO_MO_TYPE);
+    					temp_mo_drives[modlv_current_sel].type = (int)SendMessage(h, CB_GETCURSEL, 0, 0);
+    				}
+    				h = GetDlgItem(hdlg, IDC_LIST_MO_DRIVES);
+    				mo_update_item(h, modlv_current_sel);
+    				mo_ignore_change = 0;
+    			return FALSE;
             }
             return FALSE;
 
