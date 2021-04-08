@@ -184,7 +184,9 @@
 #define STR_3316	"Autres périphériques"
 #define STR_3317	"Disques dur"
 #define STR_3318	"Lecteurs de disquettes"
-#define STR_3319	"Périphériques amovibles"
+#define STR_3319	"Périphériques CD/DVD"
+#define STR_3320	"Périphériques IOMEGA"
+#define STR_3321	"Périphériques Magnéto-Optiques"
 
 /* UI dialog: Settings (Machine, 3325.) */
 #define  STR_3325	"Machine:"
@@ -302,7 +304,7 @@
 #define  STR_3580	"ATAPI"
 #define  STR_3581	"SCSI"
 #define  STR_3582	"USB"
-
+#define  STR_3583	"Lecteurs de DON:"
 
 /* UI: Status Bar (3900.) */
 #define STR_3900	"(vide)"
@@ -335,6 +337,9 @@
 #define STR_3960	"Résau (%s)"
 #define STR_3970	"Son (%s)"
 
+#define STR_3980	"DON %i (%ls): %ls"
+#define STR_3981	"Images DON\0*.im?\0All files\0*.*\0"
+#define STR_3982	"Images DON\0*.im?;*.bin\0"
 
 /* UI menu: Action (4000.) */
 #define STR_ACTION	"&Action"
@@ -409,5 +414,17 @@
 #define STR_HELP	"&Aide"
 #define  STR_4091	"&A propos de VARCem"
 
+/* Status bar for magneto-optical (4100.) */
+#define STR_4100	"3.5\x22 128Mb D.O.N. (ISO 10090)"
+#define STR_4101	"3.5\x22 230Mb D.O.N. (ISO 13963)"
+#define STR_4102	"3.5\x22 540Mb D.O.N. (ISO 15498)"
+#define STR_4103	"3.5\x22 640Mb D.O.N. (ISO 15498)"
+#define STR_4104	"3.5\x22 1.3Gb D.O.N. (GigaMO)"
+#define STR_4105	"3.5\x22 2.3Gb D.O.N. (GigaMO 2)"
+#define STR_4106	"5.25\x22 600Mb D.O.N."
+#define STR_4107	"5.25\x22 650Mb D.O.N."
+#define STR_4108	"5.25\x22 1Gb D.O.N."
+#define STR_4109	"5.25\x22 1.3Gb D.O.N."
+#define STR_4120	"Modèle :"
 
 /* End of file. */
