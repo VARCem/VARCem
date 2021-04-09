@@ -112,7 +112,7 @@ static const mo_drive_type_t mo_drive_types[KNOWN_MO_VENDORS] = {
 
 
 typedef struct {
-    int8_t	bus_type,		/* 0 = ATAPI, 1 = SCSI */
+    int8_t	bus_type,
     		bus_mode,		/* Bit 0 = PIO suported;
 					   Bit 1 = DMA supportd. */
 		read_only,

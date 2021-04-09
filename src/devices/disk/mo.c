@@ -56,7 +56,6 @@
 #include "../disk/hdc_ide.h"
 #include "mo.h"
 
-//#include <corecrt_io.h>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -281,11 +280,16 @@ mo_log(int level, const char *fmt, ...)
 char 
 *mo_get_internal_name(int type)
 {
-	strcpy(mo_model, mo_drive_types[type].vendor);
-	strcat(mo_model, " ");
-	strcat(mo_model, mo_drive_types[type].model);
+    char *temp;
+
+    temp = (char*) malloc(26*sizeof(char));
+
+    memset(temp, 0, 26);
+	memcpy(temp, mo_drive_types[type].vendor, 8);
+    temp[strlen(temp)] = ' ';
+	memcpy(temp + strlen(temp), mo_drive_types[type].model, 16);
     
-	return mo_model;
+	return temp;
 }
 
 int
@@ -863,7 +867,7 @@ invalid_field_pl(mo_t *dev)
     dev->status = 0x53;
 }
 
-
+#if 0
 static void
 data_phase_error(mo_t *dev)
 {
@@ -873,7 +877,7 @@ data_phase_error(mo_t *dev)
 
     cmd_error(dev);
 }
-
+#endif
 
 static int
 mo_blocks(mo_t *dev, int32_t *len, int first_batch, int out)
@@ -1726,8 +1730,7 @@ phase_data_out(mo_t *dev)
     uint8_t page, page_len;
     uint32_t i = 0;
     uint8_t hdr_len, val, old_val, ch;
-    uint32_t last_to_write = 0;
-    uint32_t c, h, s;
+
     int len = 0;
 
     switch(dev->current_cdb[0]) {
@@ -1938,9 +1941,9 @@ read_from_dma(mo_t *dev)
 	return ret;
 
     if (dev->drv->bus_type == MO_BUS_SCSI)
-	DEBUG("MO %i: SCSI Input data length: %i\n", dev->id, *BufLen);
+    	DEBUG("MO %i: SCSI Input data length: %i\n", dev->id, *BufLen);
     else
-	DEBUG("MO %i: ATAPI Input data length: %i\n", dev->id, dev->packet_len);
+    	DEBUG("MO %i: ATAPI Input data length: %i\n", dev->id, dev->packet_len);
 
     ret = phase_data_out(dev);
 
@@ -1983,7 +1986,7 @@ write_to_scsi_dma(scsi_device_t *sd, UNUSED(uint8_t scsi_id))
     int32_t BufLen = sd->buffer_length;
 
     if (dev == NULL)
-	return 0;
+    	return 0;
 
     DEBUG("Writing to SCSI DMA: SCSI ID %02X, init length %i\n", scsi_id, BufLen);
     memcpy(sd->cmd_buffer, dev->buffer, BufLen);
@@ -2004,15 +2007,15 @@ write_to_dma(mo_t *dev)
     int ret = 0;
 
     if (dev->drv->bus_type == MO_BUS_SCSI) {
-	DEBUG("Write to SCSI DMA: (ID %02X)\n", dev->drv->bus_id.scsi.id);
-	ret = write_to_scsi_dma(sd, dev->drv->bus_id.scsi.id);
+    	DEBUG("Write to SCSI DMA: (ID %02X)\n", dev->drv->bus_id.scsi.id);
+    	ret = write_to_scsi_dma(sd, dev->drv->bus_id.scsi.id);
     } else
-	ret = write_to_ide_dma(dev);
+    	ret = write_to_ide_dma(dev);
 
     if (dev->drv->bus_type == MO_BUS_SCSI)
-	DEBUG("MO %i: SCSI Output data length: %i\n", dev->id, BufLen);
+    	DEBUG("MO %i: SCSI Output data length: %i\n", dev->id, BufLen);
     else
-	DEBUG("MO %i: ATAPI Output data length: %i\n", dev->id, dev->packet_len);
+    	DEBUG("MO %i: ATAPI Output data length: %i\n", dev->id, dev->packet_len);
 
     return ret;
 }
@@ -2319,13 +2322,13 @@ do_init(mo_t *dev)
 
     dev->drv->bus_mode = 0;
     if (dev->drv->bus_type >= MO_BUS_ATAPI)
-	dev->drv->bus_mode |= 2;
+    	dev->drv->bus_mode |= 2;
     if (dev->drv->bus_type < MO_BUS_SCSI)
-	dev->drv->bus_mode |= 1;
+    	dev->drv->bus_mode |= 1;
     DEBUG("MO %i: Bus type %i, bus mode %i\n",
 	  dev->id, dev->drv->bus_type, dev->drv->bus_mode);
     if (dev->drv->bus_type == MO_BUS_ATAPI)
-	set_signature(dev);
+    	set_signature(dev);
     dev->status = READY_STAT | DSC_STAT;
     dev->pos = 0;
     dev->packet_status = 0xff;
@@ -2450,15 +2453,15 @@ mo_close(void)
     int c;
 
     for (c = 0; c < MO_NUM; c++) {
-	dev = (mo_t *)mo_drives[c].priv;
+    	dev = (mo_t *)mo_drives[c].priv;
 
-	if (dev != NULL) {
-		mo_disk_close(dev);
+    	if (dev != NULL) {
+    		mo_disk_close(dev);
 
-		free(dev);
+    		free(dev);
 
-		mo_drives[c].priv = NULL;
-	}
+    		mo_drives[c].priv = NULL;
+    	}
     }
 }
 
@@ -2521,10 +2524,10 @@ void
 mo_disk_close(mo_t *dev)
 {
     if (dev->drv->f) {
-	fclose(dev->drv->f);
-	dev->drv->f = NULL;
+    	fclose(dev->drv->f);
+    	dev->drv->f = NULL;
 
-	dev->drv->medium_size = 0;
+    	dev->drv->medium_size = 0;
     }
 }
 
@@ -2547,12 +2550,11 @@ mo_load(mo_t *dev, const wchar_t *fn)
 
 	for(i = 0; i < KNOWN_MO_TYPES; i++)
 	{
-	    if(size == mo_types[i].disk_size)
-	    {
-		found = 1;
-		dev->drv->medium_size = mo_types[i].sectors;
-		dev->drv->sector_size = mo_types[i].bytes_per_sector;
-		break;
+    	if (size == mo_types[i].disk_size) {
+    		found = 1;
+    		dev->drv->medium_size = mo_types[i].sectors;
+    		dev->drv->sector_size = mo_types[i].bytes_per_sector;
+    		break;
 	    }
 	}
 

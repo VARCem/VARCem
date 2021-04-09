@@ -8,7 +8,7 @@
  *
  *		Implementation of the "Magneto-optical Devices" dialog.
  *
- * Version:	@(#)win_settings_mo.h	1.0.2	2021/05/03
+ * Version:	@(#)win_settings_mo.h	1.0.2	2021/04/09
  *
  * Authors:     Natalia Portillo, <claunia@claunia.com>
  *              Fred N. van Kempen, <decwiz@yahoo.com>
@@ -49,12 +49,13 @@
 
 static int mo_ignore_change = 0;
 static int modlv_current_sel;
+static int listtomodel[64];
 
 static int
 mo_combo_to_string(int id)
 {
     if (id == 0)
-	return(IDS_DISABLED);
+    	return(IDS_DISABLED);
 
     return(IDS_3580 + id - 1);
 }
@@ -66,8 +67,8 @@ mo_id_to_combo(HWND h, int num)
     int i;
 
     for (i = 0; i < num; i++) {
-	swprintf(temp, sizeof_w(temp), L"%i", i);
-	SendMessage(h, CB_ADDSTRING, 0, (LPARAM)temp);
+    	swprintf(temp, sizeof_w(temp), L"%i", i);
+    	SendMessage(h, CB_ADDSTRING, 0, (LPARAM)temp);
     }
 }
 
@@ -282,6 +283,33 @@ mo_add_locations(HWND hdlg) {
 }
 
 static void
+mo_recalc_model_locations(HWND hdlg) {
+    WCHAR temp[128];
+    HWND  h;
+    int   i, j;
+    int   b;
+
+    h = GetDlgItem(hdlg, IDC_COMBO_MO_TYPE);
+    SendMessage(h, CB_RESETCONTENT, 0, 0);
+    b = temp_mo_drives[modlv_current_sel].bus_type - 1;
+    i = j = 0;
+    memset(listtomodel, 0x00, sizeof(listtomodel));
+
+    while (i < KNOWN_MO_VENDORS) {
+		if (mo_drive_types[i].supported_bus[b]) {
+			swprintf(temp, sizeof_w(temp), L"%s",mo_get_internal_name(i));
+			SendMessage(h, CB_ADDSTRING, 0, (LPARAM)temp);
+           	listtomodel[j] = i;
+			if (i == temp_mo_drives[modlv_current_sel].type)
+				SendMessage(h, CB_SETCURSEL, j, 0);
+           	j++;
+		}
+    	i++;
+    }
+
+}
+
+static void
 mo_recalc_location_controls(HWND hdlg, int assign_id) {
     HWND h;
     int  i;
@@ -332,8 +360,7 @@ mo_recalc_location_controls(HWND hdlg, int assign_id) {
     		h = GetDlgItem(hdlg, IDC_COMBO_MO_TYPE);
     		ShowWindow(h, SW_SHOW);
     		EnableWindow(h, TRUE);
-    		SendMessage(h, CB_SETCURSEL,
-                        temp_mo_drives[modlv_current_sel].type, 0);     
+            mo_recalc_model_locations(hdlg);     
             break;
 
         case MO_BUS_SCSI:
@@ -363,8 +390,7 @@ mo_recalc_location_controls(HWND hdlg, int assign_id) {
     		h = GetDlgItem(hdlg, IDC_COMBO_MO_TYPE);
     		ShowWindow(h, SW_SHOW);
     		EnableWindow(h, TRUE);
-    		SendMessage(h, CB_SETCURSEL,
-                        temp_mo_drives[modlv_current_sel].type, 0);     
+    		mo_recalc_model_locations(hdlg);
             break;
     }
 }
@@ -405,9 +431,7 @@ mo_devices_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam) {
             h = GetDlgItem(hdlg, IDC_COMBO_MO_BUS);
             b = temp_mo_drives[modlv_current_sel].bus_type;
             SendMessage(h, CB_SETCURSEL, b, 0);
-			h = GetDlgItem(hdlg, IDC_COMBO_MO_TYPE);    		
- 			b = temp_mo_drives[modlv_current_sel].type;
-            SendMessage(h, CB_SETCURSEL, b, 0);
+            mo_recalc_model_locations(hdlg);
             mo_recalc_location_controls(hdlg, 0);
             mo_ignore_change = 0;
             return TRUE;
@@ -516,7 +540,7 @@ mo_devices_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam) {
     							return FALSE;
     					mo_ignore_change = 1;
     					h = GetDlgItem(hdlg, IDC_COMBO_MO_TYPE);
-    					temp_mo_drives[modlv_current_sel].type = (int)SendMessage(h, CB_GETCURSEL, 0, 0);
+    					temp_mo_drives[modlv_current_sel].type = listtomodel[(int)SendMessage(h, CB_GETCURSEL, 0, 0)];
     				}
     				h = GetDlgItem(hdlg, IDC_LIST_MO_DRIVES);
     				mo_update_item(h, modlv_current_sel);
