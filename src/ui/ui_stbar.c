@@ -588,7 +588,7 @@ ui_sb_reset(void)
     for (drive = 0; drive < MO_NUM; drive++) {
 	/* Could be Internal or External IDE.. */
 	if ((mo_drives[drive].bus_type == MO_BUS_ATAPI) &&
-	    !(hdint || !strcmp(hdc, "ide"))) {
+	    !(hdint || !strncmp(hdc, "ide", 3))) {
 	    continue;
 	}
 
@@ -691,7 +691,7 @@ ui_sb_reset(void)
    for (drive = 0; drive < MO_NUM; drive++) {
     	/* Could be Internal or External IDE.. */
     	if ((mo_drives[drive].bus_type == MO_BUS_ATAPI) &&
-    		!(hdint || !strcmp(hdc, "ide"))) {
+    		!(hdint || !strncmp(hdc, "ide", 3))) {
     		continue;
     	}
 
