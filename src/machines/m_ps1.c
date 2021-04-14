@@ -22,7 +22,11 @@
  *		The reserved 384K is remapped to the top of extended memory.
  *		If this is not done then you get an error on startup.
  *
- * Version:	@(#)m_ps1.c	1.0.33	2021/03/18
+ *		BIOS we use is model 2121-B82. It should not have serial ports but a modem.
+ *		Though right now two serial ports seems to be needed for it to boot without
+ *		1101 error.
+ *
+ * Version:	@(#)m_ps1.c	1.0.34	2021/04/14
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -435,28 +439,34 @@ ps1_out(uint16_t port, uint8_t val, priv_t priv)
 		break;
 
 	case 0x0102:
-		if (val & 0x04)
-			serial_setup(0, SERIAL1_ADDR, SERIAL1_IRQ);
+		if (! (dev->reg_94 & 0x80)) {
 #if 0
-		  else
+			parallel_remove(0);
 			serial_remove(0);
 #endif
-		if (val & 0x10) {
-			switch ((val >> 5) & 3) {
-				case 0:
-					parallel_setup(0, 0x03bc);
-					break;
-
-				case 1:
-					parallel_setup(0, 0x0378);
-					break;
-
-				case 2:
-					parallel_setup(0, 0x0278);
-					break;
+			if (val & 0x04) {
+    			if (val & 0x08)
+    				serial_setup(0, SERIAL1_ADDR, SERIAL1_IRQ);
+				else
+                    serial_setup(0, SERIAL2_ADDR, SERIAL2_IRQ);
 			}
+    		if (val & 0x10) {
+                    switch ((val >> 5) & 3) {
+                        case 0:
+                            parallel_setup(0, 0x03bc);
+                            break;
+
+                        case 1:
+                            parallel_setup(0, 0x0378);
+                            break;
+
+                        case 2:
+                            parallel_setup(0, 0x0278);
+                            break;
+                    }
+                }
+    		dev->reg_102 = val;
 		}
-		dev->reg_102 = val;
 		break;
 
 	case 0x0103:
@@ -665,12 +675,17 @@ const device_t m_ps1_2011 = {
     ps1_config
 };
 
+static const CPU cpus_ps1_m2121[] = {
+    { "i386SX/16", CPU_386SX,  16000000, 1, 0, 0x2308, 0, 0, 0, 3,3,3,3, 2 },
+    { "i386SX/20", CPU_386SX,  20000000, 1, 0, 0x2308, 0, 0, 0, 4,4,3,3, 3 },
+    { NULL }
+};
 
 static const machine_t m2121_info = {
     MACHINE_ISA | MACHINE_AT | MACHINE_PS2 | MACHINE_HDC | MACHINE_FDC_PS2 | MACHINE_VIDEO,
     MACHINE_VIDEO,
     1, 6, 1, 64, -1,
-    {{"Intel",cpus_i386SX},{"AMD",cpus_Am386SX},{"Cyrix",cpus_486SLC}}
+    {{"",cpus_ps1_m2121}}
 };
 
 const device_t m_ps1_2121 = {

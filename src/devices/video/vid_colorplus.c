@@ -8,13 +8,13 @@
  *
  *		Plantronics ColorPlus emulation.
  *
- * Version:	@(#)vid_colorplus.c	1.0.18	2020/09/27
+ * Version:	@(#)vid_colorplus.c	1.0.19	2021/04/14
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -379,6 +379,7 @@ colorplus_init(const device_t *info, UNUSED(void *parent))
 {
     colorplus_t *dev;
     int display_type;
+    int onboard = info->local;
 
     dev = (colorplus_t *)mem_alloc(sizeof(colorplus_t));
     memset(dev, 0x00, sizeof(colorplus_t));
@@ -404,9 +405,11 @@ colorplus_init(const device_t *info, UNUSED(void *parent))
     video_inform(DEVICE_VIDEO_GET(info->flags),
 		 (const video_timings_t *)info->vid_timing);
 
-    /* Force the LPT3 port to be enabled. */
-    config.parallel_enabled[2] = 1;
-    parallel_setup(2, 0x03bc);
+    if (! onboard) {
+    	/* Force the LPT3 port to be enabled. */
+    	config.parallel_enabled[2] = 1;
+    	parallel_setup(2, 0x03bc);
+	}
 
     return (priv_t)dev;
 }
@@ -490,7 +493,7 @@ const device_t colorplus_device = {
 const device_t colorplus_onboard_device = {
     "Onboard Plantronics ColorPlus",
     DEVICE_VIDEO(VID_TYPE_CGA) | DEVICE_ISA,
-    0,
+    1,
     NULL,
     colorplus_init, colorplus_close, NULL,
     NULL,
