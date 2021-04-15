@@ -8,7 +8,7 @@
  *
  *		Implementation of various Commodore systems.
  *
- * Version:	@(#)m_commodore.c	1.0.19	2021/03/18
+ * Version:	@(#)m_commodore.c	1.0.20	2021/04/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Altheos, <altheos@varcem.com>
@@ -68,7 +68,10 @@
 
 typedef struct {
     int		type;
-} pc30_t;
+
+    /* Video stuff. */
+    rom_t	vid_bios;
+} pccomm_t;
 
 
 static void
@@ -101,9 +104,9 @@ pc30_write(UNUSED(uint16_t port), uint8_t val, UNUSED(priv_t priv))
 
 
 static void
-pc30_close(priv_t priv)
+pccomm_close(priv_t priv)
 {
-    pc30_t *dev = (pc30_t *)priv;
+    pccomm_t *dev = (pccomm_t *)priv;
 
     free(dev);
 }
@@ -112,16 +115,18 @@ pc30_close(priv_t priv)
 static priv_t
 common_init(const device_t *info, void *arg)
 {
-    pc30_t *dev;
+    pccomm_t *dev;
+    romdef_t *roms = (romdef_t *)arg;
 
+    dev = (pccomm_t *)mem_alloc(sizeof(pccomm_t));
+    memset(dev, 0x00, sizeof(pccomm_t));
+    dev->type = info->local;
+    
     /* Add machine device to system. */
-    device_add_ex(info, (priv_t)arg);
+    device_add_ex(info, (priv_t)dev);
 
     switch(info->local) {
         case 30: /* PC30 */
-            dev = (pc30_t *)mem_alloc(sizeof(pc30_t));
-            memset(dev, 0x00, sizeof(pc30_t));
-            dev->type = info->local;
             m_at_ide_init();
             mem_remap_top(384);
             device_add(&fdc_at_device);
@@ -150,8 +155,11 @@ common_init(const device_t *info, void *arg)
 		device_add(&keyboard_ps2_ami_device);
 		if (config.mouse_type == MOUSE_INTERNAL)
 			device_add(&mouse_ps2_device);	
-		if (config.video_card == VID_INTERNAL)
+		if (config.video_card == VID_INTERNAL) {
+			rom_init(&dev->vid_bios, roms->vidfn, 
+    				0xc0000, roms->vidsz, roms->vidsz - 1, 0, 0);
 			device_add(&gd5402_onboard_device);
+		}
 		break;
     }
 
@@ -171,7 +179,7 @@ const device_t m_cbm_pc30 = {
     DEVICE_ROOT,
     30,
     L"commodore/pc30",
-    common_init, pc30_close, NULL,
+    common_init, pccomm_close, NULL,
     NULL, NULL, NULL,
     &pc30_info,
     NULL
@@ -190,7 +198,7 @@ const device_t m_cbm_sl386sx = {
     DEVICE_ROOT,
     53,
     L"commodore/sl386sx",
-    common_init, NULL, NULL,
+    common_init, pccomm_close, NULL,
     NULL, NULL, NULL,
     &sl386sx_info,
     NULL
@@ -209,7 +217,7 @@ const device_t m_cbm_sl386sx25 = {
     DEVICE_ROOT,
     69,
     L"commodore/sl386sx25",
-    common_init, NULL, NULL,
+    common_init, pccomm_close, NULL,
     NULL, NULL, NULL,
     &sl386sx25_info,
     NULL
