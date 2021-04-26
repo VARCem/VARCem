@@ -12,7 +12,7 @@
  *		those are not used by the platform code. This is easier to
  *		maintain.
  *
- * Version:	@(#)ui_resource.h	1.0.24	2021/03/20
+ * Version:	@(#)ui_resource.h	1.0.25	2021/04/26
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -228,10 +228,10 @@
 #define ICON_ZIP_A		49	/* "zip_active.ico" */
 #define ICON_ZIP_E		176	/* "zip_empty.ico" */
 #define ICON_ZIP_I		177	/* "zip_empty_active.ico" */
-#define ICON_MO	        	251     /* "mo.ico" */
-#define ICON_MO_A		252	/* "mo_active.ico" */
-#define ICON_MO_E		253	/* "mo_empty.ico" */
-#define ICON_MO_I		254	/* "mo_empty_active.ico" */
+#define ICON_MO		50	/* "mo.ico" */
+#define ICON_MO_A		51/* "mo_active.ico" */
+#define ICON_MO_E		178	/* "mo_empty.ico" */
+#define ICON_MO_I		179	/* "mo_empty_active.ico" */
 #define ICON_DISK		64	/* "hard_disk.ico" */
 #define ICON_DISK_A		65	/* "hard_disk_active.ico" */
 #define ICON_NETWORK		80	/* "network.ico" */
