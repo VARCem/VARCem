@@ -8,13 +8,13 @@
  *
  *		Implementation of several ASUS mainboards.
  *
- * Version:	@(#)m_asus.c	1.0.4	2019/05/28
+ * Version:	@(#)m_asus.c	1.0.5	2021/04/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -134,7 +134,7 @@ common_init(const device_t *info, void *arg)
 
 
 static const machine_t tp4xe_info = {
-    MACHINE_PCI | MACHINE_ISA | MACHINE_VLB | MACHINE_AT | MACHINE_HDC,
+    MACHINE_PCI | MACHINE_ISA | MACHINE_AT | MACHINE_HDC,
     0,
     8, 128, 8, 128, -1,
     {{"Intel",cpus_PentiumS5},{"IDT",cpus_WinChip},CPU_AMD_K5}
@@ -153,7 +153,7 @@ const device_t m_p54tp4xe = {
 
 
 static const machine_t t2p4_info = {
-    MACHINE_PCI | MACHINE_ISA | MACHINE_VLB | MACHINE_AT | MACHINE_PS2 | MACHINE_HDC,
+    MACHINE_PCI | MACHINE_ISA | MACHINE_AT | MACHINE_PS2 | MACHINE_HDC,
     0,
     8, 512, 8, 128, -1,
     {{"Intel",cpus_Pentium},{"IDT",cpus_WinChip},CPU_AMD_K56,{"Cyrix",cpus_6x86}}
@@ -172,7 +172,7 @@ const device_t m_p55t2p4 = {
 
 
 static const machine_t tvp4_info = {
-    MACHINE_PCI | MACHINE_ISA | MACHINE_VLB | MACHINE_AT | MACHINE_PS2 | MACHINE_HDC,
+    MACHINE_PCI | MACHINE_ISA | MACHINE_AT | MACHINE_PS2 | MACHINE_HDC,
     0,
     8, 128, 8, 128, -1,
     {{"Intel",cpus_Pentium},{"IDT",cpus_WinChip},CPU_AMD_K56,{"Cyrix",cpus_6x86}}
