@@ -1745,7 +1745,7 @@ buslogic_init(const device_t *info, UNUSED(void *parent))
 		has_autoscsi_rom = 0;
 		has_scam_rom = 0;
 		dev->fw_rev = "BA150";
-		dev->bit32 = 1;
+		dev->flags |= X54X_32BIT;
 		dev->pos_regs[0] = 0x08;	/* MCA board ID */
 		dev->pos_regs[1] = 0x07;	
 		mca_add(buslogic_mca_read, buslogic_mca_write, buslogic_mca_feedb, NULL, dev);
@@ -1764,7 +1764,7 @@ buslogic_init(const device_t *info, UNUSED(void *parent))
 		scam_rom_name = BT445S_SCAM_BIOS_PATH;
 		scam_rom_size = 0x0200;
 		dev->fw_rev = "AA507B";
-		dev->bit32 = 1;
+		dev->flags |= X54X_32BIT;
 		dev->ha_bps = 10000000.0;	/* fast SCSI */
 		dev->max_id = 7;		/* narrow SCSI */
 		break;
