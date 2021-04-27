@@ -12,14 +12,14 @@
  *
  *		These controllers were designed for various buses.
  *
- * Version:	@(#)scsi_x54x.c	1.0.19	2019/05/17
+ * Version:	@(#)scsi_x54x.c	1.0.20	2021/04/27
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		TheCollector1995, <mariogplayer@gmail.com>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
- *		Copyright 2016-2018 Miran Grca.
+ *		Copyright 2017-2021 Fred N. van Kempen.
+ *		Copyright 2016-2021 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -1330,7 +1330,7 @@ x54x_in(uint16_t port, priv_t priv)
 		break;
 
 	case 2:
-		if (dev->int_geom_writable)
+		if (dev->flags & X54X_INT_GEOM_WRITABLE)
 			ret = dev->Interrupt;
 		else
 			ret = dev->Interrupt & ~0x70;
@@ -1347,7 +1347,7 @@ x54x_in(uint16_t port, priv_t priv)
 		 *   6		Not checked
 		 *   7		Not checked
 		 */
-		if (dev->int_geom_writable)
+		if (dev->flags & X54X_INT_GEOM_WRITABLE)
 			ret = dev->Geometry;
 		else {
 			switch(dev->Geometry) {
@@ -1422,7 +1422,7 @@ x54x_reset(x54x_t *dev)
     int i, j;
 
     clear_irq(dev);
-    if (dev->int_geom_writable)
+    if (dev->flags & X54X_INT_GEOM_WRITABLE)
 	dev->Geometry = 0x80;
       else
 	dev->Geometry = 0x00;
@@ -1777,12 +1777,12 @@ x54x_out(uint16_t port, uint8_t val, priv_t priv)
 		break;
 
 	case 2:
-		if (dev->int_geom_writable)
+		if (dev->flags & X54X_INT_GEOM_WRITABLE)
 			dev->Interrupt = val;
 		break;
 
 	case 3:
-		if (dev->int_geom_writable)
+		if (dev->flags & X54X_INT_GEOM_WRITABLE)
 			dev->Geometry = val;
 		break;
     }
