@@ -291,7 +291,7 @@ sis496_out(UNUSED(int func), int addr, uint8_t val, priv_t priv)
         dev->pci_conf[addr] = val & 0xf8;
         break;
 
-    case 0x44: /*Shadow configure*/
+	case 0x44: /*Shadow configure*/
 		dev->pci_conf[0x44] = val;
 		if (valxor & 0xff) {
 			recalc_mapping(dev);
@@ -323,7 +323,7 @@ sis496_out(UNUSED(int func), int addr, uint8_t val, priv_t priv)
         dev->pci_conf[addr] = val & 0xf0;
         break;
 
-    case 0xc0:
+	case 0xc0:
         dev->pci_conf[addr] = val & 0x8f;
 		if (val & 0x80)
 			pci_set_irq_routing(PCI_INTA, val & 0xf);
@@ -355,7 +355,7 @@ sis496_out(UNUSED(int func), int addr, uint8_t val, priv_t priv)
 			pci_set_irq_routing(PCI_INTD, PCI_IRQ_DISABLED);
 		break;
     
-    default:
+	default:
 		if ((addr >= 4 && addr < 8) || addr >= 0x40)
 			dev->pci_conf[addr] = val;
         break;
@@ -375,15 +375,15 @@ sis496_in(UNUSED(int func), int addr, priv_t priv)
 		case 0xa0:
 			ret &= 0x10;
 			break;
-	case 0xa1:
+		case 0xa1:
 			ret = 0x00;
 			break;
-	case 0x82: // Port 22h Mirror
-		ret = dev->cur_reg;
-		break;
-	case 0x83: //Port 70h Mirror
-		ret = inb(0x70);
-		break;
+		case 0x82: // Port 22h Mirror
+			ret = dev->cur_reg;
+			break;
+		case 0x83: //Port 70h Mirror
+			ret = inb(0x70);
+			break;
 	}
 
     return ret;
