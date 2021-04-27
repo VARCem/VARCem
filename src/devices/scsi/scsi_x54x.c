@@ -12,14 +12,14 @@
  *
  *		These controllers were designed for various buses.
  *
- * Version:	@(#)scsi_x54x.c	1.0.19	2019/05/17
+ * Version:	@(#)scsi_x54x.c	1.0.20	2021/04/27
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		TheCollector1995, <mariogplayer@gmail.com>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
- *		Copyright 2016-2018 Miran Grca.
+ *		Copyright 2017-2021 Fred N. van Kempen.
+ *		Copyright 2016-2021 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -441,7 +441,7 @@ bios_command(x54x_t *x54x, uint8_t max_id, BIOSCMD *cmd, int8_t islba)
 		DEBUG("BIOS Target ID %i has no device attached\n", cmd->id);
 		ret = 0x80;
 	} else {
-		if ((dev->type == SCSI_REMOVABLE_CDROM) && !x54x->cdrom_boot) {
+		if ((dev->type == SCSI_REMOVABLE_CDROM) && !(x54x->flags & X54X_CDROM_BOOT)) {
 			DEBUG("BIOS Target ID %i is CD-ROM on unsupported BIOS\n", cmd->id);
 			return(0x80);
 		} else {
@@ -608,7 +608,7 @@ mbi_setup(x54x_t *dev, uint32_t CCBPointer, CCBU *CmdBlock,
 
     req->CCBPointer = CCBPointer;
     memcpy(&(req->CmdBlock), CmdBlock, sizeof(CCB32));
-    req->Is24bit = dev->Mbx24bit;
+    req->Is24bit = !!(dev->flags & X54X_MBX_24BIT);
     req->HostStatus = HostStatus;
     req->TargetStatus = TargetStatus;
     req->MailboxCompletionCode = mbcc;
@@ -649,7 +649,7 @@ x54x_mbi(x54x_t *dev)
     uint32_t MailboxCompletionCode = req->MailboxCompletionCode;
     uint32_t Incoming;
 
-    Incoming = dev->MailboxInAddr + (dev->MailboxInPosCur * (dev->Mbx24bit ? sizeof(Mailbox_t) : sizeof(Mailbox32_t)));
+    Incoming = dev->MailboxInAddr + (dev->MailboxInPosCur * ((dev->flags & X54X_MBX_24BIT) ? sizeof(Mailbox_t) : sizeof(Mailbox32_t)));
 
     if (MailboxCompletionCode != MBI_NOT_FOUND) {
 	CmdBlock->common.HostStatus = HostStatus;
@@ -666,7 +666,7 @@ x54x_mbi(x54x_t *dev)
 
     DEBUG("Host Status 0x%02X, Target Status 0x%02X\n",HostStatus,TargetStatus);
 
-    if (dev->Mbx24bit) {
+    if (dev->flags & X54X_MBX_24BIT) {
 	U32_TO_ADDR(CCBPointer, req->CCBPointer);
 	DEBUG("Mailbox 24-bit: Status=0x%02X, CCB at 0x%04X\n", req->MailboxCompletionCode, CCBPointer);
 	DMAPageWrite(Incoming, &(req->MailboxCompletionCode), 1);
@@ -1064,7 +1064,7 @@ req_setup(x54x_t *dev, uint32_t CCBPointer, Mailbox32_t *Mailbox32)
     DMAPageRead(CCBPointer, (uint8_t *)&req->CmdBlock, sizeof(CCB32));
     add_to_period(dev, sizeof(CCB32));
 
-    req->Is24bit = dev->Mbx24bit;
+    req->Is24bit = !!(dev->flags & X54X_MBX_24BIT);
     req->CCBPointer = CCBPointer;
     req->TargetID = dev->Mbx24bit ? req->CmdBlock.old_fmt.Id : req->CmdBlock.new_fmt.Id;
     req->LUN = dev->Mbx24bit ? req->CmdBlock.old_fmt.Lun : req->CmdBlock.new_fmt.Lun;
@@ -1167,7 +1167,7 @@ x54x_mbo(x54x_t *dev, Mailbox32_t *Mailbox32)
 	Cur = dev->MailboxOutPosCur;
     }
 
-    if (dev->Mbx24bit) {
+    if (dev->flags & X54X_MBX_24BIT) {
 	Outgoing = Addr + (Cur * sizeof(Mailbox_t));
 	DMAPageRead(Outgoing, (uint8_t *)&MailboxOut, sizeof(Mailbox_t));
 	add_to_period(dev, sizeof(Mailbox_t));
@@ -1194,7 +1194,7 @@ x54x_mbo_process(x54x_t *dev)
     uint8_t CmdStatus = MBO_FREE;
     uint32_t CodeOffset = 0;
 
-    CodeOffset = dev->Mbx24bit ? 0 : 7;
+    CodeOffset = (dev->flags & X54X_MBX_24BIT) ? 0 : 7;
 
     Outgoing = x54x_mbo(dev, &mb32);
 
@@ -1256,11 +1256,9 @@ do_mail(x54x_t *dev)
 	}
     } else {
 	/* Strict round robin mode - only process the current mailbox and advance the pointer if successful. */
-x54x_do_mail_again:
 	if (x54x_mbo_process(dev)) {
 		dev->MailboxOutPosCur++;
 		dev->MailboxOutPosCur %= dev->MailboxCount;
-		goto x54x_do_mail_again;
 	}
     }
 }
@@ -1330,7 +1328,7 @@ x54x_in(uint16_t port, priv_t priv)
 		break;
 
 	case 2:
-		if (dev->int_geom_writable)
+		if (dev->flags & X54X_INT_GEOM_WRITABLE)
 			ret = dev->Interrupt;
 		else
 			ret = dev->Interrupt & ~0x70;
@@ -1347,7 +1345,7 @@ x54x_in(uint16_t port, priv_t priv)
 		 *   6		Not checked
 		 *   7		Not checked
 		 */
-		if (dev->int_geom_writable)
+		if (dev->flags & X54X_INT_GEOM_WRITABLE)
 			ret = dev->Geometry;
 		else {
 			switch(dev->Geometry) {
@@ -1422,7 +1420,7 @@ x54x_reset(x54x_t *dev)
     int i, j;
 
     clear_irq(dev);
-    if (dev->int_geom_writable)
+    if (dev->flags & X54X_INT_GEOM_WRITABLE)
 	dev->Geometry = 0x80;
       else
 	dev->Geometry = 0x00;
@@ -1430,7 +1428,7 @@ x54x_reset(x54x_t *dev)
     dev->Command = 0xFF;
     dev->CmdParam = 0;
     dev->CmdParamLeft = 0;
-    dev->Mbx24bit = 1;
+    dev->flags |= X54X_MBX_24BIT;
     dev->MailboxInPosCur = 0;
     dev->MailboxOutInterrupts = 0;
     dev->PendingInterrupt = 0;
@@ -1581,9 +1579,9 @@ x54x_out(uint16_t port, uint8_t val, priv_t priv)
 					break;
 
 				case CMD_MBINIT: /* mailbox initialization */
-					dev->Mbx24bit = 1;
+                    dev->flags |= X54X_MBX_24BIT;
 
-					mbi = (MailboxInit_t *)dev->CmdBuf;
+                    mbi = (MailboxInit_t *)dev->CmdBuf;
 
 					dev->MailboxInit = 1;
 					dev->MailboxCount = mbi->Count;
@@ -1603,12 +1601,12 @@ x54x_out(uint16_t port, uint8_t val, priv_t priv)
 
 				case CMD_BIOSCMD: /* execute BIOS */
 					cmd = (BIOSCMD *)dev->CmdBuf;
-					if (!dev->lba_bios) {
+					if (!(dev->flags & X54X_LBA_BIOS)) {
 						/* 1640 uses LBA. */
 						cyl = ((cmd->u.chs.cyl & 0xff) << 8) | ((cmd->u.chs.cyl >> 8) & 0xff);
 						cmd->u.chs.cyl = cyl;
 					}
-					if (dev->lba_bios) {
+					if (dev->flags & X54X_LBA_BIOS) {
 						/* 1640 uses LBA. */
 						DEBUG("BIOS LBA=%06lx (%lu)\n",
 							lba32_blk(cmd),
@@ -1621,7 +1619,7 @@ x54x_out(uint16_t port, uint8_t val, priv_t priv)
 							cmd->u.chs.head,
 							cmd->u.chs.sec);
 					}
-					dev->DataBuf[0] = bios_command(dev, dev->max_id, cmd, (dev->lba_bios)?1:0);
+					dev->DataBuf[0] = bios_command(dev, dev->max_id, cmd, !!(dev->flags & X54X_LBA_BIOS));
 					DEBUG("BIOS Completion/Status Code %x\n", dev->DataBuf[0]);
 					dev->DataReplyLeft = 1;
 					break;
@@ -1777,12 +1775,12 @@ x54x_out(uint16_t port, uint8_t val, priv_t priv)
 		break;
 
 	case 2:
-		if (dev->int_geom_writable)
+		if (dev->flags & X54X_INT_GEOM_WRITABLE)
 			dev->Interrupt = val;
 		break;
 
 	case 3:
-		if (dev->int_geom_writable)
+		if (dev->flags & X54X_INT_GEOM_WRITABLE)
 			dev->Geometry = val;
 		break;
     }
@@ -1831,7 +1829,7 @@ x54x_io_set(x54x_t *dev, uint32_t base, uint8_t len)
 
     if (dev->bus & DEVICE_PCI)
 	bit32 = 1;
-    else if ((dev->bus & DEVICE_MCA) && dev->bit32)
+    else if ((dev->bus & DEVICE_MCA) && (dev->flags & X54X_32BIT))
 	bit32 = 1;
 
     if (bit32) {
@@ -1855,7 +1853,7 @@ x54x_io_remove(x54x_t *dev, uint32_t base, uint8_t len)
 
     if (dev->bus & DEVICE_PCI)
 	bit32 = 1;
-    else if ((dev->bus & DEVICE_MCA) && dev->bit32)
+    else if ((dev->bus & DEVICE_MCA) && (dev->flags & X54X_32BIT))
 	bit32 = 1;
 
     DEBUG("x54x: Removing I/O handler at %04X\n", base);
@@ -1879,7 +1877,7 @@ x54x_mem_init(x54x_t *dev, uint32_t addr)
 
     if (dev->bus & DEVICE_PCI)
 	bit32 = 1;
-    else if ((dev->bus & DEVICE_MCA) && dev->bit32)
+    else if ((dev->bus & DEVICE_MCA) && (dev->flags & X54X_32BIT))
 	bit32 = 1;
 
     if (bit32) {

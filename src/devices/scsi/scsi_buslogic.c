@@ -13,7 +13,7 @@
  *		  1 - BT-545S ISA;
  *		  2 - BT-958D PCI
  *
- * Version:	@(#)scsi_buslogic.c	1.0.19	2021/03/16
+ * Version:	@(#)scsi_buslogic.c	1.0.20	2021/04/27
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -639,18 +639,21 @@ SCSIBIOSRequestSetup(x54x_t *dev, uint8_t *CmdBuf, uint8_t *DataInBuf, uint8_t D
     sd->status = SCSI_STATUS_OK;
 
     if (! scsi_device_present(sd)) {
-	DEBUG("SCSI Target ID %i has no device attached\n", ESCSICmd->TargetId);
-	DataInBuf[2] = CCB_SELECTION_TIMEOUT;
-	DataInBuf[3] = SCSI_STATUS_OK;
-    } else {
-	DEBUG("SCSI Target ID %i detected and working\n", ESCSICmd->TargetId);
+		DEBUG("SCSI Target ID %i has no device attached\n", ESCSICmd->TargetId);
+		DataInBuf[2] = CCB_SELECTION_TIMEOUT;
+		DataInBuf[3] = SCSI_STATUS_OK;
+		return;
+	} else {
+		DEBUG("SCSI Target ID %i detected and working\n", ESCSICmd->TargetId);
 
-	DEBUG("Transfer Control %02X\n", ESCSICmd->DataDirection);
+		DEBUG("Transfer Control %02X\n", ESCSICmd->DataDirection);
+		DEBUG("CDB Length %i\n", ESCSICmd->CDBLength);
 	DEBUG("CDB Length %i\n", ESCSICmd->CDBLength);	
-	if (ESCSICmd->DataDirection > 0x03) {
-		DEBUG("Invalid control byte: %02X\n", ESCSICmd->DataDirection);
+		DEBUG("CDB Length %i\n", ESCSICmd->CDBLength);
+		if (ESCSICmd->DataDirection > 0x03) {
+			DEBUG("Invalid control byte: %02X\n", ESCSICmd->DataDirection);
+		}
 	}
-    }
 
     x54x_buf_alloc(sd, ESCSICmd->DataLength);
 
@@ -1742,7 +1745,7 @@ buslogic_init(const device_t *info, UNUSED(void *parent))
 		has_autoscsi_rom = 0;
 		has_scam_rom = 0;
 		dev->fw_rev = "BA150";
-		dev->bit32 = 1;
+		dev->flags |= X54X_32BIT;
 		dev->pos_regs[0] = 0x08;	/* MCA board ID */
 		dev->pos_regs[1] = 0x07;	
 		mca_add(buslogic_mca_read, buslogic_mca_write, buslogic_mca_feedb, NULL, dev);
@@ -1761,7 +1764,7 @@ buslogic_init(const device_t *info, UNUSED(void *parent))
 		scam_rom_name = BT445S_SCAM_BIOS_PATH;
 		scam_rom_size = 0x0200;
 		dev->fw_rev = "AA507B";
-		dev->bit32 = 1;
+		dev->flags |= X54X_32BIT;
 		dev->ha_bps = 10000000.0;	/* fast SCSI */
 		dev->max_id = 7;		/* narrow SCSI */
 		break;
@@ -1998,7 +2001,7 @@ const device_t buslogic_640a_device = {
 };
 
 const device_t buslogic_445s_device = {
-    "Buslogic BT-445S ISA",
+    "Buslogic BT-445S VLB",
     DEVICE_VLB,
     CHIP_BUSLOGIC_VLB,
     BT445S_BIOS_PATH,

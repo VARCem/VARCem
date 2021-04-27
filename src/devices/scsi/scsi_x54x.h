@@ -8,13 +8,13 @@
  *
  *		Definitions for the common AHA/BL code.
  *
- * Version:	@(#)scsi_x54x.h	1.0.10	2020/06/01
+ * Version:	@(#)scsi_x54x.h	1.0.11	2021/04/27
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		TheCollector1995, <mariogplayer@gmail.com>
  *
- *		Copyright 2017-2020 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -381,6 +381,7 @@ typedef struct {
 #define		X54X_LBA_BIOS		 4
 #define		X54X_INT_GEOM_WRITABLE	 8
 #define		X54X_MBX_24BIT		16
+#define		X54X_ISAPNP		32
 
 typedef struct {
     int8_t	type;				/* type of device */
@@ -479,13 +480,9 @@ typedef struct {
     uint8_t	setup_info_len;
     uint8_t	max_id;
     uint8_t	pci_slot;
-    uint8_t	bit32;
-    uint8_t	lba_bios;
 
     mem_map_t	mmio_mapping;
 
-    uint8_t	int_geom_writable;
-    uint8_t	cdrom_boot;
 
     /* Pointer to a structure of vendor-specific data that only the vendor-specific code can understand */
     void	*ven_data;

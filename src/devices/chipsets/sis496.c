@@ -8,14 +8,14 @@
  *
  *		Implementation of the SiS 85C496/497 chipset.
  *
- * Version:	@(#)sis49x.c	1.0.14	2021/03/18
+ * Version:	@(#)sis49x.c	1.0.15	2021/04/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
  *		Copyright 2017-2021 Fred N. van Kempen.
- *		Copyright 2016-2018 Miran Grca.
+ *		Copyright 2016-2021 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -60,7 +60,7 @@ typedef struct {
 
 
 static void
-sis497_write(uint16_t port, uint8_t val, priv_t priv)
+sis497_out(uint16_t port, uint8_t val, priv_t priv)
 {
     sis49x_t *dev = (sis49x_t *)priv;
     uint8_t indx = (port & 1) ? 0 : 1;
@@ -82,7 +82,7 @@ sis497_write(uint16_t port, uint8_t val, priv_t priv)
 
 
 static uint8_t
-sis497_read(uint16_t port, priv_t priv)
+sis497_in(uint16_t port, priv_t priv)
 {
     sis49x_t *dev = (sis49x_t *)priv;
     uint8_t indx = (port & 1) ? 0 : 1;
@@ -230,9 +230,9 @@ sis497_reset(sis49x_t *dev)
     dev->regs[0x26] = 0x01;
 
     io_removehandler(0x0022, 2,
-		     sis497_read,NULL,NULL, sis497_write,NULL,NULL, dev);
+		     sis497_in,NULL,NULL, sis497_out,NULL,NULL, dev);
     io_sethandler(0x0022, 2,
-		  sis497_read,NULL,NULL, sis497_write,NULL,NULL, dev);
+		  sis497_in,NULL,NULL, sis497_out,NULL,NULL, dev);
 }
 
 
@@ -272,36 +272,59 @@ recalc_mapping(sis49x_t *dev)
 
 
 static void
-sis496_write(UNUSED(int func), int addr, uint8_t val, priv_t priv)
+sis496_out(UNUSED(int func), int addr, uint8_t val, priv_t priv)
 {
     sis49x_t *dev = (sis49x_t *)priv;
+    uint8_t   old, valxor;
+
+    old = dev->pci_conf[addr];
+    valxor = (dev->pci_conf[addr]) ^ val;
 
     switch (addr) {
-	case 0x42: /*Cache configure*/
+	case 0x42: // Cache configure
+		dev->pci_conf[addr] = val;
 		cpu_cache_ext_enabled = (val & 0x01);
 		cpu_update_waitstates();
 		break;
-	
+
+	case 0x43: // Cache configure
+        dev->pci_conf[addr] = val & 0xf8;
+        break;
+
 	case 0x44: /*Shadow configure*/
-		if ((dev->pci_conf[0x44] & val) ^ 0xf0) {
-			dev->pci_conf[0x44] = val;
+		dev->pci_conf[0x44] = val;
+		if (valxor & 0xff) {
 			recalc_mapping(dev);
+    		if (((old & 0xf0) == 0xf0) && ((val & 0xf0) == 0x30))
+				flushmmucache_nopc();
+			else if (((old & 0xf0) == 0xf0) && ((val & 0xf0) == 0x00))
+				flushmmucache_nopc();
+			else
+				flushmmucache();
 		}
 		break;
 
 	case 0x45: /*Shadow configure*/
-		if ((dev->pci_conf[0x45] & val) ^ 0x01) {
-			dev->pci_conf[0x45] = val;
+		dev->pci_conf[0x45] = val & 0x0f;
+		if (valxor & 0x03) {
 			recalc_mapping(dev);
+    		if ((old == 0x0a) && (val == 0x09))
+				flushmmucache_nopc();
+			else
+				flushmmucache();
 		}
 		break;
 
+	case 0x47: // 85C496 Address Decoder
+        dev->pci_conf[addr] = val & 0x1f;
+        break;
 
-	case 0x82:
-		sis497_write(0x22, val, priv);
-		break;
+	case 0x55: // Exclusive Area 3 Setup
+        dev->pci_conf[addr] = val & 0xf0;
+        break;
 
 	case 0xc0:
+        dev->pci_conf[addr] = val & 0x8f;
 		if (val & 0x80)
 			pci_set_irq_routing(PCI_INTA, val & 0xf);
 		else
@@ -309,6 +332,7 @@ sis496_write(UNUSED(int func), int addr, uint8_t val, priv_t priv)
 		break;
 
 	case 0xc1:
+		dev->pci_conf[addr] = val & 0x8f;
 		if (val & 0x80)
 			pci_set_irq_routing(PCI_INTB, val & 0xf);
 		else
@@ -316,6 +340,7 @@ sis496_write(UNUSED(int func), int addr, uint8_t val, priv_t priv)
 		break;
 
 	case 0xc2:
+		dev->pci_conf[addr] = val & 0x8f;
 		if (val & 0x80)
 			pci_set_irq_routing(PCI_INTC, val & 0xf);
 		else
@@ -323,24 +348,45 @@ sis496_write(UNUSED(int func), int addr, uint8_t val, priv_t priv)
 		break;
 
 	case 0xc3:
+		dev->pci_conf[addr] = val & 0x8f;
 		if (val & 0x80)
 			pci_set_irq_routing(PCI_INTD, val & 0xf);
 		else
 			pci_set_irq_routing(PCI_INTD, PCI_IRQ_DISABLED);
 		break;
+    
+	default:
+		if ((addr >= 4 && addr < 8) || addr >= 0x40)
+			dev->pci_conf[addr] = val;
+        break;
     }
-  
-    if ((addr >= 4 && addr < 8) || addr >= 0x40)
-	dev->pci_conf[addr] = val;
+
+    DEBUG("[%04X:%08X] PCI Write  %02X from %02X:%02X\n", CS, cpu_state.pc, val, func, addr);
 }
 
 
 static uint8_t
-sis496_read(UNUSED(int func), int addr, priv_t priv)
+sis496_in(UNUSED(int func), int addr, priv_t priv)
 {
     sis49x_t *dev = (sis49x_t *)priv;
+    uint8_t ret = dev->pci_conf[addr];
 
-    return dev->pci_conf[addr];
+    switch (addr) {
+		case 0xa0:
+			ret &= 0x10;
+			break;
+		case 0xa1:
+			ret = 0x00;
+			break;
+		case 0x82: // Port 22h Mirror
+			ret = dev->cur_reg;
+			break;
+		case 0x83: //Port 70h Mirror
+			ret = inb(0x70);
+			break;
+	}
+
+    return ret;
 }
  
 
@@ -350,10 +396,10 @@ sis496_reset(void *priv)
     uint8_t val;
 
     /* Read current value of 0x44. */
-    val = sis496_read(0, 0x44, priv);
+    val = sis496_in(0, 0x44, priv);
 
     /* Turn off shadow BIOS but keep the lower 4 bits. */
-    sis496_write(0, 0x44, val & 0x0f, priv);
+    sis496_out(0, 0x44, val & 0x0f, priv);
 
     sis497_reset((sis49x_t *)priv);
 }
@@ -378,13 +424,13 @@ sis496_init(UNUSED(const device_t *info), UNUSED(void *parent))
     dev->pci_conf[0x01] = 0x10; 
     dev->pci_conf[0x02] = 0x96; /*496/497*/
     dev->pci_conf[0x03] = 0x04; 
-    dev->pci_conf[0x04] = 7;
-    dev->pci_conf[0x05] = 0;
+    dev->pci_conf[0x04] = 0x07;
+    dev->pci_conf[0x05] = 0x00;
 
     dev->pci_conf[0x06] = 0x80;
     dev->pci_conf[0x07] = 0x02;
 
-    dev->pci_conf[0x08] = 2; /*Device revision*/
+    dev->pci_conf[0x08] = 0x02; /*Device revision*/
 
     dev->pci_conf[0x09] = 0x00; /*Device class (PCI bridge)*/
     dev->pci_conf[0x0a] = 0x00;
@@ -392,7 +438,7 @@ sis496_init(UNUSED(const device_t *info), UNUSED(void *parent))
 
     dev->pci_conf[0x0e] = 0x00; /*Single function device*/
 
-    pci_add_card(5, sis496_read, sis496_write, dev);
+    pci_add_card(5, sis496_in, sis496_out, dev);
 
     sis497_reset(dev);
 

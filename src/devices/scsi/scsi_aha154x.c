@@ -10,7 +10,7 @@
  *		made by Adaptec, Inc. These controllers were designed for
  *		the ISA bus.
  *
- * Version:	@(#)scsi_aha154x.c	1.0.19	2021/03/16
+ * Version:	@(#)scsi_aha154x.c	1.0.20	2021/04/27
  *
  *		Based on original code from TheCollector1995 and Miran Grca.
  *
@@ -367,8 +367,7 @@ aha_cmds(void *priv)
 
 	case CMD_BIOS_MBINIT: /* BIOS Mailbox Initialization */
 		/* Sent by CF BIOS. */
-		//dev->Mbx24bit = 1;
-                dev->flags |= X54X_MBX_24BIT;
+		dev->flags |= X54X_MBX_24BIT;
 
 		mbi = (MailboxInit_t *)dev->CmdBuf;
 
@@ -813,7 +812,7 @@ aha_init(const device_t *info, UNUSED(void *parent))
 		dev->rom_shramsz = 128;		/* size of shadow RAM */
 		dev->rom_ioaddr = 0x3f7e;	/* [2:0] idx into addr table */
 		dev->rom_fwhigh = 0x0022;	/* firmware version (hi/lo) */
-                dev->flags |= X54X_CDROM_BOOT;
+		dev->flags |= X54X_CDROM_BOOT;
 		dev->ven_get_host_id = get_host_id;	/* function to return host ID from EEPROM */
 		dev->ven_get_irq = get_irq;	/* function to return IRQ from EEPROM */
 		dev->ven_get_dma = get_dma;	/* function to return DMA channel from EEPROM */
@@ -828,7 +827,7 @@ aha_init(const device_t *info, UNUSED(void *parent))
 		dev->rom_shramsz = 128;		/* size of shadow RAM */
 		dev->rom_ioaddr = 0x3f7e;	/* [2:0] idx into addr table */
 		dev->rom_fwhigh = 0x0022;	/* firmware version (hi/lo) */
-    		dev->cdrom_boot = 1;
+		dev->flags |= X54X_CDROM_BOOT;
 		dev->ven_get_host_id = get_host_id;	/* function to return host ID from EEPROM */
 		dev->ven_get_irq = get_irq;	/* function to return IRQ from EEPROM */
 		dev->ven_get_dma = get_dma;	/* function to return DMA channel from EEPROM */
