@@ -8,7 +8,7 @@
  *
  *		Definitions for the common AHA/BL code.
  *
- * Version:	@(#)scsi_x54x.h	1.0.11	2021/04/27
+ * Version:	@(#)scsi_x54x.h	1.0.12	2021/04/28
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -447,7 +447,6 @@ typedef struct {
 		MailboxReq;
 
     volatile int
-		Mbx24bit,
 		MailboxOutInterrupts;
 
     volatile int
