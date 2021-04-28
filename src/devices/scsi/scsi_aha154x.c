@@ -10,7 +10,7 @@
  *		made by Adaptec, Inc. These controllers were designed for
  *		the ISA bus.
  *
- * Version:	@(#)scsi_aha154x.c	1.0.20	2021/04/27
+ * Version:	@(#)scsi_aha154x.c	1.0.21	2021/04/28
  *
  *		Based on original code from TheCollector1995 and Miran Grca.
  *
@@ -307,8 +307,14 @@ param_len(void *priv)
 	case CMD_MBENABLE:
 		return(2);
 
-	default:
-		break;
+	case 0x39:
+		return (3);
+
+	case 0x40:
+		return (2);
+
+    default:
+        break;
     }
 
     return(0);
@@ -404,12 +410,17 @@ aha_cmds(void *priv)
 		}
 		break;
 
-	case 0x2c:	/* AHA-1542CP sends this */
-		dev->DataBuf[0] = 0x00;
+	case 0x2c:	/* Detect termination status */
+		dev->DataBuf[0] = 0x40; // Bits 7,6 are termination status and must be 1,0 for the BIOS to work
 		dev->DataReplyLeft = 1;
 		break;
 
-	case 0x33:	/* AHA-1542CP sends this */
+	case 0x2d: /* AHA-1542CP sends this */
+		dev->DataBuf[0] = 0x00;
+		dev->DataReplyLeft = 2;
+        break;
+
+    case 0x33:	/* Send the SCSISelect code decompressor program */
 		dev->DataBuf[0] = 0x00;
 		dev->DataBuf[1] = 0x00;
 		dev->DataBuf[2] = 0x00;
@@ -836,12 +847,14 @@ aha_init(const device_t *info, UNUSED(void *parent))
 
 	case AHA_154xCP:
 		strcpy(dev->name, "AHA-154xCP");
-		dev->nvr_path = L"aha1540cp.nvr";
+		dev->nvr_path = L"aha1542cp.nvr";
 		dev->fw_rev = "F001";
 		dev->rom_shram = 0x3f80;	/* shadow RAM address base */
 		dev->rom_shramsz = 128;		/* size of shadow RAM */
 		dev->rom_ioaddr = 0x3f7e;	/* [2:0] idx into addr table */
 		dev->rom_fwhigh = 0x0055;	/* firmware version (hi/lo) */
+		dev->flags |= X54X_CDROM_BOOT;
+		dev->flags |= X54X_ISAPNP;
 		dev->ven_get_host_id = get_host_id;	/* function to return host ID from EEPROM */
 		dev->ven_get_irq = get_irq;	/* function to return IRQ from EEPROM */
 		dev->ven_get_dma = get_dma;	/* function to return DMA channel from EEPROM */

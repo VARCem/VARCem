@@ -12,7 +12,7 @@
  *
  *		These controllers were designed for various buses.
  *
- * Version:	@(#)scsi_x54x.c	1.0.20	2021/04/27
+ * Version:	@(#)scsi_x54x.c	1.0.21	2021/04/28
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1066,8 +1066,8 @@ req_setup(x54x_t *dev, uint32_t CCBPointer, Mailbox32_t *Mailbox32)
 
     req->Is24bit = !!(dev->flags & X54X_MBX_24BIT);
     req->CCBPointer = CCBPointer;
-    req->TargetID = dev->Mbx24bit ? req->CmdBlock.old_fmt.Id : req->CmdBlock.new_fmt.Id;
-    req->LUN = dev->Mbx24bit ? req->CmdBlock.old_fmt.Lun : req->CmdBlock.new_fmt.Lun;
+    req->TargetID = req->Is24bit ? req->CmdBlock.old_fmt.Id : req->CmdBlock.new_fmt.Id;
+    req->LUN = req->Is24bit ? req->CmdBlock.old_fmt.Lun : req->CmdBlock.new_fmt.Lun;
 
     if ((req->TargetID > dev->max_id) || (req->LUN > 7)) {
 	DEBUG("SCSI Target ID %i or LUN %i is not valid\n", req->TargetID, req->LUN);
