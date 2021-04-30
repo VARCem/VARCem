@@ -8,13 +8,13 @@
  *
  *		Implementation of the VLSI 82C480 chipset.
  *
- * Version:	@(#)vl82c480.c	1.0.1	2021/03/18
+ * Version:	@(#)vl82c480.c	1.0.2	2021/04/30
  *
  * Authors:	Altheos, <altheos@varcem.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2020 Altheos.
- *		Copyright 2020 Miran Grca.
+ *		Copyright 2020-2021 Altheos.
+ *		Copyright 2020-2021 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -94,14 +94,14 @@ shadow_recalc(vl82c480_t *dev)
     shadowbios = 0;
     shadowbios_write = 0;
 
-    for (i = 0; i < 8; i += 2) {
-	for (j = 0; j < 6; j++) {
-		base = 0x000a0000 + (i << 13) + (j << 16);
-		access = dev->regs[0x0d + j] & (3 << i);
-		mem_set_mem_state(base, 0x4000, vl82c480_shflags(access));
-		shadowbios |= ((base >= 0xe0000) && (access & 0x02));
-		shadowbios_write |= ((base >= 0xe0000) && (access & 0x01));
-	}
+    for (i = 0; i < 6; i++) {
+		for (j = 0; j < 8; j += 2) {
+			base = 0x000a0000 + (i << 16) + (j << 13);
+			access = (dev->regs[0x0d + i] >> j) & 0x03;
+			mem_set_mem_state(base, 0x4000, vl82c480_shflags(access));
+			shadowbios |= ((base >= 0xe0000) && (access & 0x02));
+			shadowbios_write |= ((base >= 0xe0000) && (access & 0x01));
+		}
     }
 
     flushmmucache();
