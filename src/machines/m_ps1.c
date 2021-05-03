@@ -26,7 +26,7 @@
  *		Though right now two serial ports seems to be needed for it to boot without
  *		1101 error.
  *
- * Version:	@(#)m_ps1.c	1.0.34	2021/04/14
+ * Version:	@(#)m_ps1.c	1.0.35	2021/04/30
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -543,6 +543,8 @@ ps1_init(const device_t *info, UNUSED(void *arg))
  	/* Enable the builtin HDC. */
 	if (config.hdc_type == HDC_INTERNAL)
 		device_add(&ps1_hdc_device);
+
+    mem_remap_top(384);
     }
 
     if (dev->model == 2121) {
@@ -575,6 +577,8 @@ ps1_init(const device_t *info, UNUSED(void *arg))
 
 	/* Enable the builtin IDE port. */
 	device_add(&ide_isa_device);
+
+    mem_remap_top(384);
     }
 
     if (dev->model == 2133) {
@@ -608,8 +612,6 @@ ps1_init(const device_t *info, UNUSED(void *arg))
     config.game_enabled = 0;
     machine_common_init();
     config.game_enabled = i;
-
-    mem_remap_top(384);
 
     /* Set up our DRAM refresh timer. */
     pit_set_out_func(&pit, 1, m_at_refresh_timer);
