@@ -8,7 +8,7 @@
  *
  *		Common UI support functions for the Status Bar module.
  *
- * Version:	@(#)ui_stbar.c	1.0.22	2021/03/09
+ * Version:	@(#)ui_stbar.c	1.0.23	2021/05/15
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -442,7 +442,7 @@ menu_cdrom(int part, int drive)
 
 check_items:
 #endif
-    if (! dev->sound_on)
+    if (!dev->sound_on)
 	sb_menu_set_item(part, IDM_CDROM_MUTE | drive, 1);
 
     if (dev->host_drive == 200)
