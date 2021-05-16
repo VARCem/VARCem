@@ -61,18 +61,20 @@ typedef struct {
 
 #define KNOWN_MO_TYPES 10
 static const mo_type_t mo_types[KNOWN_MO_TYPES] = {
-    // 3.5" standard M.O. disks
+    // 3.5" standard M.O. disks. One sided.
     {	248826,  512, 127398912, "3.5\" 128Mb M.O. (ISO 10090)" },
     {	446325,  512, 228518400, "3.5\" 230Mb M.O. (ISO 13963)" },
     {	1041500,  512, 533248000, "3.5\" 540Mb M.O. (ISO 15498)" },
     {	310352,  2048, 635600896, "3.5\" 640Mb M.O. (ISO 15498)" },
     {	605846,  2048, 1240772608, "3.5\" 1.3Gb M.O. (GigaMO)" },
     {	1063146,  2048, 2177323008, "3.5\" 2.3Gb M.O. (GigaMO 2)" },
-    // 5.25" M.O. disks
-    { 1147248, 512, 587390976, "5.25\" 600Mb M.O."},
-    { 629136, 1024, 644235264, "5.25\" 650Mb M.O."},
-    { 1809990, 512, 926714880, "5.25\" 1Gb M.O."},
-    { 1274082, 1024, 1304659968, "5.25\" 1.3Gb M.O."},
+    // 5.25" M.O. disks. Two sided.
+    // 5.25" MO name has the size of two sides, each side is an image, 
+    // you need to change it manually on the GUI, same as you had to do in a real drive
+    { 573624, 512, 293695488, "5.25\" 600Mb M.O."},
+    { 314568, 1024, 322117632, "5.25\" 650Mb M.O."},
+    { 904995, 512, 463357440, "5.25\" 1Gb M.O."},
+    { 637041, 1024, 652329984, "5.25\" 1.3Gb M.O."},
 };
 
 typedef struct
