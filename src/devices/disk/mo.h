@@ -9,12 +9,12 @@
  *		Implementation of a generic Magneto-Optical Disk drive
  *		commands, for both ATAPI and SCSI usage.
  *
- * Version:	@(#)mo.h	1.0.2	2021/04/07
+ * Version:	@(#)mo.h	1.0.3	2021/05/16
  *
  * Authors:  Natalia Portillo, <claunia@claunia.com>
  *           Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2020 Natalia Portillo.
+ *		Copyright 2020-2021 Natalia Portillo.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -69,10 +69,10 @@ static const mo_type_t mo_types[KNOWN_MO_TYPES] = {
     {	605846,  2048, 1240772608, "3.5\" 1.3Gb M.O. (GigaMO)" },
     {	1063146,  2048, 2177323008, "3.5\" 2.3Gb M.O. (GigaMO 2)" },
     // 5.25" M.O. disks
-    {573624, 512, 293695488, "5.25\" 600Mb M.O."},
-    {314568, 1024, 322117632, "5.25\" 650Mb M.O."},
-    {904995, 512, 463357440, "5.25\" 1Gb M.O."},
-    {637041, 1024, 652329984, "5.25\" 1.3Gb M.O."},
+    { 1147248, 512, 587390976, "5.25\" 600Mb M.O."},
+    { 629136, 1024, 644235264, "5.25\" 650Mb M.O."},
+    { 1809990, 512, 926714880, "5.25\" 1Gb M.O."},
+    { 1274082, 1024, 1304659968, "5.25\" 1.3Gb M.O."},
 };
 
 typedef struct

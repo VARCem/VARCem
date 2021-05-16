@@ -6,14 +6,14 @@
  *
  *		This file is part of the VARCem Project.
  *
- *		Implementation of the New Floppy/ZIP Image dialog.
+ *		Implementation of the New Floppy/ZIP/MO Image dialog.
  *
- * Version:	@(#)win_new_image.c	1.0.23	2019/05/17
+ * Version:	@(#)win_new_image.c	1.0.24	2021/05/16
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -58,6 +58,7 @@ static wchar_t	fd_file_name[512];
 static int	is_zip, is_mo;
 static int	drive_id, sb_part;
 static int	file_type = 0;		/* 0 = IMG, 1 = Japanese FDI, 2 = 86F */
+static int  listtosize[16];
 
 
 /* Show a MessageBox dialog.  This is nasty, I know.  --FvK */
@@ -81,7 +82,7 @@ msg_box(HWND hwnd, int type, void *arg)
 static void
 dlg_init(HWND hdlg)
 {
-    int i, zip_types;
+    int i, j, zip_types;
     HWND h;
     WCHAR temp[255];
 
@@ -91,12 +92,17 @@ dlg_init(HWND hdlg)
 	for (i = 0; i < zip_types; i++)
                 SendMessage(h, CB_ADDSTRING, 0, win_string(IDS_3282 + 12 + i));
     } else if (is_mo) {
-    	for (i = 0; i < KNOWN_MO_TYPES; i++) {
-    		if (mo_drive_types[mo_drives[drive_id].type - 1].supported_media[i]) {
+    	i = j = 0;
+    	memset(listtosize, 0x00, sizeof(listtosize));
+	    while (i < KNOWN_MO_TYPES) {
+			if (mo_drive_types[mo_drives[drive_id].type].supported_media[i]) {
 				mbstowcs(temp, mo_types[i].name, sizeof_w(temp));
-				SendMessage(h, CB_ADDSTRING,0, (LPARAM)temp);
+				SendMessage(h, CB_ADDSTRING, 0, (LPARAM)temp);
+           		listtosize[j] = i;
+           		j++;
 			}
-		}
+    		i++;
+    	}
     } else {
 	for (i = 0; i < 12; i++)
                 SendMessage(h, CB_ADDSTRING, 0, win_string(IDS_3282 + i));
@@ -160,7 +166,7 @@ dlg_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 				if (is_zip)
 					disk_size += 12;
 				if (is_mo)
-                    disk_size += 15;
+                    disk_size = listtosize[(int)SendMessage(h, CB_GETCURSEL, 0, 0)];
 
                 if (file_type == 2) {
 					h = GetDlgItem(hdlg, IDC_COMBO_RPM_MODE);
