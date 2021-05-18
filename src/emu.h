@@ -211,6 +211,7 @@ extern int	d86f_do_log;
 extern int	hdc_do_log;
 extern int	hdd_do_log;
 extern int	zip_do_log;
+extern int	mo_do_log;
 extern int	cdrom_do_log;
 extern int	cdrom_image_do_log;
 extern int	cdrom_host_do_log;

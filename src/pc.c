@@ -80,6 +80,7 @@
 #include "devices/scsi/scsi_disk.h"
 #include "devices/disk/zip.h"
 #include "devices/cdrom/cdrom.h"
+#include "devices/disk/mo.h"
 #include "devices/network/network.h"
 #include "devices/sound/sound.h"
 #include "devices/video/video.h"
@@ -696,6 +697,7 @@ usage:
     hdd_init();
     cdrom_global_init();
     zip_global_init();
+    mo_global_init();
     network_init();
 
     /* Load the configuration file. */
@@ -856,6 +858,8 @@ pc_close(thread_t *ptr)
 
 	zip_close();
 
+    mo_close();
+
     scsi_disk_close();
 }
 
@@ -872,6 +876,7 @@ pc_reset_hard_close(void)
     cdrom_close();
 
     zip_close();
+    mo_close();
 
     scsi_disk_close();
 
@@ -961,6 +966,7 @@ pc_reset_hard_init(void)
 
     cdrom_hard_reset();
     zip_hard_reset();
+    mo_hard_reset();
     scsi_disk_hard_reset();
 
     /* Reset and reconfigure the Network Card layer. */
@@ -1048,6 +1054,7 @@ pc_reload(UNUSED(const wchar_t *fn))
     cdrom_hard_reset();
 
     zip_hard_reset();
+    mo_hard_reset();
 
     scsi_disk_hard_reset();
 

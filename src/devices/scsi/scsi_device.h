@@ -68,11 +68,19 @@
 #define GPCMD_READ_FORMAT_CAPACITIES	0x23
 #define GPCMD_READ_CDROM_CAPACITY	0x25
 #define GPCMD_READ_10			0x28
+#define GPCMD_READ_GENERATION   0x29
 #define GPCMD_WRITE_10			0x2a
 #define GPCMD_SEEK_10			0x2b
+#define GPCMD_ERASE_10          0x2c
+#define GPCMD_READ_UPDATED_BLOCK   0x2d
 #define GPCMD_WRITE_AND_VERIFY_10	0x2e
 #define GPCMD_VERIFY_10			0x2f
+#define GPCMD_MEDIUM_SCAN       0x38
 #define GPCMD_READ_BUFFER		0x3c
+#define GPCMD_UPDATE_BLOCK      0x3d
+#define GPCMD_READ_LONG_10      0x3e
+#define GPCMD_WRITE_LONG_10     0x3f
+#define GPCMD_CHANGE_DEFINITION 0x40
 #define GPCMD_WRITE_SAME_10		0x41
 #define GPCMD_READ_SUBCHANNEL		0x42
 #define GPCMD_READ_TOC_PMA_ATIP		0x43
@@ -92,6 +100,7 @@
 #define GPCMD_READ_12			0xa8
 #define GPCMD_WRITE_12			0xaa
 #define GPCMD_READ_DVD_STRUCTURE 	0xad	/* For reading. */
+#define GPCMD_ERASE_12          0xac
 #define GPCMD_WRITE_AND_VERIFY_12	0xae
 #define GPCMD_VERIFY_12			0xaf
 #define GPCMD_PLAY_CD_OLD		0xb4

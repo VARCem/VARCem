@@ -74,6 +74,7 @@ ifeq ($(DEV_BUILD), y)
  XL24		:= y
  WONDER		:= y
  HOSTCD		:= y
+# MODRIVES	:= n
 endif
 
 
@@ -778,6 +779,10 @@ ifeq ($(DEV_BRANCH), y)
   DEVBROBJ	+= net_arti2m.o
  endif
 
+ ifeq ($(MODRIVES), y)
+  OPTS		+= -DUSE_MO_DRIVES
+ endif
+
 endif
 
 
@@ -899,6 +904,10 @@ CDROMOBJ	:= cdrom.o \
 
 ZIPOBJ		:= zip.o
 
+ifeq ($(MODRIVES), y)
+MOOBJ		:= mo.o
+endif
+
 ifeq ($(USB), y)
 USBOBJ		:= usb.o
 endif
@@ -973,9 +982,9 @@ PLATOBJ		:= win.o \
 
 
 OBJ		:= $(MAINOBJ) $(CPUOBJ) $(MCHOBJ) $(SYSOBJ) $(CHIPOBJ) \
-		   $(DEVOBJ) $(FDDOBJ) $(CDROMOBJ) $(ZIPOBJ) $(HDDOBJ) \
-		   $(USBOBJ) $(NETOBJ) $(SCSIOBJ) $(SNDOBJ) $(VIDOBJ) \
-		   $(UIOBJ) $(PLATOBJ) $(MISCOBJ) $(DEVBROBJ)
+		   $(DEVOBJ) $(FDDOBJ) $(CDROMOBJ) $(ZIPOBJ) $(MOOBJ) \
+		   $(HDDOBJ) $(USBOBJ) $(NETOBJ) $(SCSIOBJ) $(SNDOBJ) \
+		   $(VIDOBJ) $(UIOBJ) $(PLATOBJ) $(MISCOBJ) $(DEVBROBJ)
 ifdef EXOBJ
 OBJ		+= $(EXOBJ)
 endif

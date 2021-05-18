@@ -63,6 +63,7 @@
 #include "pic.h"
 #include "port92.h"
 #include "intel_piix.h"
+#include "../disk/mo.h"
 
 
 typedef struct
@@ -825,7 +826,8 @@ piix_reset(priv_t priv)
 {
     //FIXME: this should be ide_reset() ...
     cdrom_reset_bus(CDROM_BUS_ATAPI);
-    zip_reset_bus(CDROM_BUS_ATAPI);
+    zip_reset_bus(ZIP_BUS_ATAPI);
+    mo_reset_bus(MO_BUS_ATAPI);
 }
 
 

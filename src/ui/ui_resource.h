@@ -12,7 +12,7 @@
  *		those are not used by the platform code. This is easier to
  *		maintain.
  *
- * Version:	@(#)ui_resource.h	1.0.24	2021/03/20
+ * Version:	@(#)ui_resource.h	1.0.25	2021/04/26
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -186,6 +186,11 @@
 #define IDM_ZIP_EJECT		(IDM_SBAR + 0x1200)
 #define IDM_ZIP_RELOAD		(IDM_SBAR + 0x1300)
 
+#define IDM_MO_IMAGE_NEW	(IDM_SBAR + 0x1400)
+#define IDM_MO_IMAGE_EXIST	(IDM_SBAR + 0x1500)
+#define IDM_MO_EJECT		(IDM_SBAR + 0x1600)
+#define IDM_MO_RELOAD		(IDM_SBAR + 0x1700)
+
 #define IDM_DISK_IMAGE_NEW	(IDM_SBAR + 0x1800)
 #define IDM_DISK_IMAGE_EXIST	(IDM_SBAR + 0x1900)
 #define IDM_DISK_EJECT		(IDM_SBAR + 0x1a00)
@@ -223,6 +228,10 @@
 #define ICON_ZIP_A		49	/* "zip_active.ico" */
 #define ICON_ZIP_E		176	/* "zip_empty.ico" */
 #define ICON_ZIP_I		177	/* "zip_empty_active.ico" */
+#define ICON_MO		50	/* "mo.ico" */
+#define ICON_MO_A		51/* "mo_active.ico" */
+#define ICON_MO_E		178	/* "mo_empty.ico" */
+#define ICON_MO_I		179	/* "mo_empty_active.ico" */
 #define ICON_DISK		64	/* "hard_disk.ico" */
 #define ICON_DISK_A		65	/* "hard_disk_active.ico" */
 #define ICON_NETWORK		80	/* "network.ico" */
@@ -240,7 +249,7 @@
 #define ICON_FLOPPY_D		248	/* "floppy_disabled.ico" */
 #define ICON_CDROM_D		249	/* "cdrom_disabled.ico" */
 #define ICON_ZIP_D		250	/* "zip_disabled.ico" */
-
+#define ICON_MO_D       255 // "mo_disabled.ico" 
 
 /* String IDs. */
 #define IDS_BEGIN	2000		/* start of accessible string IDs */
@@ -373,7 +382,9 @@
 #define  IDS_3316	3316		/* "Other peripherals" */
 #define  IDS_3317	3317		/* "Hard disks" */
 #define  IDS_3318	3318		/* "Floppy drives" */
-#define  IDS_3319	3319		/* "Other removable devices" */
+#define  IDS_3319	3319		/* "CD/DVD devices" */
+#define  IDS_3320	3320		/* "IOMEGA devices" */
+#define  IDS_3321	3321		/* "Magneto-optical devices" */
 
 /* UI dialog: Settings (Machine, 3325.) */
 #define  IDS_3325	3325		/* "Machine:" */
@@ -517,11 +528,13 @@
 #define  IDS_3924	3924		/* "CD-ROM images (*.iso;*.cu.." */
 #define IDS_3930	3930		/* "Disk %i (%ls): %ls" */
 #define IDS_3950	3950		/* "ZIP%03i %i (%ls): %ls" */
-#define  IDS_3951	3951		/* "ZIP images (*.im?)\0*.im..." */
-#define  IDS_3952	3952		/* "ZIP images (*.im?)\0*.im..." */
+#define IDS_3951	3951		/* "ZIP images (*.im?)\0*.im..." */
+#define IDS_3952	3952		/* "ZIP images (*.im?)\0*.im..." */
 #define IDS_3960	3960		/* "Network (%s) */
 #define IDS_3970	3970		/* "Sound (%s) */
-
+#define IDS_3980	3980		/* "MO %i (%ls): %ls" */
+#define IDS_3981	3981		/* "MO images (*.im?)\0*.im..." */
+#define IDS_3982	3982		/* "MO images (*.im?)\0*.im..." */
 
 /* UI menu: Action (4000.) */
 #define IDS_ACTION	4000		/* "&Action" */
@@ -595,8 +608,21 @@
 #define IDS_HELP	4090		/* "&Help" */
 #define IDS_4091	4091		/* "&About VARCem" */
 
+/* UI dialog: New Image for M.O. (4100.) */
+#define IDS_4100	4100 /* "3.5\x22 128Mb M.O. (ISO 10090)" */
+#define IDS_4101	4101 /* "3.5\x22 230Mb M.O. (ISO 13963)" */
+#define IDS_4102	4102 /* "3.5\x22 640Mb M.O. (ISO 15498)" */
+#define IDS_4103	4103 /* "3.5\x22 1.3Gb M.O. (GigaMO)" */
+#define IDS_4104	4104 /* "3.5\x22 2.3Gb M.O. (GigaMO 2)" */
+#define IDS_4104	4104 /* "3.5\x22 2.3Gb M.O. (GigaMO 2)" */
+#define IDS_4105	4105    
+#define IDS_4106	4106    
+#define IDS_4107	4107    
+#define IDS_4108	4108
+#define IDS_4109 	4109
+#define IDS_4120	4120 // Type
 
-#define IDS_END		4100		/* end of string IDs */
+#define IDS_END		4200		/* end of string IDs */
 
 
 #endif	/*EMU_UI_RESOURCE_H*/

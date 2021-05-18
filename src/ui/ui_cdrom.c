@@ -58,6 +58,7 @@
 #include "../devices/scsi/scsi_device.h"
 #include "../devices/scsi/scsi_disk.h"
 #include "../devices/disk/zip.h"
+#include "../devices/disk/mo.h"
 #include "../devices/cdrom/cdrom.h"
 #include "ui.h"
 
@@ -136,9 +137,9 @@ ui_cdrom_reload(uint8_t id)
 
 
 void
-ui_zip_mount(uint8_t id, int part, int8_t wp, const wchar_t *fn)
+ui_zip_mount(uint8_t id, int part, int8_t wp, const wchar_t* fn)
 {
-    zip_t *dev = (zip_t *)zip_drives[id].priv;
+    zip_t* dev = (zip_t*)zip_drives[id].priv;
     int len;
 
     zip_disk_close(dev);
@@ -162,18 +163,18 @@ ui_zip_mount(uint8_t id, int part, int8_t wp, const wchar_t *fn)
 void
 ui_zip_eject(uint8_t id)
 {
-    zip_t *dev = (zip_t *)zip_drives[id].priv;
+    zip_t* dev = (zip_t*)zip_drives[id].priv;
 
     zip_disk_close(dev);
 
     if (zip_drives[id].bus_type) {
-	/* Signal disk change to the emulated machine. */
-	zip_insert(dev);
+        /* Signal disk change to the emulated machine. */
+        zip_insert(dev);
     }
 
     ui_sb_icon_state(SB_ZIP | id, 1);
-    ui_sb_menu_enable_item(SB_ZIP|id, IDM_ZIP_EJECT | id, 0);
-    ui_sb_menu_enable_item(SB_ZIP|id, IDM_ZIP_RELOAD | id, 1);
+    ui_sb_menu_enable_item(SB_ZIP | id, IDM_ZIP_EJECT | id, 0);
+    ui_sb_menu_enable_item(SB_ZIP | id, IDM_ZIP_RELOAD | id, 1);
     ui_sb_tip_update(SB_ZIP | id);
 
     config_save();
@@ -183,20 +184,89 @@ ui_zip_eject(uint8_t id)
 void
 ui_zip_reload(uint8_t id)
 {
-    zip_t *dev = (zip_t *)zip_drives[id].priv;
+    zip_t* dev = (zip_t*)zip_drives[id].priv;
 
     zip_disk_reload(dev);
 
     if (wcslen(zip_drives[id].image_path) == 0) {
-	ui_sb_menu_enable_item(SB_ZIP|id, IDM_ZIP_EJECT | id, 0);
-	ui_sb_icon_state(SB_ZIP|id, 1);
-    } else {
-	ui_sb_menu_enable_item(SB_ZIP|id, IDM_ZIP_EJECT | id, 1);
-	ui_sb_icon_state(SB_ZIP|id, 0);
+        ui_sb_menu_enable_item(SB_ZIP | id, IDM_ZIP_EJECT | id, 0);
+        ui_sb_icon_state(SB_ZIP | id, 1);
+    }
+    else {
+        ui_sb_menu_enable_item(SB_ZIP | id, IDM_ZIP_EJECT | id, 1);
+        ui_sb_icon_state(SB_ZIP | id, 0);
     }
 
-    ui_sb_menu_enable_item(SB_ZIP|id, IDM_ZIP_RELOAD | id, 0);
-    ui_sb_tip_update(SB_ZIP|id);
+    ui_sb_menu_enable_item(SB_ZIP | id, IDM_ZIP_RELOAD | id, 0);
+    ui_sb_tip_update(SB_ZIP | id);
+
+    config_save();
+}
+
+
+void
+ui_mo_mount(uint8_t id, int part, int8_t wp, const wchar_t* fn)
+{
+    mo_t* dev = (mo_t*)mo_drives[id].priv;
+    int len;
+
+    mo_disk_close(dev);
+
+    mo_drives[id].ui_writeprot = wp;
+    mo_load(dev, fn);
+    mo_insert(dev);
+
+    len = (int)wcslen(mo_drives[id].image_path);
+    ui_sb_icon_state(SB_MO | id, len ? 0 : 1);
+
+    sb_menu_enable_item(part, IDM_MO_EJECT | id, len ? 1 : 0);
+    sb_menu_enable_item(part, IDM_MO_RELOAD | id, len ? 0 : 1);
+
+    ui_sb_tip_update(SB_MO | id);
+
+    config_save();
+}
+
+
+void
+ui_mo_eject(uint8_t id)
+{
+    mo_t* dev = (mo_t*)mo_drives[id].priv;
+
+    mo_disk_close(dev);
+
+    if (mo_drives[id].bus_type) {
+        /* Signal disk change to the emulated machine. */
+        mo_insert(dev);
+    }
+
+    ui_sb_icon_state(SB_MO | id, 1);
+    ui_sb_menu_enable_item(SB_MO | id, IDM_MO_EJECT | id, 0);
+    ui_sb_menu_enable_item(SB_MO | id, IDM_MO_RELOAD | id, 1);
+    ui_sb_tip_update(SB_MO | id);
+
+    config_save();
+}
+
+
+void
+ui_mo_reload(uint8_t id)
+{
+    mo_t* dev = (mo_t*)mo_drives[id].priv;
+
+    mo_disk_reload(dev);
+
+    if (wcslen(mo_drives[id].image_path) == 0) {
+        ui_sb_menu_enable_item(SB_MO | id, IDM_MO_EJECT | id, 0);
+        ui_sb_icon_state(SB_MO | id, 1);
+    }
+    else {
+        ui_sb_menu_enable_item(SB_MO | id, IDM_MO_EJECT | id, 1);
+        ui_sb_icon_state(SB_MO | id, 0);
+    }
+
+    ui_sb_menu_enable_item(SB_MO | id, IDM_MO_RELOAD | id, 0);
+    ui_sb_tip_update(SB_MO | id);
 
     config_save();
 }

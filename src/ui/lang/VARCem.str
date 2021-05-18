@@ -187,7 +187,9 @@
 #define STR_3316	"Other peripherals"
 #define STR_3317	"Hard disks"
 #define STR_3318	"Floppy drives"
-#define STR_3319	"Other removable devices"
+#define STR_3319	"CD/DVD devices"
+#define STR_3320	"IOMEGA devices"
+#define STR_3321	"Magneto-optical devices"
 
 /* UI dialog: Settings (Machine, 3325.) */
 #define  STR_3325	"Machine:"
@@ -306,6 +308,7 @@
 #define  STR_3580	"ATAPI"
 #define  STR_3581	"SCSI"
 #define  STR_3582	"USB"
+#define  STR_3583	"Magneto-optical drives:"
 
 
 /* UI: Status Bar (3900.) */
@@ -340,6 +343,10 @@
 #define STR_3952	"ZIP images\0*.im?;*.zdi\0"
 #define STR_3960	"Network (%s)"
 #define STR_3970	"Sound (%s)"
+
+#define STR_3980	"MO %i (%ls): %ls"
+#define STR_3981	"MO images\0*.im?\0All files\0*.*\0"
+#define STR_3982	"MO images\0*.im?;*.bin\0"
 
 
 /* UI menu: Action (4000.) */
@@ -416,5 +423,17 @@
 #define STR_HELP	"&Help"
 #define  STR_4091	"&About VARCem"
 
+/* Status bar for magneto-optical (4100.) */
+#define STR_4100	"3.5\x22 128Mb M.O. (ISO 10090)"
+#define STR_4101	"3.5\x22 230Mb M.O. (ISO 13963)"
+#define STR_4102	"3.5\x22 540Mb M.O. (ISO 15498)"
+#define STR_4103	"3.5\x22 640Mb M.O. (ISO 15498)"
+#define STR_4104	"3.5\x22 1.3Gb M.O. (GigaMO)"
+#define STR_4105	"3.5\x22 2.3Gb M.O. (GigaMO 2)"
+#define STR_4106	"5.25\x22 600Mb M.O."
+#define STR_4107	"5.25\x22 650Mb M.O."
+#define STR_4108	"5.25\x22 1Gb M.O."
+#define STR_4109	"5.25\x22 1.3Gb M.O."
+#define STR_4120	"Type :"
 
 /* End of file. */

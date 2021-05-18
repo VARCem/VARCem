@@ -70,6 +70,7 @@
 #include "devices/scsi/scsi_device.h"
 #include "devices/cdrom/cdrom.h"
 #include "devices/disk/zip.h"
+#include "devices/disk/mo.h"
 #include "devices/network/network.h"
 #include "devices/sound/sound.h"
 #include "devices/sound/midi.h"
@@ -1290,225 +1291,254 @@ save_floppy(UNUSED(const config_t *cfg), const char *cat)
 }
 
 
-/* Load "Removable Devices" section. */
+/* Load "Multimedia Devices" section. */
 //FIXME: stuff should be loaded into config_t !
 static void
-load_removable(UNUSED(config_t *cfg), const char *cat)
+load_multimedia(UNUSED(config_t* cfg), const char* cat)
 {
-    char temp[512], tmp2[512], *p;
+    char temp[512], tmp2[512], * p;
     char s[512];
     unsigned int board = 0, dev = 0;
-    wchar_t *wp;
+    wchar_t* wp;
     int c;
 
     for (c = 0; c < CDROM_NUM; c++) {
-	sprintf(temp, "cdrom_%02i_host_drive", c+1);
+	sprintf(temp, "cdrom_%02i_host_drive", c + 1);
 	cdrom[c].host_drive = config_get_int(cat, temp, 0);
 	cdrom[c].prev_host_drive = cdrom[c].host_drive;
 
-	sprintf(temp, "cdrom_%02i_parameters", c+1);
+	sprintf(temp, "cdrom_%02i_parameters", c + 1);
 	p = config_get_string(cat, temp, "0, none");
-	sscanf(p, "%01u, %s", (int *)&cdrom[c].sound_on, s);
+	sscanf(p, "%01u, %s", (int*)&cdrom[c].sound_on, s);
 	cdrom[c].bus_type = cdrom_string_to_bus(s);
 
-	sprintf(temp, "cdrom_%02i_speed", c+1);
+	sprintf(temp, "cdrom_%02i_speed", c + 1);
 	cdrom[c].speed_idx = config_get_int(cat, temp, cdrom_speed_idx(CDROM_SPEED_DEFAULT));
 
 	/* Default values, needed for proper operation of the Settings dialog. */
 	cdrom[c].bus_id.ide_channel = cdrom[c].bus_id.scsi.id = c + 2;
 
-	sprintf(temp, "cdrom_%02i_ide_channel", c+1);
+	sprintf(temp, "cdrom_%02i_ide_channel", c + 1);
 	if (cdrom[c].bus_type == CDROM_BUS_ATAPI) {
-		sprintf(tmp2, "%01u:%01u", (c+2)>>1, (c+2)&1);
-		p = config_get_string(cat, temp, tmp2);
-		sscanf(p, "%01u:%01u", &board, &dev);
-		board &= 3;
-		dev &= 1;
-		cdrom[c].bus_id.ide_channel = (board<<1)+dev;
+	    sprintf(tmp2, "%01u:%01u", (c + 2) >> 1, (c + 2) & 1);
+	    p = config_get_string(cat, temp, tmp2);
+	    sscanf(p, "%01u:%01u", &board, &dev);
+	    board &= 3;
+	    dev &= 1;
+	    cdrom[c].bus_id.ide_channel = (board << 1) + dev;
 
-		if (cdrom[c].bus_id.ide_channel > 7)
-			cdrom[c].bus_id.ide_channel = 7;
-	} else {
-		sprintf(temp, "cdrom_%02i_scsi_location", c+1);
-		if (cdrom[c].bus_type == CDROM_BUS_SCSI) {
-			sprintf(tmp2, "%02u:%02u", c+2, 0);
-			p = config_get_string(cat, temp, tmp2);
-			sscanf(p, "%02u:%02u",
-				(int *)&cdrom[c].bus_id.scsi.id,
-				(int *)&cdrom[c].bus_id.scsi.lun);
-	
-			if (cdrom[c].bus_id.scsi.id > 15)
-				cdrom[c].bus_id.scsi.id = 15;
-			if (cdrom[c].bus_id.scsi.lun > 7)
-				cdrom[c].bus_id.scsi.lun = 7;
-		} else {
-			config_delete_var(cat, temp);
-		}
+	    if (cdrom[c].bus_id.ide_channel > 7)
+		cdrom[c].bus_id.ide_channel = 7;
+	}
+	else {
+	    sprintf(temp, "cdrom_%02i_scsi_location", c + 1);
+	    if (cdrom[c].bus_type == CDROM_BUS_SCSI) {
+		sprintf(tmp2, "%02u:%02u", c + 2, 0);
+		p = config_get_string(cat, temp, tmp2);
+		sscanf(p, "%02u:%02u",
+		    (int*)&cdrom[c].bus_id.scsi.id,
+		    (int*)&cdrom[c].bus_id.scsi.lun);
+
+		if (cdrom[c].bus_id.scsi.id > 15)
+		    cdrom[c].bus_id.scsi.id = 15;
+		if (cdrom[c].bus_id.scsi.lun > 7)
+		    cdrom[c].bus_id.scsi.lun = 7;
+	    }
+	    else {
+		config_delete_var(cat, temp);
+	    }
 	}
 
-	sprintf(temp, "cdrom_%02i_image_path", c+1);
+	sprintf(temp, "cdrom_%02i_image_path", c + 1);
 	wp = config_get_wstring(cat, temp, L"");
 
 	/* Try to make relative, and copy to destination. */
 	pc_path(cdrom[c].image_path, sizeof_w(cdrom[c].image_path), wp);
 
 	if (cdrom[c].host_drive < 'A')
-		cdrom[c].host_drive = 0;
+	    cdrom[c].host_drive = 0;
 
 	if ((cdrom[c].host_drive == 0x200) &&
 	    (wcslen(cdrom[c].image_path) == 0))
-		cdrom[c].host_drive = 0;
+	    cdrom[c].host_drive = 0;
 
 	/* If the CD-ROM is disabled, delete all its variables. */
 	if (cdrom[c].bus_type == CDROM_BUS_DISABLED) {
-		sprintf(temp, "cdrom_%02i_host_drive", c+1);
-		config_delete_var(cat, temp);
+	    sprintf(temp, "cdrom_%02i_host_drive", c + 1);
+	    config_delete_var(cat, temp);
 
-		sprintf(temp, "cdrom_%02i_parameters", c+1);
-		config_delete_var(cat, temp);
+	    sprintf(temp, "cdrom_%02i_parameters", c + 1);
+	    config_delete_var(cat, temp);
 
-		sprintf(temp, "cdrom_%02i_ide_channel", c+1);
-		config_delete_var(cat, temp);
+	    sprintf(temp, "cdrom_%02i_ide_channel", c + 1);
+	    config_delete_var(cat, temp);
 
-		sprintf(temp, "cdrom_%02i_scsi_location", c+1);
-		config_delete_var(cat, temp);
+	    sprintf(temp, "cdrom_%02i_scsi_location", c + 1);
+	    config_delete_var(cat, temp);
 
-		sprintf(temp, "cdrom_%02i_image_path", c+1);
-		config_delete_var(cat, temp);
+	    sprintf(temp, "cdrom_%02i_image_path", c + 1);
+	    config_delete_var(cat, temp);
 	}
 
-	sprintf(temp, "cdrom_%02i_iso_path", c+1);
-	config_delete_var(cat, temp);
-    }
-
-    for (c = 0; c < ZIP_NUM; c++) {
-	sprintf(temp, "zip_%02i_parameters", c+1);
-	p = config_get_string(cat, temp, "0, none");
-	sscanf(p, "%01u, %s", (unsigned *)&zip_drives[c].is_250, s);
-	zip_drives[c].bus_type = zip_string_to_bus(s);
-
-	/* Default values, needed for proper operation of the Settings dialog. */
-	zip_drives[c].bus_id.ide_channel = zip_drives[c].bus_id.scsi.id = c + 2;
-
-	sprintf(temp, "zip_%02i_ide_channel", c+1);
-	if (zip_drives[c].bus_type == ZIP_BUS_ATAPI) {
-		sprintf(tmp2, "%01u:%01u", (c+2)>>1, (c+2)&1);
-		p = config_get_string(cat, temp, tmp2);
-		sscanf(p, "%01u:%01u", &board, &dev);
-
-		board &= 3;
-		dev &= 1;
-		zip_drives[c].bus_id.ide_channel = (board<<1)+dev;
-
-		if (zip_drives[c].bus_id.ide_channel > 7)
-			zip_drives[c].bus_id.ide_channel = 7;
-	} else {
-		sprintf(temp, "zip_%02i_scsi_location", c+1);
-		if (zip_drives[c].bus_type == CDROM_BUS_SCSI) {
-			sprintf(tmp2, "%02u:%02u", c+2, 0);
-			p = config_get_string(cat, temp, tmp2);
-			sscanf(p, "%02u:%02u",
-				(unsigned *)&zip_drives[c].bus_id.scsi.id,
-				(unsigned *)&zip_drives[c].bus_id.scsi.lun);
-	
-			if (zip_drives[c].bus_id.scsi.id > 15)
-				zip_drives[c].bus_id.scsi.id = 15;
-			if (zip_drives[c].bus_id.scsi.lun > 7)
-				zip_drives[c].bus_id.scsi.lun = 7;
-		} else {
-			config_delete_var(cat, temp);
-		}
-	}
-
-	sprintf(temp, "zip_%02i_image_path", c+1);
-	wp = config_get_wstring(cat, temp, L"");
-
-	/* Try to make relative, and copy to destination. */
-	pc_path(zip_drives[c].image_path, sizeof_w(zip_drives[c].image_path), wp);
-
-	/* If the CD-ROM is disabled, delete all its variables. */
-	if (zip_drives[c].bus_type == ZIP_BUS_DISABLED) {
-		sprintf(temp, "zip_%02i_host_drive", c+1);
-		config_delete_var(cat, temp);
-
-		sprintf(temp, "zip_%02i_parameters", c+1);
-		config_delete_var(cat, temp);
-
-		sprintf(temp, "zip_%02i_ide_channel", c+1);
-		config_delete_var(cat, temp);
-
-		sprintf(temp, "zip_%02i_scsi_location", c+1);
-		config_delete_var(cat, temp);
-
-		sprintf(temp, "zip_%02i_image_path", c+1);
-		config_delete_var(cat, temp);
-	}
-
-	sprintf(temp, "zip_%02i_iso_path", c+1);
+	sprintf(temp, "cdrom_%02i_iso_path", c + 1);
 	config_delete_var(cat, temp);
     }
 }
 
-
-/* Save "Other Removable Devices" section. */
+/* Save "Multimedia Devices" section. */
 static void
-save_removable(UNUSED(const config_t *cfg), const char *cat)
+save_multimedia(const config_t* cfg, const char* cat)
 {
     char temp[512], tmp2[512];
     int c;
 
     for (c = 0; c < CDROM_NUM; c++) {
-	sprintf(temp, "cdrom_%02i_host_drive", c+1);
+	sprintf(temp, "cdrom_%02i_host_drive", c + 1);
 	if ((cdrom[c].bus_type == 0) ||
 	    (cdrom[c].host_drive < 'A') || ((cdrom[c].host_drive > 'Z') && (cdrom[c].host_drive != 200))) {
-		config_delete_var(cat, temp);
-	} else {
-		config_set_int(cat, temp, cdrom[c].host_drive);
+	    config_delete_var(cat, temp);
+	}
+	else {
+	    config_set_int(cat, temp, cdrom[c].host_drive);
 	}
 
-	sprintf(temp, "cdrom_%02i_speed", c+1);
+	sprintf(temp, "cdrom_%02i_speed", c + 1);
 	if ((cdrom[c].bus_type == 0) ||
-		(cdrom_speeds[cdrom[c].speed_idx].speed == cdrom_speed_idx(CDROM_SPEED_DEFAULT))) {
-		config_delete_var(cat, temp);
-	} else {
-		config_set_int(cat, temp, cdrom[c].speed_idx);
+	    (cdrom_speeds[cdrom[c].speed_idx].speed == cdrom_speed_idx(CDROM_SPEED_DEFAULT))) {
+	    config_delete_var(cat, temp);
+	}
+	else {
+	    config_set_int(cat, temp, cdrom[c].speed_idx);
 	}
 
-	sprintf(temp, "cdrom_%02i_parameters", c+1);
+	sprintf(temp, "cdrom_%02i_parameters", c + 1);
 	if (cdrom[c].bus_type == 0) {
-		config_delete_var(cat, temp);
-	} else {
-		sprintf(tmp2, "%u, %s", cdrom[c].sound_on,
-			cdrom_bus_to_string(cdrom[c].bus_type));
-		config_set_string(cat, temp, tmp2);
+	    config_delete_var(cat, temp);
+	}
+	else {
+	    sprintf(tmp2, "%u, %s", cdrom[c].sound_on,
+		cdrom_bus_to_string(cdrom[c].bus_type));
+	    config_set_string(cat, temp, tmp2);
 	}
 
-	sprintf(temp, "cdrom_%02i_ide_channel", c+1);
+	sprintf(temp, "cdrom_%02i_ide_channel", c + 1);
 	if (cdrom[c].bus_type != CDROM_BUS_ATAPI) {
-		config_delete_var(cat, temp);
-	} else {
-		sprintf(tmp2, "%01u:%01u", cdrom[c].bus_id.ide_channel>>1,
-					cdrom[c].bus_id.ide_channel & 1);
-		config_set_string(cat, temp, tmp2);
+	    config_delete_var(cat, temp);
+	}
+	else {
+	    sprintf(tmp2, "%01u:%01u", cdrom[c].bus_id.ide_channel >> 1,
+		cdrom[c].bus_id.ide_channel & 1);
+	    config_set_string(cat, temp, tmp2);
 	}
 
 	sprintf(temp, "cdrom_%02i_scsi_location", c + 1);
 	if (cdrom[c].bus_type != CDROM_BUS_SCSI) {
-		config_delete_var(cat, temp);
-	} else {
-		sprintf(tmp2, "%02u:%02u",
-			cdrom[c].bus_id.scsi.id, cdrom[c].bus_id.scsi.lun);
-		config_set_string(cat, temp, tmp2);
+	    config_delete_var(cat, temp);
+	}
+	else {
+	    sprintf(tmp2, "%02u:%02u",
+		cdrom[c].bus_id.scsi.id, cdrom[c].bus_id.scsi.lun);
+	    config_set_string(cat, temp, tmp2);
 	}
 
 	sprintf(temp, "cdrom_%02i_image_path", c + 1);
 	if ((cdrom[c].bus_type == 0) ||
 	    (wcslen(cdrom[c].image_path) == 0)) {
-		config_delete_var(cat, temp);
-	} else {
-		config_set_wstring(cat, temp, cdrom[c].image_path);
+	    config_delete_var(cat, temp);
+	}
+	else {
+	    config_set_wstring(cat, temp, cdrom[c].image_path);
 	}
     }
+}
+
+/* Load "IOMEGA Devices" section. */
+//FIXME: stuff should be loaded into config_t !
+static void
+load_iomega(config_t* cfg, const char* cat)
+{
+    char temp[512], tmp2[512], * p;
+    char s[512];
+    unsigned int board = 0, dev = 0;
+    wchar_t* wp;
+    int c;
+
+    for (c = 0; c < ZIP_NUM; c++) {
+	sprintf(temp, "zip_%02i_parameters", c + 1);
+	p = config_get_string(cat, temp, "0, none");
+	sscanf(p, "%01u, %s", (unsigned*)&zip_drives[c].is_250, s);
+	zip_drives[c].bus_type = zip_string_to_bus(s);
+
+	/* Default values, needed for proper operation of the Settings dialog. */
+	zip_drives[c].bus_id.ide_channel = zip_drives[c].bus_id.scsi.id = c + 2;
+
+	sprintf(temp, "zip_%02i_ide_channel", c + 1);
+	if (zip_drives[c].bus_type == ZIP_BUS_ATAPI) {
+	    sprintf(tmp2, "%01u:%01u", (c + 2) >> 1, (c + 2) & 1);
+	    p = config_get_string(cat, temp, tmp2);
+	    sscanf(p, "%01u:%01u", &board, &dev);
+
+	    board &= 3;
+	    dev &= 1;
+	    zip_drives[c].bus_id.ide_channel = (board << 1) + dev;
+
+	    if (zip_drives[c].bus_id.ide_channel > 7)
+		zip_drives[c].bus_id.ide_channel = 7;
+	}
+	else {
+	    sprintf(temp, "zip_%02i_scsi_location", c + 1);
+	    if (zip_drives[c].bus_type == ZIP_BUS_SCSI) {
+		sprintf(tmp2, "%02u:%02u", c + 2, 0);
+		p = config_get_string(cat, temp, tmp2);
+		sscanf(p, "%02u:%02u",
+		    (unsigned*)&zip_drives[c].bus_id.scsi.id,
+		    (unsigned*)&zip_drives[c].bus_id.scsi.lun);
+
+		if (zip_drives[c].bus_id.scsi.id > 15)
+		    zip_drives[c].bus_id.scsi.id = 15;
+		if (zip_drives[c].bus_id.scsi.lun > 7)
+		    zip_drives[c].bus_id.scsi.lun = 7;
+	    }
+	    else {
+		config_delete_var(cat, temp);
+	    }
+	}
+
+	sprintf(temp, "zip_%02i_image_path", c + 1);
+	wp = config_get_wstring(cat, temp, L"");
+
+	/* Try to make relative, and copy to destination. */
+	pc_path(zip_drives[c].image_path, sizeof_w(zip_drives[c].image_path), wp);
+
+	/* If the ZIP is disabled, delete all its variables. */
+	if (zip_drives[c].bus_type == ZIP_BUS_DISABLED) {
+	    sprintf(temp, "zip_%02i_host_drive", c + 1);
+	    config_delete_var(cat, temp);
+
+	    sprintf(temp, "zip_%02i_parameters", c + 1);
+	    config_delete_var(cat, temp);
+
+	    sprintf(temp, "zip_%02i_ide_channel", c + 1);
+	    config_delete_var(cat, temp);
+
+	    sprintf(temp, "zip_%02i_scsi_location", c + 1);
+	    config_delete_var(cat, temp);
+
+	    sprintf(temp, "zip_%02i_image_path", c + 1);
+	    config_delete_var(cat, temp);
+	}
+
+	sprintf(temp, "zip_%02i_iso_path", c + 1);
+	config_delete_var(cat, temp);
+    }
+}
+
+/* Save "IOMEGA Devices" section. */
+static void
+save_iomega(UNUSED(const config_t* cfg), const char* cat)
+{
+    char temp[512], tmp2[512];
+    int c;
 
     for (c = 0; c < ZIP_NUM; c++) {
 	sprintf(temp, "zip_%02i_parameters", c+1);
@@ -1550,6 +1580,138 @@ save_removable(UNUSED(const config_t *cfg), const char *cat)
     delete_section_if_empty(cat);
 }
 
+/* Load "Magneto-optical Devices" section. */
+//FIXME: stuff should be loaded into config_t !
+static void
+load_mo(config_t* cfg, const char* cat)
+{
+    char temp[512], tmp2[512], * p;
+    char s[512];
+    unsigned int board = 0, dev = 0;
+    wchar_t* wp;
+    int c;
+
+    for (c = 0; c < MO_NUM; c++) {
+	sprintf(temp, "mo_%02i_parameters", c + 1);
+	p = config_get_string(cat, temp, "0, none");
+	sscanf(p, "%u, %s", (unsigned*)&mo_drives[c].type, s);
+	mo_drives[c].bus_type = mo_string_to_bus(s);
+
+	/* Default values, needed for proper operation of the Settings dialog. */
+	mo_drives[c].bus_id.ide_channel = mo_drives[c].bus_id.scsi.id = c + 2;
+
+	sprintf(temp, "mo_%02i_ide_channel", c + 1);
+	if (mo_drives[c].bus_type == MO_BUS_ATAPI) {
+	    sprintf(tmp2, "%01u:%01u", (c + 2) >> 1, (c + 2) & 1);
+	    p = config_get_string(cat, temp, tmp2);
+	    sscanf(p, "%01u:%01u", &board, &dev);
+
+	    board &= 3;
+	    dev &= 1;
+	    mo_drives[c].bus_id.ide_channel = (board << 1) + dev;
+
+	    if (mo_drives[c].bus_id.ide_channel > 7)
+		mo_drives[c].bus_id.ide_channel = 7;
+	}
+	else {
+	    sprintf(temp, "mo_%02i_scsi_location", c + 1);
+	    if (mo_drives[c].bus_type == MO_BUS_SCSI) {
+		sprintf(tmp2, "%02u:%02u", c + 2, 0);
+		p = config_get_string(cat, temp, tmp2);
+		sscanf(p, "%02u:%02u",
+		    (unsigned*)&mo_drives[c].bus_id.scsi.id,
+		    (unsigned*)&mo_drives[c].bus_id.scsi.lun);
+
+		if (mo_drives[c].bus_id.scsi.id > 15)
+		    mo_drives[c].bus_id.scsi.id = 15;
+		if (mo_drives[c].bus_id.scsi.lun > 7)
+		    mo_drives[c].bus_id.scsi.lun = 7;
+	    }
+	    else {
+		config_delete_var(cat, temp);
+	    }
+	}
+
+	sprintf(temp, "mo_%02i_image_path", c + 1);
+	wp = config_get_wstring(cat, temp, L"");
+
+	/* Try to make relative, and copy to destination. */
+	pc_path(mo_drives[c].image_path, sizeof_w(mo_drives[c].image_path), wp);
+
+	/* If the MO is disabled, delete all its variables. */
+	if (mo_drives[c].bus_type == MO_BUS_DISABLED) {
+	    sprintf(temp, "mo_%02i_host_drive", c + 1);
+	    config_delete_var(cat, temp);
+
+	    sprintf(temp, "mo_%02i_parameters", c + 1);
+	    config_delete_var(cat, temp);
+
+	    sprintf(temp, "mo_%02i_ide_channel", c + 1);
+	    config_delete_var(cat, temp);
+
+	    sprintf(temp, "mo_%02i_scsi_location", c + 1);
+	    config_delete_var(cat, temp);
+
+	    sprintf(temp, "mo_%02i_image_path", c + 1);
+	    config_delete_var(cat, temp);
+	}
+
+	sprintf(temp, "mo_%02i_iso_path", c + 1);
+	config_delete_var(cat, temp);
+    }
+}
+
+/* Save "Magneto-optical Devices" section. */
+static void
+save_mo(const config_t* cfg, const char* cat)
+{
+    char temp[512], tmp2[512];
+    int c;
+
+    for (c = 0; c < MO_NUM; c++) {
+	sprintf(temp, "mo_%02i_parameters", c + 1);
+	if (mo_drives[c].bus_type == 0) {
+	    config_delete_var(cat, temp);
+	}
+	else {
+	    sprintf(tmp2, "%u, %s", mo_drives[c].type,
+		mo_bus_to_string(mo_drives[c].bus_type));
+	    config_set_string(cat, temp, tmp2);
+	}
+
+	sprintf(temp, "mo_%02i_ide_channel", c + 1);
+	if (mo_drives[c].bus_type != MO_BUS_ATAPI) {
+	    config_delete_var(cat, temp);
+	}
+	else {
+	    sprintf(tmp2, "%01u:%01u", mo_drives[c].bus_id.ide_channel >> 1,
+		mo_drives[c].bus_id.ide_channel & 1);
+	    config_set_string(cat, temp, tmp2);
+	}
+
+	sprintf(temp, "mo_%02i_scsi_location", c + 1);
+	if (mo_drives[c].bus_type != MO_BUS_SCSI) {
+	    config_delete_var(cat, temp);
+	}
+	else {
+	    sprintf(tmp2, "%02u:%02u", mo_drives[c].bus_id.scsi.id,
+		mo_drives[c].bus_id.scsi.lun);
+	    config_set_string(cat, temp, tmp2);
+	}
+
+	sprintf(temp, "mo_%02i_image_path", c + 1);
+	if ((mo_drives[c].bus_type == 0) ||
+	    (wcslen(mo_drives[c].image_path) == 0)) {
+	    config_delete_var(cat, temp);
+	}
+	else {
+	    config_set_wstring(cat, temp, mo_drives[c].image_path);
+	}
+    }
+
+    delete_section_if_empty(cat);
+}
+
 
 static const struct {
     const char	*name;
@@ -1566,7 +1728,9 @@ static const struct {
   { "Other peripherals",load_other,		save_other		},
   { "Hard disks",	load_disks,		save_disks		},
   { "Floppy drives",	load_floppy,		save_floppy		},
-  { "Other removable devices",load_removable,	save_removable		},
+  { "CD/DVD devices",load_multimedia,	save_multimedia		},
+  { "IOMEGA devices",load_iomega,	save_iomega		},
+  { "Magneto-optical devices",load_mo,	save_mo		},
   { NULL,		NULL,			NULL			}
 };
 

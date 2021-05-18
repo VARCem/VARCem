@@ -72,6 +72,7 @@
 #define SB_DISK         0x10
 #define SB_CDROM        0x20
 #define SB_ZIP          0x30
+#define SB_MO           0x40
 #define SB_NETWORK      0x50
 #define SB_SOUND        0x60
 #define SB_TEXT         0x70
@@ -138,9 +139,13 @@ extern void	ui_floppy_mount(uint8_t drive, int part, int8_t wp,
 extern void	ui_cdrom_eject(uint8_t id);
 extern void	ui_cdrom_reload(uint8_t id);
 extern void	ui_zip_mount(uint8_t drive, int part, int8_t wp,
-			     const wchar_t *fn);
+                                const wchar_t* fn);
 extern void	ui_zip_eject(uint8_t id);
 extern void	ui_zip_reload(uint8_t id);
+extern void	ui_mo_mount(uint8_t drive, int part, int8_t wp,
+                            const wchar_t* fn);
+extern void	ui_mo_eject(uint8_t id);
+extern void	ui_mo_reload(uint8_t id);
 extern void	ui_disk_mount(uint8_t drive, int part, int8_t wp,
 			      const wchar_t *fn);
 extern void	ui_disk_unload(uint8_t id);
@@ -187,9 +192,9 @@ extern void	sb_menu_set_item(int part, int idm, int val);
 extern void	dlg_about(void);
 extern void	dlg_localize(void);
 extern int	dlg_settings(int ask);
-extern void     dlg_new_image(int drive, int part, int is_zip);
+extern void	dlg_new_image(int drive, int part, int is_zip, int is_mo);
 extern void	dlg_sound_gain(void);
-extern int      dlg_file(const wchar_t *filt, const wchar_t *ifn,
+extern int	dlg_file(const wchar_t *filt, const wchar_t *ifn,
 			 wchar_t *fn, int save);
 
 /* Platform VidApi. */
@@ -209,6 +214,7 @@ extern void	vidapi_screenshot(void);
 extern int	floppy_create_86f(const wchar_t *, int8_t sz, int8_t rpm_mode);
 extern int	floppy_create_image(const wchar_t *, int8_t sz, int8_t is_fdi);
 extern int	zip_create_image(const wchar_t *, int8_t sz, int8_t is_zdi);
+extern int	mo_create_image(const wchar_t *, int8_t sz);
 
 #ifdef __cplusplus
 }

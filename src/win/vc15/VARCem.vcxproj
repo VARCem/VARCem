@@ -613,7 +613,10 @@
     <ClInclude Include="..\..\win_settings_disk.h" />
     <ClInclude Include="..\..\win_settings_floppy.h" />
     <ClInclude Include="..\..\win_settings_input.h" />
+    <ClInclude Include="..\..\win_settings_iomega.h" />
     <ClInclude Include="..\..\win_settings_machine.h" />
+    <ClInclude Include="..\..\win_settings_mmc.h" />
+    <ClInclude Include="..\..\win_settings_mo.h" />
     <ClInclude Include="..\..\win_settings_network.h" />
     <ClInclude Include="..\..\win_settings_periph.h" />
     <ClInclude Include="..\..\win_settings_ports.h" />

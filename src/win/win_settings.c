@@ -74,6 +74,7 @@
 #include "../devices/scsi/scsi_device.h"
 #include "../devices/cdrom/cdrom.h"
 #include "../devices/disk/zip.h"
+#include "../devices/disk/mo.h"
 #include "../devices/network/network.h"
 #include "../devices/sound/sound.h"
 #include "../devices/sound/midi.h"
@@ -91,6 +92,7 @@ static int	temp_fdd_types[FDD_NUM],
 static hard_disk_t temp_hdd[HDD_NUM];
 static cdrom_t temp_cdrom_drives[CDROM_NUM];
 static zip_drive_t temp_zip_drives[ZIP_NUM];
+static mo_drive_t temp_mo_drives[MO_NUM];
 
 
 static HWND	hwndParentDialog,
@@ -130,6 +132,9 @@ settings_msgbox(int type, void *arg)
 #include "win_settings_floppy.h"		// Floppy dialog
 #include "win_settings_disk.h"			// (Hard) Disk dialog
 #include "win_settings_remov.h"			// Removable Devices dialog
+#include "win_settings_mmc.h"			// CD/DVD Devices dialog */
+#include "win_settings_iomega.h"		// IOMEGA Devices dialog */
+#include "win_settings_mo.h"			// MO Devices dialog */
 
 
 /* This does the initial read of global variables into the temporary ones. */
@@ -154,6 +159,7 @@ settings_init(void)
     /* Other removable devices category */
     memcpy(temp_cdrom_drives, cdrom, CDROM_NUM * sizeof(cdrom_t));
     memcpy(temp_zip_drives, zip_drives, ZIP_NUM * sizeof(zip_drive_t));
+    memcpy(temp_mo_drives, mo_drives, MO_NUM * sizeof(mo_drive_t));
 
     temp_deviceconfig = 0;
 }
@@ -181,6 +187,7 @@ settings_changed(void)
     /* Other removable devices category */
     i = i || memcmp(cdrom, temp_cdrom_drives, CDROM_NUM * sizeof(cdrom_t));
     i = i || memcmp(zip_drives, temp_zip_drives, ZIP_NUM * sizeof(zip_drive_t));
+    i = i || memcmp(mo_drives, temp_mo_drives, MO_NUM * sizeof(mo_drive_t));
 
     i = i || !!temp_deviceconfig;
 
@@ -255,6 +262,12 @@ settings_save(void)
 		zip_drives[i].priv = NULL;
     }
 
+ 	memcpy(mo_drives, temp_mo_drives, MO_NUM * sizeof(mo_drive_t));
+	for (i = 0; i < MO_NUM; i++) {
+		mo_drives[i].f = NULL;
+		mo_drives[i].priv = NULL;
+    }
+
     /* Mark configuration as changed. */
     config_changed = 1;
 }
@@ -275,8 +288,10 @@ settings_save(void)
 #define PAGE_PERIPHERALS		6
 #define PAGE_HARD_DISKS			7
 #define PAGE_FLOPPY_DRIVES		8
-#define PAGE_OTHER_REMOVABLE_DEVICES	9
-#define PAGE_MAX			10
+#define PAGE_MULTIMEDIA_DEVICES		9
+#define PAGE_IOMEGA_DEVICES		10
+#define PAGE_MAGNETO_OPTICAL_DEVICES	11
+#define PAGE_MAX			12
 
 /* Icon, Bus, File, C, H, S, Size. */
 #define C_COLUMNS_HARD_DISKS		6
@@ -348,11 +363,23 @@ show_child(HWND hwndParent, DWORD child_id)
 					       hwndParent, floppy_proc);
 		break;
 
-	case PAGE_OTHER_REMOVABLE_DEVICES:
-		hwndChildDialog = CreateDialog(plat_lang_dll(),
-					       (LPCWSTR)DLG_CFG_RMV_DEVICES,
-					       hwndParent, rmv_devices_proc);
-		break;
+	case PAGE_MULTIMEDIA_DEVICES:
+	    hwndChildDialog = CreateDialog(plat_lang_dll(),
+		(LPCWSTR)DLG_CFG_MMC_DEVICES,
+		hwndParent, mmc_devices_proc);
+	    break;
+
+	case PAGE_IOMEGA_DEVICES:
+	    hwndChildDialog = CreateDialog(plat_lang_dll(),
+		(LPCWSTR)DLG_CFG_IOMEGA_DEVICES,
+		hwndParent, iomega_devices_proc);
+	    break;
+
+	case PAGE_MAGNETO_OPTICAL_DEVICES:
+	    hwndChildDialog = CreateDialog(plat_lang_dll(),
+		(LPCWSTR)DLG_CFG_MO_DEVICES,
+		hwndParent, mo_devices_proc);
+	    break;
 
 	default:
 		fatal("Invalid child dialog ID\n");
@@ -376,6 +403,8 @@ image_list_init(HWND hwndList)
 	ICON_PERIPH,
 	ICON_DISK,
 	ICON_FLOPPY,
+	ICON_REMOV,
+	ICON_REMOV,
 	ICON_REMOV
     };
     HICON hiconItem;
@@ -486,6 +515,7 @@ dlg_proc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam)
 		disk_track_init();
 		cdrom_track_init();
 		zip_track_init();
+		mo_track_init();
 
 		displayed_category = -1;
 		h = GetDlgItem(hdlg, IDC_SETTINGSCATLIST);
