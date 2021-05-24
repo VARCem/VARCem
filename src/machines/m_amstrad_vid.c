@@ -25,7 +25,7 @@
  *		 by the ROS.
  *  PPC:	MDA Monitor results in half-screen, half-cell-height display??
  *
- * Version:	@(#)m_amstrad_vid.c	1.0.8	2021/03/18
+ * Version:	@(#)m_amstrad_vid.c	1.0.9	2021/05/24
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -219,11 +219,13 @@ pc1512_out(uint16_t addr, uint8_t val, priv_t priv)
     uint8_t old;
 
     switch (addr) {
-	case 0x03d4:
+	case 0x03d0: case 0x03d2:
+	case 0x03d4: case 0x03d6:
 		dev->crtcreg = val & 31;
 		return;
 
-	case 0x03d5:
+	case 0x03d1: case 0x03d3:
+	case 0x03d5: case 0x03d7:
 		old = dev->crtc[dev->crtcreg];
 		dev->crtc[dev->crtcreg] = val & crtc_mask[dev->crtcreg];
 		if (old != val) {
