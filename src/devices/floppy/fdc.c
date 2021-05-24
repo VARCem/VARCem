@@ -9,13 +9,13 @@
  *		Implementation of the NEC uPD-765 and compatible floppy disk
  *		controller.
  *
- * Version:	@(#)fdc.c	1.0.29	2021/04/06
+ * Version:	@(#)fdc.c	1.0.30	2021/05/24
  *
  * Authors:	Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
  *		Copyright 2016-2021 Miran Grca.
- *		Copyright 2008-2018 Sarah Walker.
+ *		Copyright 2008-2021 Sarah Walker.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -937,7 +937,8 @@ fdc_out(uint16_t port, uint8_t val, priv_t priv)
 					fdc->mfm = (fdc->command & 0x40) ? 1 : 0;
 					break;
 
-				case 0x0d: /*Format track*/
+				case 0x0d: case 0x4d:
+				case 0x8d: case 0xcd: /*Format track*/
 					fdc->pnum = 0;
 					fdc->ptot = 5;
 					fdc->stat |= 0x90;
@@ -1122,7 +1123,8 @@ fdc_out(uint16_t port, uint8_t val, priv_t priv)
 						fdc->seek_dir = fdc->step = 1;
 						break;
 
-					case 0x0d: /*Format*/
+					case 0x0d: case 0x4d:
+					case 0x8d: case 0xcd: /*Format*/
 						set_rate(fdc, fdc->drive);
 						fdc->head = (fdc->params[0] & 4) ? 1 : 0;
 						fdd_set_head(real_drive(fdc, fdc->drive), (fdc->params[0] & 4) ? 1 : 0);
