@@ -13,15 +13,15 @@
  * NOTE:	The MegaPC video device should be moved to the MegaPC
  *		machine file.
  *
- * Version:	@(#)vid_paradise.c	1.0.12	2019/05/17
+ * Version:	@(#)vid_paradise.c	1.0.13	2021/05/29
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
- *		Copyright 2008-2018 Sarah Walker.
+ *		Copyright 2008-2021 Sarah Walker.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -141,9 +141,9 @@ static void paradise_out(uint16_t addr, uint8_t val, priv_t priv)
                         paradise_remap(paradise);
                         return;
                 }
-                if (svga->gdcaddr == 0xe)
+                if (svga->gdcaddr == 0xb)
                 {
-                        svga->gdcreg[0xe] = val;
+                        svga->gdcreg[0xb] = val;
                         paradise_remap(paradise);
                         return;
                 }
@@ -241,7 +241,7 @@ static void paradise_remap(paradise_t *paradise)
                 paradise->write_bank[0] = paradise->write_bank[2] =  (svga->gdcreg[0xa] & mask) << 12;
                 paradise->write_bank[1] = paradise->write_bank[3] = ((svga->gdcreg[0xa] & mask) << 12) + ((svga->gdcreg[6] & 0x08) ? 0 : 0x8000);
         }
-        else if (svga->gdcreg[0xe] & 0x08)
+        else if (svga->gdcreg[0xb] & 0x08)
         {
                 if (svga->gdcreg[0x6] & 0xc)
                 {
@@ -265,6 +265,9 @@ static void paradise_remap(paradise_t *paradise)
                 paradise->write_bank[0] = paradise->write_bank[2] =  (svga->gdcreg[0x9] & mask) << 12;
                 paradise->write_bank[1] = paradise->write_bank[3] = ((svga->gdcreg[0x9] & mask) << 12) + ((svga->gdcreg[6] & 0x08) ? 0 : 0x8000);
         }
+
+	paradise->read_bank[1] &= 0x7ffff;
+        paradise->write_bank[1] &= 0x7ffff;
 }
 
 
