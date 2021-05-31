@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows systems using the MinGW32 environment.
 #
-# Version:	@(#)Makefile.minGW	1.0.105	2021/03/26
+# Version:	@(#)Makefile.minGW	1.0.106	2021/05/31
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -904,9 +904,7 @@ CDROMOBJ	:= cdrom.o \
 
 ZIPOBJ		:= zip.o
 
-ifeq ($(MODRIVES), y)
 MOOBJ		:= mo.o
-endif
 
 ifeq ($(USB), y)
 USBOBJ		:= usb.o
