@@ -8,15 +8,15 @@
  *
  *		Emulation of the old and new IBM CGA graphics cards.
  *
- * Version:	@(#)vid_cga.c	1.0.20	2019/05/17
+ * Version:	@(#)vid_cga.c	1.0.21	2021/05/24
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *		Copyright 2016-2019 Miran Grca.
- *		Copyright 2008-2019 Sarah Walker.
+ *		Copyright 2008-2021 Sarah Walker.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -152,11 +152,13 @@ cga_out(uint16_t port, uint8_t val, priv_t priv)
     uint8_t old;
 
     switch (port) {
-	case 0x03d4:
+	case 0x03d0: case 0x03d2:
+	case 0x03d4: case 0x03d6:
 		dev->crtcreg = val & 31;
 		return;
 
-	case 0x03d5:
+	case 0x03d1: case 0x03d3:
+	case 0x03d5: case 0x03d7:
 		old = dev->crtc[dev->crtcreg];
 		dev->crtc[dev->crtcreg] = val & crtcmask[dev->crtcreg];
 		if (old != val) {
