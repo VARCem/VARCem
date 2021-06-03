@@ -8,7 +8,7 @@
  *
  *		Sound devices support module.
  *
- * Version:	@(#)sound_dev.c	1.0.15	2021/03/16
+ * Version:	@(#)sound_dev.c	1.0.16	2021/06/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -54,36 +54,6 @@
 #ifdef ENABLE_SOUND_DEV_LOG
 int	sound_card_do_log = ENABLE_SOUND_DEV_LOG;
 #endif
-
-
-/* Sound card devices. */
-extern const device_t adlib_device;
-extern const device_t adlib_mca_device;
-extern const device_t adgold_device;
-extern const device_t es1371_device;
-extern const device_t sbpci128_device;
-extern const device_t cms_device;
-extern const device_t gus_device;
-#if defined(DEV_BRANCH) && defined(USE_GUSMAX)
-extern const device_t gusmax_device;
-#endif
-#if defined(DEV_BRANCH) && defined(USE_PAS16)
-extern const device_t pas16_device;
-#endif
-extern const device_t sb_1_device;
-extern const device_t sb_15_device;
-extern const device_t sb_mcv_device;
-extern const device_t sb_2_device;
-extern const device_t sb_pro_v1_device;
-extern const device_t sb_pro_v2_device;
-extern const device_t sb_pro_mcv_device;
-extern const device_t sb_16_device;
-extern const device_t sb_awe32_device;
-#ifdef USE_RESID
-extern const device_t ssi2001_device;
-#endif
-extern const device_t wss_device;
-extern const device_t ncr_business_audio_device;
 
 
 static const struct {

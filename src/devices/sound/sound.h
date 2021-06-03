@@ -8,13 +8,13 @@
  *
  *		Definitions for the Sound Emulation core.
  *
- * Version:	@(#)sound.h	1.0.12	2020/07/12
+ * Version:	@(#)sound.h	1.0.13	2021/06/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2020 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -55,6 +55,36 @@ extern "C" {
 
 extern int	sound_pos_global;
 
+#ifdef EMU_DEVICE_H
+/* Sound card devices. */
+extern const device_t adlib_device;
+extern const device_t adlib_mca_device;
+extern const device_t adgold_device;
+extern const device_t es1371_device;
+extern const device_t sbpci128_device;
+extern const device_t cms_device;
+extern const device_t gus_device;
+#if defined(DEV_BRANCH) && defined(USE_GUSMAX)
+extern const device_t gusmax_device;
+#endif
+#if defined(DEV_BRANCH) && defined(USE_PAS16)
+extern const device_t pas16_device;
+#endif
+extern const device_t sb_1_device;
+extern const device_t sb_15_device;
+extern const device_t sb_mcv_device;
+extern const device_t sb_2_device;
+extern const device_t sb_pro_v1_device;
+extern const device_t sb_pro_v2_device;
+extern const device_t sb_pro_mcv_device;
+extern const device_t sb_16_device;
+extern const device_t sb_awe32_device;
+#ifdef USE_RESID
+extern const device_t ssi2001_device;
+#endif
+extern const device_t wss_device;
+extern const device_t ncr_business_audio_device;
+#endif
 
 extern void	sound_log(int level, const char *fmt, ...);
 
