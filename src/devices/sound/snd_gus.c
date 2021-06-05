@@ -8,15 +8,15 @@
  *
  *		Implementation of the Gravis UltraSound sound device.
  *
- * Version:	@(#)snd_gus.c	1.0.18	2020/06/05
+ * Version:	@(#)snd_gus.c	1.0.19	2021/06/05
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2020 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
- *		Copyright 2008-2018 Sarah Walker.
+ *		Copyright 2008-2021 Sarah Walker.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -184,11 +184,14 @@ static double	vol16bit[4096];
 
 
 static void
-poll_irqs(gus_t *dev)
+update_int_status(gus_t *dev)
 {
     int c;
+    int irq_pending = 0;
+    int midi_irq_pending = 0;
 
     dev->irqstatus &= ~0x60;
+    dev->irqstatus2 = 0xe0;
 
     for (c = 0; c < 32; c++) {
 	if (dev->waveirqs[c]) {
@@ -196,24 +199,46 @@ poll_irqs(gus_t *dev)
 		if (dev->rampirqs[c])
 			dev->irqstatus2 |= 0x80;
 		dev->irqstatus |= 0x20;
-		if (dev->irq != -1)
-			picint(1 << dev->irq);
-		return;
+		irq_pending = 1;
+		break;
 	}
 
 	if (dev->rampirqs[c]) {
 		dev->irqstatus2 = 0xa0 | c;
 		dev->irqstatus |= 0x40;
-		if (dev->irq != -1)
-			picint(1 << dev->irq);
-		return;
+		irq_pending = 1;
+		break;
 	}
     }
 
-    dev->irqstatus2 = 0xe0;
+    if ((dev->tctrl & 4) && (dev->irqstatus & 0x04))
+                irq_pending = 1; /*Timer 1 interrupt pending*/
+        if ((dev->tctrl & 8) && (dev->irqstatus & 0x08))
+                irq_pending = 1; /*Timer 2 interrupt pending*/
+        if ((dev->irqstatus & 0x80) && (dev->dmactrl & 0x20))
+                irq_pending = 1; /*DMA TC interrupt pending*/
 
-    if (!dev->irqstatus && dev->irq != -1)
-	picintc(1 << dev->irq);
+        midi_irq_pending = dev->midi_status & MIDI_INT_MASTER;
+
+    if (dev->irq == dev->irq_midi && dev->irq != -1) {
+                if (irq_pending || midi_irq_pending)
+                        picintlevel(1 << dev->irq);
+                else
+                        picintc(1 << dev->irq);
+        } else {
+		if (dev->irq != -1) {
+                        if (irq_pending)
+                                picintlevel(1 << dev->irq);
+                        else
+                                picintc(1 << dev->irq);
+                }
+                if (dev->irq_midi != -1) {
+                        if (midi_irq_pending)
+                                picintlevel(1 << dev->irq_midi);
+                        else
+                                picintc(1 << dev->irq_midi);
+                }
+        }
 }
 
 
@@ -234,8 +259,7 @@ midi_update_int_status(gus_t *dev)
     } else
 	dev->irqstatus &= ~GUS_INT_MIDI_RECEIVE;
 
-    if ((dev->midi_status & MIDI_INT_MASTER) && (dev->irq_midi != -1))
-	picint(1 << dev->irq_midi);
+    update_int_status(dev);
 }
 
 
@@ -341,6 +365,7 @@ gus_write(uint16_t addr, uint8_t val, priv_t priv)
 
 			case 0x45: /*Timer control*/
 				dev->tctrl = val;
+				update_int_status(dev);
 				break;
 		}
 		break;
@@ -353,7 +378,7 @@ gus_write(uint16_t addr, uint8_t val, priv_t priv)
 				old = dev->waveirqs[dev->voice];
 				dev->waveirqs[dev->voice] = ((val & 0xa0) == 0xa0) ? 1 : 0;
 				if (dev->waveirqs[dev->voice] != old)
-					poll_irqs(dev);
+					update_int_status(dev);
 				break;
 
 			case 1: /*Frequency control*/
@@ -416,7 +441,7 @@ gus_write(uint16_t addr, uint8_t val, priv_t priv)
 				dev->rctrl[dev->voice] = val & 0x7F;
 				dev->rampirqs[dev->voice] = ((val & 0xa0) == 0xa0) ? 1 : 0;
 				if (dev->rampirqs[dev->voice] != old)
-					poll_irqs(dev);
+					update_int_status(dev);
 				break;
 
 			case 0xE:
@@ -460,8 +485,7 @@ gus_write(uint16_t addr, uint8_t val, priv_t priv)
 								break;
 						}
 						dev->dmactrl = val & ~0x40;
-						if (val & 0x20)
-							dev->irqnext = 1;
+						dev->irqnext = 1;
 					} else {
 						c = 0;
 						while (c < 65536) {
@@ -486,8 +510,7 @@ gus_write(uint16_t addr, uint8_t val, priv_t priv)
 								break;
 						}
 						dev->dmactrl = val & ~0x40;
-						if (val & 0x20)
-							dev->irqnext = 1;
+						dev->irqnext = 1;
 					}
 				}
 				break;
@@ -517,6 +540,7 @@ gus_write(uint16_t addr, uint8_t val, priv_t priv)
 				}
 				dev->tctrl = val;
 				dev->sb_ctrl = val;
+				update_int_status(dev);
 				break;
 
 			case 0x46: /*Timer 1*/
@@ -766,7 +790,7 @@ gus_read(uint16_t addr, priv_t priv)
 			val = dev->irqstatus2;
 			dev->rampirqs[dev->irqstatus2 & 0x1F] = 0;
 			dev->waveirqs[dev->irqstatus2 & 0x1F] = 0;
-			poll_irqs(dev);
+			update_int_status(dev);
 			break;
 
 		case 0x00: case 0x01: case 0x02: case 0x03:
@@ -816,7 +840,7 @@ gus_read(uint16_t addr, priv_t priv)
 			val = dev->irqstatus2;
 			dev->rampirqs[dev->irqstatus2 & 0x1F] = 0;
 			dev->waveirqs[dev->irqstatus2 & 0x1F] = 0;
-			poll_irqs(dev);
+			update_int_status(dev);
 			break;
 
 		case 0x41: /*DMA control*/
@@ -933,8 +957,6 @@ poll_timer_1(priv_t priv)
 		dev->t1 = dev->t1l;
 		dev->ad_status |= 0x40;
 		if (dev->tctrl & 4) {
-			if (dev->irq != -1)
-				picint(1 << dev->irq);
 			dev->ad_status |= 0x04;
 			dev->irqstatus |= 0x04;
 		}
@@ -944,11 +966,10 @@ poll_timer_1(priv_t priv)
     if (dev->irqnext) {
 	dev->irqnext = 0;
 	dev->irqstatus |= 0x80;
-	if (dev->irq != -1)
-		picint(1 << dev->irq);
     }
 
     midi_update_int_status(dev);
+    update_int_status(dev);
 }
 
 
@@ -965,8 +986,6 @@ poll_timer_2(priv_t priv)
 		dev->t2 = dev->t2l;
 		dev->ad_status |= 0x20;
 		if (dev->tctrl & 8) {
-			if (dev->irq != -1)
-				picint(1 << dev->irq);
 			dev->ad_status |= 0x02;
 			dev->irqstatus |= 0x08;
 		}
@@ -976,9 +995,8 @@ poll_timer_2(priv_t priv)
     if (dev->irqnext) {
 	dev->irqnext = 0;
 	dev->irqstatus |= 0x80;
-	if (dev->irq != -1)
-		picint(1 << dev->irq);
     }
+    update_int_status(dev);
 }
 
 
@@ -1136,7 +1154,7 @@ poll_wave(priv_t priv)
     }
 
     if (update_irqs)
-	poll_irqs(dev);
+	 update_int_status(dev);
 }
 
 
