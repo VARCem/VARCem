@@ -8,12 +8,12 @@
  *
  *		Miscellaneous x87 FPU Instructions.
  *
- * Version:	@(#)x87_ops_misc.h	1.0.4	2020/12/11
+ * Version:	@(#)x87_ops_misc.h	1.0.5	2021/06/05
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2008-2020 Sarah Walker.
+ *		Copyright 2008-2021 Sarah Walker.
  *		Copyright 2016-2020 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -698,7 +698,8 @@ static int opFSCALE(uint32_t fetchdat)
         cpu_state.pc++;
         if (fplog) DEBUG("FSCALE\n");
         temp64 = (int64_t)ST(1);
-        ST(0) = ST(0) * pow(2.0, (double)temp64);
+        if (ST(0) != 0.0)
+                ST(0) = ST(0) * pow(2.0, (double)temp64);
         cpu_state.tag[cpu_state.TOP] &= ~TAG_UINT64;
         CLOCK_CYCLES(30);
         return 0;
@@ -806,8 +807,8 @@ static int FSTENV()
 {
         FP_ENTER();
         if (fplog) DEBUG("FSTENV %08X:%08X\n", easeg, cpu_state.eaaddr);
-        switch ((cr0 & 1) | (cpu_state.op32 & 0x100))
-        {
+	cpu_state.npxs = (cpu_state.npxs & ~(7 << 11)) | ((cpu_state.TOP & 7) << 11);
+        switch ((cr0 & 1) | (cpu_state.op32 & 0x100)) {
                 case 0x000: /*16-bit real mode*/
                 writememw(easeg,cpu_state.eaaddr,cpu_state.npxc);
                 writememw(easeg,cpu_state.eaaddr+2,cpu_state.npxs);
