@@ -8,7 +8,7 @@
  *
  *		SMC FDC37C932FR and FDC37C935 Super I/O Chips.
  *
- * Version:	@(#)sio_fdc37c93x.c	1.0.17	2021/03/23
+ * Version:	@(#)sio_fdc37c93x.c	1.0.18	2021/06/07
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -493,18 +493,18 @@ fdc37c93x_out(uint16_t port, uint8_t val, priv_t priv)
 
 			case 0xf1:
 				if (valxor & 0xc)
-					fdc_update_densel_force(dev->fdc, (val & 0xC) >> 2);
+					fdc_update_densel_force(dev->fdc, (val & 0xc) >> 2);
 				break;
 
 			case 0xf2:
 				if (valxor & 0xc0)
-					fdc_update_rwc(dev->fdc, 3, (valxor & 0xC0) >> 6);
+					fdc_update_rwc(dev->fdc, 3, (val & 0xc0) >> 6);
 				if (valxor & 0x30)
-					fdc_update_rwc(dev->fdc, 2, (valxor & 0x30) >> 4);
+					fdc_update_rwc(dev->fdc, 2, (val & 0x30) >> 4);
 				if (valxor & 0x0c)
-					fdc_update_rwc(dev->fdc, 1, (valxor & 0x0C) >> 2);
+					fdc_update_rwc(dev->fdc, 1, (val & 0x0c) >> 2);
 				if (valxor & 0x03)
-					fdc_update_rwc(dev->fdc, 0, (valxor & 0x03));
+					fdc_update_rwc(dev->fdc, 0, (val & 0x03));
 				break;
 
 			case 0xf4:
