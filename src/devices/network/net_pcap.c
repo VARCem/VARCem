@@ -211,10 +211,15 @@ do_init(netdev_t *list)
     /* Process the list and build our table. */
     for (dev = devlist; dev != NULL; dev=dev->next) {
 	strcpy(list->device, dev->name);
-	if (dev->description)
-		strcpy(list->description, dev->description);
-	  else
-		memset(list->description, '\0', sizeof(list->description));
+    if (dev->description) {
+        if (strlen(dev->description) <= 127)
+            strcpy(list->description, dev->description);
+        else
+            strncpy(list->description, dev->description, 127);
+    } else {
+        /* if description is NULL, set the name. This allows pcap to display *something* useful under WINE */
+        strncpy(list->description, dev->name, sizeof(list->description)-1);
+    }
 	list++; i++;
     }
 
