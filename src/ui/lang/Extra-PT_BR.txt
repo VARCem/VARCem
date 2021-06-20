@@ -3,7 +3,7 @@
 
 
 > Select the setup language:
-:Selecione o idioma da instalação
+:Selecione o idioma da instalação:
 
 > Desktop (as in "Desktop icons")
 :Área de trabalho (nos "Ícones da área de trabalho")
@@ -41,10 +41,10 @@
 :Um conjunto de configurações de exemplo para você começar.
 
 > Generic Turbo-XT Clone.
-:Clone Turbo-XT genérico
+:Clone Turbo-XT genérico.
 
 > The original IBM-PC model.
-:Modelo IBM-PC original
+:Modelo IBM-PC original.
 
 > The new model of the IBM-PC
 :Novo modelo do IBM-PC
@@ -78,7 +78,7 @@
 :Acordo de licença
 
 > Installer for the [ProductName] application.
-:Instalador para o aplicativo [ProductName]
+:Instalador para o aplicativo [ProductName].
 
 > The VARCem Team
 :A equipe VARCem
