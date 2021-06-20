@@ -8,7 +8,7 @@
  *
  *		String definitions for "Portuguese (Brazil)" language.
  *
- * Version:	@(#)VARCem-PT_BR.str	1.0.3	2021/03/28
+ * Version:	@(#)VARCem-PT_BR.str	1.0.4	2021/06/20
  *
  * Author:	Altieres Lima da Silva, <altieres.lima@gmail.com>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
@@ -48,7 +48,7 @@
  */
 
 /* Main application strings (2000) - DO NOT TRANSLATE! */
-#define STR_VERSION	1,0,3
+#define STR_VERSION	1,0,4
 #define STR_AUTHOR	"Altieres Lima da Silva"
 #define STR_EMAIL	"altieres.lima@gmail.com"
 #define STR_NAME	"VARCem"
@@ -185,8 +185,8 @@
 #define STR_3317	"Discos rígidos"
 #define STR_3318	"Unidades de disquete"
 #define STR_3319	"Dispositivos removíveis"
-#define STR_3320	"IOMEGA devices"
-#define STR_3321	"Magneto-optical devices"
+#define STR_3320	"Dispositivos IOMEGA"
+#define STR_3321	"Dispositivos magneto-ópticos"
 
 /* UI dialog: Settings (Machine, 3325.) */
 #define  STR_3325	"Máquina:"
@@ -263,6 +263,7 @@
 #define  STR_3517	"IDE"
 #define  STR_3518	"SCSI"
 #define  STR_3519	"USB"
+
 #define  STR_3520	"Fixo"
 #define  STR_3521	"Dinâmico"
 #define  STR_3522	"Diferencial"
@@ -304,7 +305,8 @@
 #define  STR_3580	"ATAPI"
 #define  STR_3581	"SCSI"
 #define  STR_3582	"USB"
-#define  STR_3583	"Magneto-optical drives:"
+#define  STR_3583	"Unidades magneto-ópticas:"
+
 
 /* UI: Status Bar (3900.) */
 #define STR_3900	"(vazio)"
@@ -325,9 +327,11 @@
 
 #define STR_3920	"CD-ROM %i (%ls): %ls"
 #define STR_3921	"Unidade de CD/DVD do anfitrião (%c:)"
+
 #define STR_3922	"Imagens CD-ROM\0*.iso;*.cue\0Todos os arquivos(*.*)\0*.*\0"
-#define STR_3923	"&Silenciar"
 #define STR_3924	"Imagens CD-ROM\0*.iso;*.cue;*.chd\0;Todos os arquivos(*.*)\0*.*\0"
+
+#define STR_3923	"&Silenciar"
 
 #define STR_3930	"Unidade %i (%ls): %ls"
 
@@ -338,8 +342,8 @@
 #define STR_3970	"Som (%s)"
 
 #define STR_3980	"MO %i (%ls): %ls"
-#define STR_3981	"MO images\0*.im?\0All files\0*.*\0"
-#define STR_3982	"MO images\0*.im?;*.bin\0"
+#define STR_3981	"Imagens MO\0*.im?\0Todos os arquivos\0*.*\0"
+#define STR_3982	"Imagens MO\0*.im?;*.bin\0"
 
 
 /* UI menu: Action (4000.) */
@@ -427,6 +431,6 @@
 #define STR_4107	"5.25\x22 650Mb M.O."
 #define STR_4108	"5.25\x22 1Gb M.O."
 #define STR_4109	"5.25\x22 1.3Gb M.O."
-#define STR_4120	"Type :"
+#define STR_4120	"Tipo:"
 
 /* End of file. */
