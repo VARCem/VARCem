@@ -8,7 +8,7 @@
  *
  *		Implementation of the Opti 82C895/802G chipset.
  *
- * Version:	@(#)opti895.c	1.0.1	2021/03/16
+ * Version:	@(#)opti895.c	1.0.2	2021/06/26
  *
  * Authors:	Altheos, <altheos@varcem.com>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
@@ -86,7 +86,7 @@ shadow_recalc(opti895_t *dev)
 	shflags = MEM_READ_INTERNAL | MEM_WRITE_DISABLED;
     }
 
-    mem_set_mem_state(0xf0000, 0X10000, shflags);
+    mem_set_mem_state(0xf0000, 0x10000, shflags);
 
     for (i = 0; i < 8; i++) {
 	base = 0xd0000 + (i << 14);
@@ -139,12 +139,16 @@ opti895_in(uint16_t port, priv_t priv)
 	    	break;
 
 	case 0x24:
-		if (((dev->indx >= 0x20) && (dev->indx <= 0x2c)) ||
+		if (((dev->indx >= 0x20) && (dev->indx <= 0x2f)) ||
 		    ((dev->indx >= 0xe0) && (dev->indx <= 0xef))) {
 			ret = dev->regs[dev->indx];
 
 			if (dev->indx == 0xee)
 				ret = (ret & 0x7f);
+		}
+		else {
+			DEBUG("Out of Range 895 register read %X\n", dev->regs[dev->indx]);
+			ret = dev->regs[dev->indx];
 		}      
 		break;
     }
@@ -168,30 +172,53 @@ opti895_out(uint16_t port, uint8_t val, priv_t priv)
 		break;
 
 	case 0x24:
-		if (((dev->indx >= 0x20) && (dev->indx <= 0x2C)) ||
+		if (((dev->indx >= 0x20) && (dev->indx <= 0x2f)) ||
 		    ((dev->indx >= 0xe0) && (dev->indx <= 0xef))) {
-			dev->regs[dev->indx] = val;
 
 			switch (dev->indx) {
 				case 0x21:
+					dev->regs[dev->indx] = val & 0xbf;
 					cpu_cache_ext_enabled = !!(val & 0x10);
 					cpu_update_waitstates();
 					break;
 
 				case 0x22: case 0x23: case 0x26:
+					dev->regs[dev->indx] = val;
 					shadow_recalc(dev);
 					break;
 
+				case 0x24:
+					dev->regs[dev->indx] |= (val & 0x80);
+					//smram_state_change(dev->smram, 0, !!(val & 0x80));
+					break;
+
+				case 0x27:
+					dev->regs[dev->indx] = val & 0xfe;
+					break;
+
+				case 0x2c:
+					return;
+
 				case 0xe0:
+					dev->regs[dev->indx] = val;
 					if (!(val & 0x01))
 						dev->forced_green = 0;
 					break;
 
 				case 0xe1:
+					dev->regs[dev->indx] = val;
 					if ((val & 0x08) && (dev->regs[0xe0] & 0x01))
 						dev->forced_green = 1;
 					break;
+
+				default:
+					dev->regs[dev->indx] = val;
+					break;
 			}
+		}
+		else {
+			DEBUG("Out of Range 895 register write %X, %X\n", dev->regs[dev->indx], val);
+			dev->regs[dev->indx] = val;
 		}
 		break;
     }
@@ -228,13 +255,60 @@ opti895_init(const device_t *info, UNUSED(void *parent))
     dev->regs[0x27] = 0xde;
     dev->regs[0x28] = 0xf8;
     dev->regs[0x29] = 0x10;
-    dev->regs[0x2A] = 0xe0;
-    dev->regs[0x2B] = 0x10;
-    dev->regs[0x2D] = 0xc0;
+    dev->regs[0x2a] = 0xe0;
+    dev->regs[0x2b] = 0x10;
+    dev->regs[0x2d] = 0xc0;
     dev->regs[0xe8] = 0x08;
     dev->regs[0xe9] = 0x08;
-    dev->regs[0xef] = 0xff;
+    dev->regs[0xeb] = 0xff;
     dev->regs[0xef] = 0x41;
+
+    switch (mem_size >> 10) {
+    	case 2:
+		dev->regs[0x24] =  0x0;
+		break;
+	case 3:	case 4:
+		dev->regs[0x24] =  0x02;
+		break;	
+	case 5:
+		dev->regs[0x24] = 0x53;
+		break;
+	case 6:
+		dev->regs[0x24] = 0x47;
+		break;
+	case 8 :
+		dev->regs[0x24] = 0x04;
+		break;
+	case 10:
+		dev->regs[0x24] = 0x06;
+		break;
+	case 12:
+		dev->regs[0x24] = 0x15;
+		break;
+	case 16:
+		dev->regs[0x24] = 0x11;
+		break;	
+	case 17:
+		dev->regs[0x24] = 0x54;
+		break;
+	case 20:
+		dev->regs[0x24] = 0x55;
+		break;
+	case 24:
+		dev->regs[0x24] = 0x22;
+		break;
+	case 32:
+		dev->regs[0x24] = 0x12;
+		break;
+	case 64:
+		dev->regs[0x24] = 0x14;
+		break;
+	case 128:
+		dev->regs[0x24] = 0x46;
+		break;
+	default:
+		dev->regs[0x24] = 0;
+};
 
     io_sethandler(0x0022, 3,
 		  opti895_in,NULL,NULL, opti895_out,NULL,NULL, dev);
