@@ -234,10 +234,10 @@ const device_t m_cbm_sl386sx25 = {
 };
 
 static const machine_t t486dx_info = {
-    MACHINE_ISA | MACHINE_AT | MACHINE_PS2 | MACHINE_HDC | MACHINE_MOUSE,
+    MACHINE_ISA | MACHINE_VLB | MACHINE_AT | MACHINE_PS2 | MACHINE_HDC | MACHINE_MOUSE,
     0,
     1, 32, 1, 128, 0,
-    {{"Intel",cpus_i486},{"AMD",cpus_Am486},{"Cyrix",cpus_Cx486}}
+    {{"Intel",cpus_i486},{"AMD",cpus_Am486},{"Cyrix",cpus_Cx486}} /* Supports only 5V CPU */
 };
 
 const device_t m_cbm_t486dx = {
