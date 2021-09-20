@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows using Visual Studio 2015.
 #
-# Version:	@(#)Makefile.VC	1.0.87	2021/03/26
+# Version:	@(#)Makefile.VC	1.0.88	2021/09/18
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -647,11 +647,6 @@ ifeq ($(DEV_BRANCH), y)
   DEVBROBJ	+= m_zenith.obj m_zenith_vid.obj
  endif
 
- ifeq ($(SYMPHONY), y)
-  OPTS		+= -DUSE_SL
-  DEVBROBJ	+= m_sl82c460.o
- endif
-
  ifeq ($(PAS16), y)
   OPTS		+= -DUSE_PAS16
   DEVBROBJ	+= snd_pas16.obj
@@ -766,6 +761,7 @@ MCHOBJ		:= machine.obj machine_table.obj \
 		    m_commodore.obj m_hp.obj m_pbell.obj \
 		    m_tosh3100e.obj m_tosh3100e_vid.obj \
 		    m_acer.obj m_aopen.obj m_asus.obj m_tyan.obj \
+		    m_sl82c460.obj \
 		    m_misc.obj
 
 DEVOBJ		:= bugger.obj \
@@ -876,7 +872,9 @@ VIDOBJ		:= video.obj \
 		    vid_tgui9440.obj vid_tkd8001_ramdac.obj \
 		    vid_s3.obj vid_s3_virge.obj \
 		    vid_sdac_ramdac.obj \
-		    vid_voodoo.obj
+		    vid_voodoo.obj vid_voodoo_blitter.obj vid_voodoo_display.obj \
+		    vid_voodoo_fb.obj vid_voodoo_fifo.obj vid_voodoo_reg.obj \
+		    vid_voodoo_render.obj vid_voodoo_setup.obj vid_voodoo_texture.obj
 
 PLATOBJ		:= win.obj \
 		   win_lang.obj win_dynld.obj win_opendir.obj win_thread.obj \
