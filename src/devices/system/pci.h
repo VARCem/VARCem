@@ -8,7 +8,7 @@
  *
  *		Definitions for the PCI handler module.
  *
- * Version:	@(#)pci.h	1.0.4	2019/05/13
+ * Version:	@(#)pci.h	1.0.5	2021/10/01
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -73,6 +73,7 @@ typedef union {
     uint8_t addr_regs[4];
 } bar_t;
 
+extern int 	pci_burst_time, pci_nonburst_time;
 
 extern void	pci_set_irq_routing(int pci_int, int irq);
 

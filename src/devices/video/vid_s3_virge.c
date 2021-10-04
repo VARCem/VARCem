@@ -2492,8 +2492,8 @@ static void (*tex_read)(s3d_state_t *state, s3d_texture_state_t *texture_state, 
 static void (*tex_sample)(s3d_state_t *state);
 static void (*dest_pixel)(s3d_state_t *state);
 
-#define MAX(a, b) ((a) > (b) ? (a) : (b))
-#define MIN(a, b) ((a) < (b) ? (a) : (b))
+//#define MAX(a, b) ((a) > (b) ? (a) : (b))
+//#define MIN(a, b) ((a) < (b) ? (a) : (b))
 
 static int _x, _y;
 
