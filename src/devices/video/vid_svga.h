@@ -8,7 +8,7 @@
  *
  *		Definitions for the generic SVGA driver.
  *
- * Version:	@(#)vid_svga.h	1.0.12	2021/02/03
+ * Version:	@(#)vid_svga.h	1.0.13	2021/09/21
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -81,7 +81,8 @@ typedef struct svga_t
 	video_res_x, video_res_y, video_bpp, frames, fps,
 	vram_display_mask,
 	hwcursor_on, dac_hwcursor_on, overlay_on,
-	hwcursor_oddeven, dac_hwcursor_oddeven, overlay_oddeven;
+	hwcursor_oddeven, dac_hwcursor_oddeven, overlay_oddeven,
+	set_override, char_width;;
 
     /*The three variables below allow us to implement memory maps like that seen on a 1MB Trio64 :
       0MB-1MB - VRAM
@@ -100,8 +101,8 @@ typedef struct svga_t
 	     extra_banks[2],
 	     banked_mask,
 	     ca, ca_adj, 
-		 overscan_color,
-	     *map8, pallook[256];
+	     overscan_color,
+	     *map8, pallook[512];
 
     latch_t latch;
     
@@ -126,6 +127,8 @@ typedef struct svga_t
     void (*vblank_start)(struct svga_t *svga);
     void (*ven_write)(struct svga_t *svga, uint8_t val, uint32_t addr);
     float (*getclock)(int clock, priv_t);
+    /*Called at the start of vertical sync*/
+    void (*vsync_callback)(struct svga_t *svga);
 
     /*If set then another device is driving the monitor output and the SVGA
       card should not attempt to display anything */

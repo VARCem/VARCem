@@ -34,5 +34,8 @@
  *   Boston, MA 02111-1307
  *   USA.
  */
+#ifndef VIDEO_VOODOO_REG_H
+# define VIDEO_VOODOO_REG_H
 
 void voodoo_reg_writel(uint32_t addr, uint32_t val, void *priv);
+#endif

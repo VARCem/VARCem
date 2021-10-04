@@ -34,6 +34,8 @@
  *   Boston, MA 02111-1307
  *   USA.
  */
+#ifndef VIDEO_VOODOO_FIFO_H
+# define VIDEO_VOODOO_FIFO_H
 
 void voodoo_wake_fifo_thread(voodoo_t *voodoo);
 void voodoo_wake_fifo_thread_now(voodoo_t *voodoo);
@@ -43,3 +45,5 @@ void voodoo_flush(voodoo_t *voodoo);
 void voodoo_wake_fifo_threads(voodoo_set_t *set, voodoo_t *voodoo);
 void voodoo_wait_for_swap_complete(voodoo_t *voodoo);
 void voodoo_fifo_thread(void *param);
+
+#endif

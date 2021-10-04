@@ -59,7 +59,6 @@ void triangle_setup(voodoo_t *voodoo)
         float dxAB, dxBC, dyAB, dyBC;
         float area;
         int va = 0, vb = 1, vc = 2;
-        int reverse_cull = 0;
         vert_t verts[3];
 
         verts[0] = voodoo->verts[0];
@@ -79,7 +78,6 @@ void triangle_setup(voodoo_t *voodoo)
                                 va = 0;
                                 vb = 2;
                                 vc = 1;
-                                reverse_cull = 1;
                         } else {
                                 /* V1>V0, V1>V2, V0>V2, V1>V0>V2*/
                                 va = 2;
@@ -97,7 +95,6 @@ void triangle_setup(voodoo_t *voodoo)
                                 va = 1;
                                 vb = 0;
                                 vc = 2;
-                                reverse_cull = 1;
                         } else {
                                 /* V0>V1, V2>V1, V0>V2, V0>V2>V1*/
                                 va = 1;
@@ -109,45 +106,43 @@ void triangle_setup(voodoo_t *voodoo)
                         va = 2;
                         vb = 1;
                         vc = 0;
-                        reverse_cull = 1;
                 }
         }
 
-        dxAB = verts[va].sVx - verts[vb].sVx;
-        dxBC = verts[vb].sVx - verts[vc].sVx;
-        dyAB = verts[va].sVy - verts[vb].sVy;
-        dyBC = verts[vb].sVy - verts[vc].sVy;
+        dxAB = verts[0].sVx - verts[1].sVx;
+        dxBC = verts[1].sVx - verts[2].sVx;
+        dyAB = verts[0].sVy - verts[1].sVy;
+        dyBC = verts[1].sVy - verts[2].sVy;
         
         area = dxAB * dyBC - dxBC * dyAB;
 
-        if (area == 0.0) {
-                if ((voodoo->sSetupMode & SETUPMODE_CULLING_ENABLE) &&
-                    !(voodoo->sSetupMode & SETUPMODE_DISABLE_PINGPONG))
-                        voodoo->sSetupMode ^= SETUPMODE_CULLING_SIGN;
-                
-                return;
-        }
-                
-        dxAB /= area;
-        dxBC /= area;
-        dyAB /= area;
-        dyBC /= area;
+        return;
 
         if (voodoo->sSetupMode & SETUPMODE_CULLING_ENABLE) {
                 int cull_sign = voodoo->sSetupMode & SETUPMODE_CULLING_SIGN;
                 int sign = (area < 0.0);
                 
-                if (!(voodoo->sSetupMode & SETUPMODE_DISABLE_PINGPONG))
-                        voodoo->sSetupMode ^= SETUPMODE_CULLING_SIGN;
+        	if ((voodoo->sSetupMode & (SETUPMODE_CULLING_ENABLE | SETUPMODE_DISABLE_PINGPONG))
+                	== SETUPMODE_CULLING_ENABLE && voodoo->cull_pingpong)
+                        cull_sign = !cull_sign;
 
-                if (reverse_cull)
-                        sign = !sign;
-                
                 if (cull_sign && sign)
                         return;
                 if (!cull_sign && !sign)
                         return;
         }
+
+	dxAB = verts[va].sVx - verts[vb].sVx;
+        dxBC = verts[vb].sVx - verts[vc].sVx;
+        dyAB = verts[va].sVy - verts[vb].sVy;
+        dyBC = verts[vb].sVy - verts[vc].sVy;
+
+        area = dxAB * dyBC - dxBC * dyAB;
+
+        dxAB /= area;
+        dxBC /= area;
+        dyAB /= area;
+        dyBC /= area;
         
         voodoo->params.vertexAx = (int32_t)(int16_t)((int32_t)(verts[va].sVx * 16.0f) & 0xffff);
         voodoo->params.vertexAy = (int32_t)(int16_t)((int32_t)(verts[va].sVy * 16.0f) & 0xffff);

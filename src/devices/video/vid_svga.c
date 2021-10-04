@@ -11,7 +11,7 @@
  *		This is intended to be used by another VGA/SVGA driver,
  *		and not as a card in it's own right.
  *
- * Version:	@(#)vid_svga.c	1.0.30	2021/02/11
+ * Version:	@(#)vid_svga.c	1.0.31	2021/09/30
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -558,6 +558,7 @@ svga_recalctimings(svga_t *svga)
 
     svga->linedbl = svga->crtc[9] & 0x80;
     svga->rowcount = svga->crtc[9] & 31;
+    svga->char_width = (svga->seqregs[1] & 1) ? 8 : 9;
     if (enable_overscan) {
 	overscan_y = (svga->rowcount + 1) << 1;
 	if (svga->seqregs[1] & 8)	/*Low res (320)*/
@@ -571,7 +572,7 @@ svga_recalctimings(svga_t *svga)
     if (svga->vblankstart < svga->dispend)
 	svga->dispend = svga->vblankstart;
 
-    crtcconst = (svga->seqregs[1] & 1) ? (svga->clock * 8.0) : (svga->clock * 9.0);
+    crtcconst = svga->clock * svga->char_width;
 
     disptime  = svga->htotal;
     _dispontime = svga->hdisp_time;
@@ -795,25 +796,29 @@ svga_poll(priv_t priv)
 		svga->maback <<= 2;
 		svga->ca <<= 2;
 
-		svga->video_res_x = wx;
-		svga->video_res_y = wy + 1;
-		if (!(svga->gdcreg[6] & 1) && !(svga->attrregs[0x10] & 1)) { /*Text mode*/
-			svga->video_res_x /= (svga->seqregs[1] & 1) ? 8 : 9;
-			svga->video_res_y /= (svga->crtc[9] & 31) + 1;
-			svga->video_bpp = 0;
-		} else {
-			if (svga->crtc[9] & 0x80)
-				svga->video_res_y /= 2;
-			if (!(svga->crtc[0x17] & 2))
-				svga->video_res_y *= 4;
-			else if (!(svga->crtc[0x17] & 1))
-				svga->video_res_y *= 2;
-			svga->video_res_y /= (svga->crtc[9] & 31) + 1;                                   
-			if (svga->lowres)
-				svga->video_res_x /= 2;
+		if (!svga->set_override) {
+			svga->video_res_x = wx;
+			svga->video_res_y = wy + 1;
+			if (!(svga->gdcreg[6] & 1) && !(svga->attrregs[0x10] & 1)) { /*Text mode*/
+				svga->video_res_x /= svga->char_width;
+				svga->video_res_y /= (svga->crtc[9] & 31) + 1;
+				svga->video_bpp = 0;
+			} else {
+				if (svga->crtc[9] & 0x80)
+					svga->video_res_y /= 2;
+				if (!(svga->crtc[0x17] & 2))
+					svga->video_res_y *= 4;
+				else if (!(svga->crtc[0x17] & 1))
+					svga->video_res_y *= 2;
+				svga->video_res_y /= (svga->crtc[9] & 31) + 1;                                   
+				if (svga->lowres)
+					svga->video_res_x /= 2;
 
-			svga->video_bpp = svga->bpp;
+				svga->video_bpp = svga->bpp;
+			}
 		}
+		if (svga->vsync_callback)
+			svga->vsync_callback(svga);
 	}
 	if (svga->vc == svga->vtotal) {
 		svga->vc = 0;

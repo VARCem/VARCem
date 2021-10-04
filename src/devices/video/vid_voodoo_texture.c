@@ -512,7 +512,7 @@ void use_texture(voodoo_t *voodoo, voodoo_params_t *params, int tmu)
         voodoo->texture_cache[tmu][c].refcount++;
 }
 
-static void flush_texture_cache(voodoo_t *voodoo, uint32_t dirty_addr, int tmu)
+void flush_texture_cache(voodoo_t *voodoo, uint32_t dirty_addr, int tmu)
 {
         int wait_for_idle = 0;
         int c;
@@ -562,46 +562,49 @@ static void flush_texture_cache(voodoo_t *voodoo, uint32_t dirty_addr, int tmu)
 
 void voodoo_tex_writel(uint32_t addr, uint32_t val, void *p)
 {
-        int lod, s, t;
-        voodoo_t *voodoo = (voodoo_t *)p;
-        int tmu;
+    int lod, s, t;
+    voodoo_t *voodoo = (voodoo_t *)p;
+    int tmu;
 
-        if (addr & 0x400000)
-                return; /*TREX != 0*/
+    if (addr & 0x400000)
+	return; /*TREX != 0*/
         
-        tmu = (addr & 0x200000) ? 1 : 0;
+    tmu = (addr & 0x200000) ? 1 : 0;
         
-        if (tmu && !voodoo->dual_tmus)
-                return;
+    if (tmu && !voodoo->dual_tmus)
+	return;
 
-//        DEBUG("voodoo_tex_writel : %08X %08X %i\n", addr, val, voodoo->params.tformat);
-        
-        lod = (addr >> 17) & 0xf;
-        t = (addr >> 9) & 0xff;
+    if (voodoo->type != VOODOO_BANSHEE) {
+	if (!(voodoo->params.tformat[tmu] & 8) && voodoo->type == VOODOO_BANSHEE) {
+                        lod = (addr >> 16) & 0xf;
+                        t = (addr >> 8) & 0xff;
+                } else {
+                        lod = (addr >> 17) & 0xf;
+                        t = (addr >> 9) & 0xff;
+                }
         if (voodoo->params.tformat[tmu] & 8)
-                s = (addr >> 1) & 0xfe;
-        else
-        {
-                if (voodoo->params.textureMode[tmu] & (1 << 31))
-                        s = addr & 0xfc;
+		s = (addr >> 1) & 0xfe;
+        else {
+		if ((voodoo->params.textureMode[tmu] & (1 << 31)) || voodoo->type == VOODOO_BANSHEE)
+			s = addr & 0xfc;
                 else
                         s = (addr >> 1) & 0xfc;
         }
-
         if (lod > LOD_MAX)
                 return;
         
-//        if (addr >= 0x200000)
-//                return;
+//      if (addr >= 0x200000)
+//              return;
         
         if (voodoo->params.tformat[tmu] & 8)
-                addr = voodoo->params.tex_base[tmu][lod] + s*2 + (t << voodoo->params.tex_shift[tmu][lod])*2;
-        else
-                addr = voodoo->params.tex_base[tmu][lod] + s + (t << voodoo->params.tex_shift[tmu][lod]);
-        if (voodoo->texture_present[tmu][(addr & voodoo->texture_mask) >> TEX_DIRTY_SHIFT])
-        {
-//                DEBUG("texture_present at %08x %i\n", addr, (addr & voodoo->texture_mask) >> TEX_DIRTY_SHIFT);
-                flush_texture_cache(voodoo, addr & voodoo->texture_mask, tmu);
-        }
-        *(uint32_t *)(&voodoo->tex_mem[tmu][addr & voodoo->texture_mask]) = val;
+                        addr = voodoo->params.tex_base[tmu][lod] + s*2 + (t << voodoo->params.tex_shift[tmu][lod])*2;
+                else
+                        addr = voodoo->params.tex_base[tmu][lod] + s + (t << voodoo->params.tex_shift[tmu][lod]);
+    } else
+        addr = (addr & 0x1ffffc) + voodoo->params.tex_base[tmu][lod];
+    if (voodoo->texture_present[tmu][(addr & voodoo->texture_mask) >> TEX_DIRTY_SHIFT]) {
+//	DEBUG("texture_present at %08x %i\n", addr, (addr & voodoo->texture_mask) >> TEX_DIRTY_SHIFT);
+	flush_texture_cache(voodoo, addr & voodoo->texture_mask, tmu);
+    }
+    *(uint32_t *)(&voodoo->tex_mem[tmu][addr & voodoo->texture_mask]) = val;
 }

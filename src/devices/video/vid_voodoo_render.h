@@ -34,7 +34,8 @@
  *   Boston, MA 02111-1307
  *   USA.
  */
-
+#ifndef VIDEO_VOODOO_RENDER_H
+# define VIDEO_VOODOO_RENDER_H
 
 # if !(defined(_MSC_VER) && (defined(_M_X64) || defined(_M_IX86) || defined( _X86_)) || (defined(__GNUC__) && (defined(__amd64__) || defined(i386) || defined(__i386) || defined(__i386__))))
 #define NO_CODEGEN
@@ -358,3 +359,5 @@ static inline void voodoo_wait_for_render_thread_idle(voodoo_t *voodoo)
                         thread_wait_event(voodoo->render_not_full_event[1], 1);
         }
 }
+
+#endif

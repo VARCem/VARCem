@@ -34,5 +34,9 @@
  *   Boston, MA 02111-1307
  *   USA.
  */
+#ifndef VIDEO_VOODOO_SETUP_H
+# define VIDEO_VOODOO_SETUP_H
 
 void triangle_setup(voodoo_t *voodoo);
+
+#endif

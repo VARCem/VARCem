@@ -34,7 +34,11 @@
  *   Boston, MA 02111-1307
  *   USA.
  */
+#ifndef VIDEO_VOODOO_BLITTER_H
+# define VIDEO_VOODOO_BLITTER_H
 
 void blit_start(voodoo_t *voodoo);
 void blit_data(voodoo_t *voodoo, uint32_t data);
 void voodoo_fastfill(voodoo_t *voodoo, voodoo_params_t *params);
+
+#endif
