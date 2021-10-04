@@ -8,7 +8,7 @@
  *
  *		Implementation of the I2C bus and its operations.
  *
- * Version:	@(#)i2c.c	1.0.1	2021/03/18
+ * Version:	@(#)i2c.c	1.0.2	2021/10/01
  *
  * Author:	RichardG, <richardg867@gmail.com>
  *
@@ -45,7 +45,7 @@
 
 
 #define NADDRS		128		/* I2C supports 128 addresses */
-#define MAX(a, b) ((a) > (b) ? (a) : (b))
+//#define MAX(a, b) ((a) > (b) ? (a) : (b))
 
 
 typedef struct _i2c_ {
