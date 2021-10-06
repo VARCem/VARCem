@@ -8,7 +8,7 @@
  *
  *		Emulation of the 3DFX Voodoo Graphics FIFO.
  *
- * Version:	@(#)vid_voodoo_fifo.c	1.0.1	2021/09/14
+ * Version:	@(#)vid_voodoo_fifo.c	1.0.2	2021/10/06
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -209,6 +209,8 @@ void voodoo_fifo_thread(void *param)
                                         voodoo_reg_writel(fifo->addr_type & FIFO_ADDR, fifo->val, voodoo);
                                         fifo->addr_type = FIFO_INVALID;
                                         voodoo->fifo_read_idx++;
+					if (FIFO_EMPTY)
+                                                break;
                                         fifo = &voodoo->fifo[voodoo->fifo_read_idx & FIFO_MASK];
                                 }
                                 break;
@@ -218,6 +220,8 @@ void voodoo_fifo_thread(void *param)
                                         voodoo_fb_writew(fifo->addr_type & FIFO_ADDR, fifo->val, voodoo);
                                         fifo->addr_type = FIFO_INVALID;
                                         voodoo->fifo_read_idx++;
+					if (FIFO_EMPTY)
+                                                break;
                                         fifo = &voodoo->fifo[voodoo->fifo_read_idx & FIFO_MASK];
                                 }
                                 break;
@@ -227,6 +231,8 @@ void voodoo_fifo_thread(void *param)
                                         voodoo_fb_writel(fifo->addr_type & FIFO_ADDR, fifo->val, voodoo);
                                         fifo->addr_type = FIFO_INVALID;
                                         voodoo->fifo_read_idx++;
+					if (FIFO_EMPTY)
+                                                break;
                                         fifo = &voodoo->fifo[voodoo->fifo_read_idx & FIFO_MASK];
                                 }
                                 break;
@@ -236,6 +242,8 @@ void voodoo_fifo_thread(void *param)
                                                 voodoo_tex_writel(fifo->addr_type & FIFO_ADDR, fifo->val, voodoo);
                                         fifo->addr_type = FIFO_INVALID;
                                         voodoo->fifo_read_idx++;
+					if (FIFO_EMPTY)
+                                                break;
                                         fifo = &voodoo->fifo[voodoo->fifo_read_idx & FIFO_MASK];
                                 }
                                 break;
@@ -244,6 +252,8 @@ void voodoo_fifo_thread(void *param)
                                         voodoo_2d_reg_writel(voodoo, fifo->addr_type & FIFO_ADDR, fifo->val);
                                         fifo->addr_type = FIFO_INVALID;
                                         voodoo->fifo_read_idx++;
+					if (FIFO_EMPTY)
+                                                break;
                                         fifo = &voodoo->fifo[voodoo->fifo_read_idx & FIFO_MASK];
                                 }
                                 break;
