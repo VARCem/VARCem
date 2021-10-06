@@ -248,8 +248,10 @@ typedef struct voodoo_t
         
         uint32_t fb_read_offset, fb_write_offset;
         
-        int row_width;
+        int row_width, aux_row_width;
         int block_width;
+
+	int col_tiled, aux_tiled;
         
         uint8_t *fb_mem, *tex_mem[2];
         uint16_t *tex_mem_w[2];
@@ -331,6 +333,7 @@ typedef struct voodoo_t
         int cmdfifo_rp;
         volatile int cmdfifo_depth_rd, cmdfifo_depth_wr;
         uint32_t cmdfifo_amin, cmdfifo_amax;
+	int cmdfifo_holecount;
         
         uint32_t sSetupMode;
 	vert_t verts[4];
@@ -440,6 +443,8 @@ typedef struct voodoo_t
                 int host_data_count;
                 int host_data_size_src, host_data_size_dest;
                 int src_stride_src, src_stride_dest;
+
+		int src_bpp;
         } banshee_blt;
 
         struct
@@ -470,7 +475,7 @@ typedef struct voodoo_t
         int buffer_cutoff;
 
 	uint32_t tile_base, tile_stride;
-        int tile_stride_shift, tile_x;
+        int tile_stride_shift, tile_x, tile_x_real;
 
         tmrval_t read_time, write_time, burst_time;
 

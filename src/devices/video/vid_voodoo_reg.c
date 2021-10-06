@@ -82,7 +82,6 @@ void voodoo_reg_writel(uint32_t addr, uint32_t val, void *priv)
                 chip = 0xf;
         
         tempif.i = val;
-//DEBUG("voodoo_reg_write_l: addr=%08x val=%08x(%f) chip=%x\n", addr, val, tempif.f, chip);
         addr &= 0x3fc;
 
         if ((voodoo->fbiInit3 & FBIINIT3_REMAP) && addr < 0x100 && ad21)
@@ -126,7 +125,7 @@ void voodoo_reg_writel(uint32_t addr, uint32_t val, void *priv)
 
                 voodoo->params.swapbufferCMD = val;
 
-//               DEBUG("Swap buffer %08x %d %p %i\n", val, voodoo->swap_count, &voodoo->swap_count, (voodoo == voodoo->set->voodoos[1]) ? 1 : 0);
+//              DEBUG("Swap buffer %08x %d %p %i\n", val, voodoo->swap_count, &voodoo->swap_count, (voodoo == voodoo->set->voodoos[1]) ? 1 : 0);
 //              voodoo->front_offset = params->front_offset;
                 voodoo_wait_for_render_thread_idle(voodoo);
                 if (!(val & 1)) {
@@ -551,6 +550,9 @@ void voodoo_reg_writel(uint32_t addr, uint32_t val, void *priv)
                 case SST_fogTable18: case SST_fogTable19: case SST_fogTable1a: case SST_fogTable1b:
                 case SST_fogTable1c: case SST_fogTable1d: case SST_fogTable1e: case SST_fogTable1f:
                 addr = (addr - SST_fogTable00) >> 1;
+		if (voodoo->type == VOODOO_BANSHEE)
+                        val = ~val; /*Banshee fog table seems to be inverted. There's a reference
+                                      in the glide2x source to a "banshee (rev<3) fogTable hack"*/
                 voodoo->params.fogTable[addr].dfog   = val & 0xff;
                 voodoo->params.fogTable[addr].fog    = (val >> 8) & 0xff;
                 voodoo->params.fogTable[addr+1].dfog = (val >> 16) & 0xff;
@@ -575,24 +577,32 @@ void voodoo_reg_writel(uint32_t addr, uint32_t val, void *priv)
                 if (voodoo->type == VOODOO_BANSHEE) {
                         voodoo->params.draw_offset = val & 0xfffff0;
                         voodoo->fb_write_offset = voodoo->params.draw_offset;
-//                        pclog("colorBufferAddr=%06x\n", voodoo->params.draw_offset);
+//                      DEBUG("colorBufferAddr=%06x\n", voodoo->params.draw_offset);
                 }
                 break;
                 case SST_colBufferStride:
                 if (voodoo->type == VOODOO_BANSHEE) {
-                        if (val & (1 << 15)) {
-                                voodoo->row_width = (val & 0x7f) * 128;
-//                                pclog("colBufferStride = %i bytes, tiled\n", voodoo->row_width);
-                        } else {
+                        voodoo->col_tiled = val & (1 << 15);
+                        if (voodoo->col_tiled)
+                                voodoo->row_width = (val & 0x7f) * 128*32;
+                        else
                                 voodoo->row_width = val & 0x3fff;
-//                                pclog("colBufferStride = %i bytes, linear\n", voodoo->row_width);
-                        }
                 }
                 break;
                 case SST_auxBufferAddr:
                 if (voodoo->type == VOODOO_BANSHEE) {
                         voodoo->params.aux_offset = val & 0xfffff0;
-//                        pclog("auxBufferAddr=%06x\n", voodoo->params.aux_offset);
+//                      DEBUG("auxBufferAddr=%06x\n", voodoo->params.aux_offset);
+                }
+                break;
+
+		case SST_auxBufferStride:
+                if (voodoo->type == VOODOO_BANSHEE) {
+                        voodoo->aux_tiled = val & (1 << 15);
+                        if (voodoo->aux_tiled)
+                                voodoo->aux_row_width = (val & 0x7f) * 128*32;
+                        else
+                                voodoo->aux_row_width = val & 0x3fff;
                 }
                 break;
 

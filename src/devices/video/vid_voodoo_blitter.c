@@ -145,21 +145,18 @@ void blit_start(voodoo_t *voodoo)
                         uint16_t *dst = (uint16_t *)&voodoo->fb_mem[dst_base_addr + dst_y*dst_stride];
                         int src_x = voodoo->bltSrcX, dst_x = voodoo->bltDstX;
                         
-                        for (x = 0; x <= size_x; x++)
-                        {
+                        for (x = 0; x <= size_x; x++) {
                                 uint16_t src_dat = src[src_x];
                                 uint16_t dst_dat = dst[dst_x];
                                 int rop = 0;
 
-                                if (voodoo->bltCommand & BLIT_CLIPPING_ENABLED)
-                                {
+                                if (voodoo->bltCommand & BLIT_CLIPPING_ENABLED) {
                                         if (dst_x < voodoo->bltClipLeft || dst_x >= voodoo->bltClipRight ||
                                             dst_y < voodoo->bltClipLowY || dst_y >= voodoo->bltClipHighY)
                                                 goto skip_pixel_blit;
                                 }
 
-                                if (voodoo->bltCommand & BLIT_SRC_CHROMA)
-                                {
+                                if (voodoo->bltCommand & BLIT_SRC_CHROMA) {
                                         int r = (src_dat >> 11);
                                         int g = (src_dat >> 5) & 0x3f;
                                         int b = src_dat & 0x1f;
@@ -169,8 +166,7 @@ void blit_start(voodoo_t *voodoo)
                                             b >= voodoo->bltSrcChromaMinB && b <= voodoo->bltSrcChromaMaxB)
                                                 rop |= BLIT_ROP_SRC_PASS;
                                 }
-                                if (voodoo->bltCommand & BLIT_DST_CHROMA)
-                                {
+                                if (voodoo->bltCommand & BLIT_DST_CHROMA) {
                                         int r = (dst_dat >> 11);
                                         int g = (dst_dat >> 5) & 0x3f;
                                         int b = dst_dat & 0x1f;
@@ -206,13 +202,11 @@ skip_pixel_blit:
                 break;
                 
                 case BLIT_COMMAND_RECT_FILL:
-                for (y = 0; y <= size_y; y++)
-                {
+                for (y = 0; y <= size_y; y++) {
                         uint16_t *dst;
                         int dst_x = voodoo->bltDstX;
                         
-                        if (SLI_ENABLED)
-                        {
+                        if (SLI_ENABLED) {
                                 if ((!(voodoo->initEnable & INITENABLE_SLI_MASTER_SLAVE) && (voodoo->blt.dst_y & 1)) ||
                                     ((voodoo->initEnable & INITENABLE_SLI_MASTER_SLAVE) && !(voodoo->blt.dst_y & 1)))
                                         goto skip_line_fill;
@@ -221,10 +215,8 @@ skip_pixel_blit:
                         else                        
                                 dst = (uint16_t *)&voodoo->fb_mem[dst_base_addr + dst_y*dst_stride];
 
-                        for (x = 0; x <= size_x; x++)
-                        {
-                                if (voodoo->bltCommand & BLIT_CLIPPING_ENABLED)
-                                {
+                        for (x = 0; x <= size_x; x++) {
+                                if (voodoo->bltCommand & BLIT_CLIPPING_ENABLED) {
                                         if (dst_x < voodoo->bltClipLeft || dst_x >= voodoo->bltClipRight ||
                                             dst_y < voodoo->bltClipLowY || dst_y >= voodoo->bltClipHighY)
                                                 goto skip_pixel_fill;
@@ -305,70 +297,66 @@ void blit_data(voodoo_t *voodoo, uint32_t data)
                 int x = (voodoo->blt.x_dir > 0) ? (voodoo->blt.dst_x + voodoo->blt.cur_x) : (voodoo->blt.dst_x - voodoo->blt.cur_x);
                 int rop = 0;
                 
-                switch (voodoo->bltCommand & BLIT_SRC_FORMAT)
-                {
+                switch (voodoo->bltCommand & BLIT_SRC_FORMAT) {
                         case BLIT_SRC_1BPP: case BLIT_SRC_1BPP_BYTE_PACKED:
-                        src_dat = (data & 1) ? voodoo->bltColorFg : voodoo->bltColorBg;
-                        data >>= 1;
-                        src_bits--;
-                        break;
+                        	src_dat = (data & 1) ? voodoo->bltColorFg : voodoo->bltColorBg;
+                        	data >>= 1;
+                        	src_bits--;
+                        	break;
                         case BLIT_SRC_16BPP:
-                        switch (voodoo->bltCommand & BLIT_SRC_RGB_FORMAT)
-                        {
-                                case BLIT_SRC_RGB_ARGB: case BLIT_SRC_RGB_RGBA:
-                                src_dat = data & 0xffff;
-                                break;
-                                case BLIT_SRC_RGB_ABGR: case BLIT_SRC_RGB_BGRA:
-                                src_dat = ((data & 0xf800) >> 11) | (data & 0x07c0) | ((data & 0x0038) << 11);
-                                break;
-                        }
-                        data >>= 16;
-                        src_bits -= 16;
-                        break;
+                        	switch (voodoo->bltCommand & BLIT_SRC_RGB_FORMAT) {
+                                	case BLIT_SRC_RGB_ARGB: case BLIT_SRC_RGB_RGBA:
+                                		src_dat = data & 0xffff;
+                                		break;
+                                	case BLIT_SRC_RGB_ABGR: case BLIT_SRC_RGB_BGRA:
+                                		src_dat = ((data & 0xf800) >> 11) | (data & 0x07c0) | ((data & 0x0038) << 11);
+                                		break;
+                        	}
+                        	data >>= 16;
+                        	src_bits -= 16;
+                        	break;
                         case BLIT_SRC_24BPP: case BLIT_SRC_24BPP_DITHER_2X2: case BLIT_SRC_24BPP_DITHER_4X4:
-                        switch (voodoo->bltCommand & BLIT_SRC_RGB_FORMAT)
-                        {
-                                case BLIT_SRC_RGB_ARGB:
-                                r = (data >> 16) & 0xff;
-                                g = (data >> 8) & 0xff;
-                                b = data & 0xff;
-                                break;
-                                case BLIT_SRC_RGB_ABGR:
-                                r = data & 0xff;
-                                g = (data >> 8) & 0xff;
-                                b = (data >> 16) & 0xff;
-                                break;
-                                case BLIT_SRC_RGB_RGBA:
-                                r = (data >> 24) & 0xff;
-                                g = (data >> 16) & 0xff;
-                                b = (data >> 8) & 0xff;
-                                break;
-                                case BLIT_SRC_RGB_BGRA:
-                                r = (data >> 8) & 0xff;
-                                g = (data >> 16) & 0xff;
-                                b = (data >> 24) & 0xff;
-                                break;
-                        }
-                        switch (voodoo->bltCommand & BLIT_SRC_FORMAT)
-                        {
-                                case BLIT_SRC_24BPP:
-                                src_dat = (b >> 3) | ((g & 0xfc) << 3) | ((r & 0xf8) << 8);
-                                break;
-                                case BLIT_SRC_24BPP_DITHER_2X2:
-                                r = dither_rb2x2[r][voodoo->blt.dst_y & 1][x & 1];
-                                g =  dither_g2x2[g][voodoo->blt.dst_y & 1][x & 1];
-                                b = dither_rb2x2[b][voodoo->blt.dst_y & 1][x & 1];
-                                src_dat = (b >> 3) | ((g & 0xfc) << 3) | ((r & 0xf8) << 8);
-                                break;
-                                case BLIT_SRC_24BPP_DITHER_4X4:
-                                r = dither_rb[r][voodoo->blt.dst_y & 3][x & 3];
-                                g =  dither_g[g][voodoo->blt.dst_y & 3][x & 3];
-                                b = dither_rb[b][voodoo->blt.dst_y & 3][x & 3];
-                                src_dat = (b >> 3) | ((g & 0xfc) << 3) | ((r & 0xf8) << 8);
-                                break;
-                        }
-                        src_bits = 0;
-                        break;
+                        	switch (voodoo->bltCommand & BLIT_SRC_RGB_FORMAT) {
+                                	case BLIT_SRC_RGB_ARGB:
+                                		r = (data >> 16) & 0xff;
+                                		g = (data >> 8) & 0xff;
+                                		b = data & 0xff;
+                                		break;
+                                	case BLIT_SRC_RGB_ABGR:
+                                		r = data & 0xff;
+                                		g = (data >> 8) & 0xff;
+                                		b = (data >> 16) & 0xff;
+                                	break;
+                                	case BLIT_SRC_RGB_RGBA:
+                                		r = (data >> 24) & 0xff;
+                                		g = (data >> 16) & 0xff;
+                                		b = (data >> 8) & 0xff;
+                                		break;
+                                	case BLIT_SRC_RGB_BGRA:
+                                		r = (data >> 8) & 0xff;
+                                		g = (data >> 16) & 0xff;
+                                		b = (data >> 24) & 0xff;
+                                		break;
+                        	}
+                        	switch (voodoo->bltCommand & BLIT_SRC_FORMAT) {
+                                	case BLIT_SRC_24BPP:
+                                		src_dat = (b >> 3) | ((g & 0xfc) << 3) | ((r & 0xf8) << 8);
+                                		break;
+                                	case BLIT_SRC_24BPP_DITHER_2X2:
+                                		r = dither_rb2x2[r][voodoo->blt.dst_y & 1][x & 1];
+                                		g =  dither_g2x2[g][voodoo->blt.dst_y & 1][x & 1];
+                                		b = dither_rb2x2[b][voodoo->blt.dst_y & 1][x & 1];
+                                		src_dat = (b >> 3) | ((g & 0xfc) << 3) | ((r & 0xf8) << 8);
+                                		break;
+	                                case BLIT_SRC_24BPP_DITHER_4X4:
+        		                        r = dither_rb[r][voodoo->blt.dst_y & 3][x & 3];
+                        		        g =  dither_g[g][voodoo->blt.dst_y & 3][x & 3];
+                                		b = dither_rb[b][voodoo->blt.dst_y & 3][x & 3];
+                                		src_dat = (b >> 3) | ((g & 0xfc) << 3) | ((r & 0xf8) << 8);
+                                		break;
+                        	}
+                        	src_bits = 0;
+                        	break;
                 }
 
                 if (SLI_ENABLED)
@@ -429,24 +417,21 @@ skip_pixel:
         }
 }
 
-void voodoo_fastfill(voodoo_t *voodoo, voodoo_params_t *params)
+void 
+voodoo_fastfill(voodoo_t *voodoo, voodoo_params_t *params)
 {
         int y;
         int low_y, high_y;
 
-        if (params->fbzMode & (1 << 17))
-        {
+        if (params->fbzMode & (1 << 17)) {
                 high_y = voodoo->v_disp - params->clipLowY;
                 low_y = voodoo->v_disp - params->clipHighY;
-        }
-        else
-        {
+        } else {
                 low_y = params->clipLowY;
                 high_y = params->clipHighY;
         }
         
-        if (params->fbzMode & FBZ_RGB_WMASK)
-        {
+        if (params->fbzMode & FBZ_RGB_WMASK) {
                 int r, g, b;
                 uint16_t col;
 
@@ -455,52 +440,61 @@ void voodoo_fastfill(voodoo_t *voodoo, voodoo_params_t *params)
                 b = (params->color1 >> 3) & 0x1f;
                 col = b | (g << 5) | (r << 11);
 
-                if (SLI_ENABLED)
-                {
-                        for (y = low_y; y < high_y; y += 2)
-                        {
+                if (SLI_ENABLED) {
+                        for (y = low_y; y < high_y; y += 2) {
                                 uint16_t *cbuf = (uint16_t *)&voodoo->fb_mem[(params->draw_offset + (y >> 1) * voodoo->row_width) & voodoo->fb_mask];
                                 int x;
                         
                                 for (x = params->clipLeft; x < params->clipRight; x++)
                                         cbuf[x] = col;
                         }
-                }
-                else
-                {
-                        for (y = low_y; y < high_y; y++)
-                        {
-                                uint16_t *cbuf = (uint16_t *)&voodoo->fb_mem[(params->draw_offset + y*voodoo->row_width) & voodoo->fb_mask];
-                                int x;
+                } else {
+                        for (y = low_y; y < high_y; y++) {
+                                if (voodoo->col_tiled) {
+                                        uint16_t *cbuf = (uint16_t *)&voodoo->fb_mem[(params->draw_offset + (y >> 5) * voodoo->row_width + (y & 31) * 128) & voodoo->fb_mask];
+                                        int x;
+
+                                        for (x = params->clipLeft; x < params->clipRight; x++) {
+                                                int x2 = (x & 63) | ((x >> 6) * 128*32/2);
+                                                cbuf[x2] = col;
+                                        }
+                                } else {
+                                        uint16_t *cbuf = (uint16_t *)&voodoo->fb_mem[(params->draw_offset + y * voodoo->row_width) & voodoo->fb_mask];
+                                        int x;
                         
-                                for (x = params->clipLeft; x < params->clipRight; x++)
-                                        cbuf[x] = col;
-                        }
+                                	for (x = params->clipLeft; x < params->clipRight; x++)
+                                        	cbuf[x] = col;
+                        	}
+			}
                 }
         }
-        if (params->fbzMode & FBZ_DEPTH_WMASK)
-        {        
-                if (SLI_ENABLED)
-                {
-                        for (y = low_y; y < high_y; y += 2)
-                        {
+        if (params->fbzMode & FBZ_DEPTH_WMASK) {        
+                if (SLI_ENABLED) {
+                        for (y = low_y; y < high_y; y += 2) {
                                 uint16_t *abuf = (uint16_t *)&voodoo->fb_mem[(params->aux_offset + (y >> 1) * voodoo->row_width) & voodoo->fb_mask];
                                 int x;
                 
                                 for (x = params->clipLeft; x < params->clipRight; x++)
                                         abuf[x] = params->zaColor & 0xffff;
                         }
-                }
-                else
-                {
-                        for (y = low_y; y < high_y; y++)
-                        {
-                                uint16_t *abuf = (uint16_t *)&voodoo->fb_mem[(params->aux_offset + y*voodoo->row_width) & voodoo->fb_mask];
-                                int x;
+                } else {
+                        for (y = low_y; y < high_y; y++) {
+                                if (voodoo->aux_tiled) {
+                                        uint16_t *abuf = (uint16_t *)&voodoo->fb_mem[(params->aux_offset + (y >> 5) * voodoo->aux_row_width + (y & 31) * 128) & voodoo->fb_mask];
+                                        int x;
+
+                                        for (x = params->clipLeft; x < params->clipRight; x++) {
+                                                int x2 = (x & 63) | ((x >> 6) * 128*32/2);
+                                                abuf[x2] = params->zaColor & 0xffff;
+                                        }
+                                } else {
+                                        uint16_t *abuf = (uint16_t *)&voodoo->fb_mem[(params->aux_offset + y * voodoo->aux_row_width) & voodoo->fb_mask];
+                                        int x;
                 
-                                for (x = params->clipLeft; x < params->clipRight; x++)
-                                        abuf[x] = params->zaColor & 0xffff;
-                        }
+                                	for (x = params->clipLeft; x < params->clipRight; x++)
+                                        	abuf[x] = params->zaColor & 0xffff;
+                        	}
+			}
                 }
         }
 }
