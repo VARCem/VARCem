@@ -550,9 +550,6 @@ void voodoo_reg_writel(uint32_t addr, uint32_t val, void *priv)
                 case SST_fogTable18: case SST_fogTable19: case SST_fogTable1a: case SST_fogTable1b:
                 case SST_fogTable1c: case SST_fogTable1d: case SST_fogTable1e: case SST_fogTable1f:
                 addr = (addr - SST_fogTable00) >> 1;
-		if (voodoo->type == VOODOO_BANSHEE)
-                        val = ~val; /*Banshee fog table seems to be inverted. There's a reference
-                                      in the glide2x source to a "banshee (rev<3) fogTable hack"*/
                 voodoo->params.fogTable[addr].dfog   = val & 0xff;
                 voodoo->params.fogTable[addr].fog    = (val >> 8) & 0xff;
                 voodoo->params.fogTable[addr+1].dfog = (val >> 16) & 0xff;
@@ -624,12 +621,12 @@ void voodoo_reg_writel(uint32_t addr, uint32_t val, void *priv)
                 case SST_sVx:
                 tempif.i = val;
                 voodoo->verts[3].sVx = tempif.f;
-//                DEBUG("sVx[%i]=%f\n", voodoo->vertex_num, tempif.f);
+//              DEBUG("sVx[%i]=%f\n", voodoo->vertex_num, tempif.f);
                 break;
                 case SST_sVy:
                 tempif.i = val;
                 voodoo->verts[3].sVy = tempif.f;
-//                DEBUG("sVy[%i]=%f\n", voodoo->vertex_num, tempif.f);
+//              DEBUG("sVy[%i]=%f\n", voodoo->vertex_num, tempif.f);
                 break;
                 case SST_sARGB:
                 voodoo->verts[3].sBlue  = (float)(val & 0xff);
@@ -687,36 +684,75 @@ void voodoo_reg_writel(uint32_t addr, uint32_t val, void *priv)
                 break;
 
                 case SST_sBeginTriCMD:
-//                DEBUG("sBeginTriCMD %i %f\n", voodoo->vertex_num, voodoo->verts[4].sVx);
+//              DEBUG("sBeginTriCMD %i %f\n", voodoo->vertex_num, voodoo->verts[4].sVx);
                 voodoo->verts[0] = voodoo->verts[3];
-                voodoo->vertex_num = 1;
+                voodoo->verts[1] = voodoo->verts[3];
+                voodoo->verts[2] = voodoo->verts[3];
+                voodoo->vertex_next_age = 0;
+                voodoo->vertex_ages[0] = voodoo->vertex_next_age++;
                 voodoo->num_verticies = 1;
 		voodoo->cull_pingpong = 0;
                 break;
                 case SST_sDrawTriCMD:
-//                DEBUG("sDrawTriCMD %i %i %i\n", voodoo->num_verticies, voodoo->vertex_num, voodoo->sSetupMode & SETUPMODE_STRIP_MODE);
-                if (voodoo->vertex_num == 3)
-                        voodoo->vertex_num = (voodoo->sSetupMode & SETUPMODE_STRIP_MODE) ? 1 : 0;
-                voodoo->verts[voodoo->vertex_num] = voodoo->verts[3];
+//              DEBUG("sDrawTriCMD %i %i\n", voodoo->num_verticies, voodoo->sSetupMode & SETUPMODE_STRIP_MODE);
+                /*I'm not sure this is the vertex selection algorithm actually used in the 3dfx
+                  chips, but this works with a number of games that switch between strip and fan
+                  mode in the middle of a run (eg Black & White, Viper Racing)*/
+                if (voodoo->vertex_next_age < 3) {
+                        /*Fewer than three vertices already written, store in next slot*/
+                        int vertex_nr = voodoo->vertex_next_age;
+
+                        voodoo->verts[vertex_nr] = voodoo->verts[3];
+                        voodoo->vertex_ages[vertex_nr] = voodoo->vertex_next_age++;
+                } else {
+                        int vertex_nr = 0;
+
+                        if (!(voodoo->sSetupMode & SETUPMODE_STRIP_MODE)) {
+                                /*Strip - find oldest vertex*/
+                                if ((voodoo->vertex_ages[0] < voodoo->vertex_ages[1]) &&
+                                    (voodoo->vertex_ages[0] < voodoo->vertex_ages[2]))
+                                        vertex_nr = 0;
+                                else if ((voodoo->vertex_ages[1] < voodoo->vertex_ages[0]) &&
+                                    (voodoo->vertex_ages[1] < voodoo->vertex_ages[2]))
+                                        vertex_nr = 1;
+                                else
+                                        vertex_nr = 2;
+                        } else {
+                                /*Fan - find second oldest vertex (ie pivot around oldest)*/
+                                if ((voodoo->vertex_ages[1] < voodoo->vertex_ages[0]) &&
+                                    (voodoo->vertex_ages[0] < voodoo->vertex_ages[2]))
+                                        vertex_nr = 0;
+                                else if ((voodoo->vertex_ages[2] < voodoo->vertex_ages[0]) &&
+                                    (voodoo->vertex_ages[0] < voodoo->vertex_ages[1]))
+                                        vertex_nr = 0;
+                                else if ((voodoo->vertex_ages[0] < voodoo->vertex_ages[1]) &&
+                                    (voodoo->vertex_ages[1] < voodoo->vertex_ages[2]))
+                                        vertex_nr = 1;
+                                else if ((voodoo->vertex_ages[2] < voodoo->vertex_ages[1]) &&
+                                    (voodoo->vertex_ages[1] < voodoo->vertex_ages[0]))
+                                        vertex_nr = 1;
+                                else
+                                        vertex_nr = 2;
+                        }
+                        voodoo->verts[vertex_nr] = voodoo->verts[3];
+                        voodoo->vertex_ages[vertex_nr] = voodoo->vertex_next_age++;
+                }
 
                 voodoo->num_verticies++;
-                voodoo->vertex_num++;
                 if (voodoo->num_verticies == 3) {
-//                        DEBUG("triangle_setup\n");
+//                      DEBUG("triangle_setup\n");
                         triangle_setup(voodoo);
 			voodoo->cull_pingpong = !voodoo->cull_pingpong;
                         
                         voodoo->num_verticies = 2;
                 }
-                if (voodoo->vertex_num == 4)
-                        fatal("sDrawTriCMD overflow\n");
                 break;
                 
                 case SST_bltSrcBaseAddr:
                 voodoo->bltSrcBaseAddr = val & 0x3fffff;
                 break;
                 case SST_bltDstBaseAddr:
-//                DEBUG("Write bltDstBaseAddr %08x\n", val);
+//              DEBUG("Write bltDstBaseAddr %08x\n", val);
                 voodoo->bltDstBaseAddr = val & 0x3fffff;
                 break;
                 case SST_bltXYStrides:

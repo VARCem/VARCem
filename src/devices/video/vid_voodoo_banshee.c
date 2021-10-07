@@ -608,6 +608,14 @@ static void banshee_recalctimings(svga_t *svga)
                                 voodoo->overlay.end_x, voodoo->overlay.end_y,
                                 voodoo->overlay.size_x, voodoo->overlay.size_y,
                                 svga->overlay.pitch);
+			if (!voodoo->overlay.start_x && !voodoo->overlay.start_y &&
+                            svga->hdisp == voodoo->overlay.size_x && svga->dispend == voodoo->overlay.size_y)
+                        {
+                                /*Overlay is full screen, so don't bother rendering the desktop
+                                  behind it*/
+                                svga->render = svga_render_null;
+                                svga->bpp = 0;
+                        }
                 }
 
                 svga->set_override = 1;
@@ -634,22 +642,21 @@ static void banshee_recalctimings(svga_t *svga)
 
 static uint32_t banshee_status(banshee_t *banshee)
 {
-        voodoo_t *voodoo = banshee->voodoo;
-        svga_t *svga = &banshee->svga;
-        int fifo_entries = FIFO_ENTRIES;
-        int fifo_size = 0xffff - fifo_entries;
-        int swap_count = voodoo->swap_count;
-        int written = voodoo->cmd_written + voodoo->cmd_written_fifo;
-        int busy = (written - voodoo->cmd_read) || (voodoo->cmdfifo_depth_rd != voodoo->cmdfifo_depth_wr) ||
-			voodoo->render_voodoo_busy[0] || voodoo->render_voodoo_busy[1];
-        uint32_t ret;
+    voodoo_t *voodoo = banshee->voodoo;
+    svga_t *svga = &banshee->svga;
+    int fifo_entries = FIFO_ENTRIES;
+    int fifo_size = 0xffff - fifo_entries;
+    int swap_count = voodoo->swap_count;
+    int written = voodoo->cmd_written + voodoo->cmd_written_fifo;
+    int busy = (written - voodoo->cmd_read) || (voodoo->cmdfifo_depth_rd != voodoo->cmdfifo_depth_wr) || voodoo->render_voodoo_busy[0] || voodoo->render_voodoo_busy[1];
+    uint32_t ret;
 
-        ret = 0;
-        if (fifo_size < 0x20)
-                ret |= fifo_size;
-        else
-                ret |= 0x1f;
-        if (fifo_size)
+    ret = 0;
+    if (fifo_size < 0x20)
+	ret |= fifo_size;
+    else
+	ret |= 0x1f;
+    if (fifo_size)
                 ret |= 0x20;
         if (swap_count < 7)
                 ret |= (swap_count << 28);
@@ -847,7 +854,7 @@ banshee_ext_outl(uint16_t addr, uint32_t val, priv_t priv)
                 break;
 
                 case Video_vidDesktopStartAddr:
-                banshee->vidDesktopStartAddr = val;
+                banshee->vidDesktopStartAddr = val & 0xffffff;
                 svga->fullchange = changeframecount;
                 svga_recalctimings(svga);
                 break;
@@ -1464,7 +1471,6 @@ banshee_write_linear(uint32_t addr, uint8_t val, priv_t priv)
         addr &= svga->decode_mask;
         if (addr >= voodoo->tile_base) {
                 int x, y;
-                uint32_t old_addr = addr;
 
                 addr -= voodoo->tile_base;
                 x = addr & (voodoo->tile_stride-1);
@@ -1488,123 +1494,117 @@ banshee_write_linear(uint32_t addr, uint8_t val, priv_t priv)
 static void 
 banshee_writew_linear(uint32_t addr, uint16_t val, priv_t priv)
 {
-        banshee_t *banshee = (banshee_t *)priv;
-        voodoo_t *voodoo = banshee->voodoo;
-        svga_t *svga = &banshee->svga;
+    banshee_t *banshee = (banshee_t *)priv;
+    voodoo_t *voodoo = banshee->voodoo;
+    svga_t *svga = &banshee->svga;
+    int x, y;
 
-        cycles -= voodoo->write_time;
+    cycles -= voodoo->write_time;
 
-        addr &= svga->decode_mask;
-        if (addr >= voodoo->tile_base) {
-                int x, y;
-                uint32_t old_addr = addr;
+    addr &= svga->decode_mask;
+    if (addr >= voodoo->tile_base) {
+	addr -= voodoo->tile_base;
+	x = addr & (voodoo->tile_stride-1);
+	y = addr >> voodoo->tile_stride_shift;
 
-                addr -= voodoo->tile_base;
-                x = addr & (voodoo->tile_stride-1);
-                y = addr >> voodoo->tile_stride_shift;
-
-                addr = voodoo->tile_base + (x & 127) + ((x >> 7) * 128*32) 
+	addr = voodoo->tile_base + (x & 127) + ((x >> 7) * 128*32) 
 			+ ((y & 31) * 128) + (y >> 5)*voodoo->tile_x_real;
-        }
-        if (addr >= svga->vram_max)
-                return;
+    }
+    if (addr >= svga->vram_max)
+	return;
 
-        //egawrites++;
+    //egawrites++;
 
-        cycles -= video_timing_write_w;
-        //cycles_lost += video_timing_write_w;
+    cycles -= video_timing_write_w;
+    //cycles_lost += video_timing_write_w;
 
-        svga->changedvram[addr >> 12] = changeframecount;
-        *(uint16_t *)&svga->vram[addr & svga->vram_mask] = val;
+    svga->changedvram[addr >> 12] = changeframecount;
+    *(uint16_t *)&svga->vram[addr & svga->vram_mask] = val;
 }
 
 static void 
 banshee_writel_linear(uint32_t addr, uint32_t val, priv_t priv)
 {
-        banshee_t *banshee = (banshee_t *)priv;
-        voodoo_t *voodoo = banshee->voodoo;
-        svga_t *svga = &banshee->svga;
+    banshee_t *banshee = (banshee_t *)priv;
+    voodoo_t *voodoo = banshee->voodoo;
+    svga_t *svga = &banshee->svga;
+    int timing;
+    int x, y;
 
-        if (addr == voodoo->last_write_addr+4)
-                cycles -= voodoo->burst_time;
-        else
-                cycles -= voodoo->write_time;
-        voodoo->last_write_addr = addr;
+    if (addr == voodoo->last_write_addr+4)
+	timing -= voodoo->burst_time;
+    else
+	timing -= voodoo->write_time;
+
+    cycles -= timing;
+    //cycles_lost += timing;
+    voodoo->last_write_addr = addr;
 
 //        /*if (val) */pclog("write_linear_l: addr=%08x val=%08x  %08x\n", addr, val, voodoo->tile_base);
-        addr &= svga->decode_mask;
-        if (addr >= voodoo->tile_base) {
-                int x, y;
-                uint32_t old_addr = addr;
-                uint32_t addr_off;
-                uint32_t addr2;
+    addr &= svga->decode_mask;
+    if (addr >= voodoo->tile_base) {
+	addr -= voodoo->tile_base;
+	x = addr & (voodoo->tile_stride-1);
+	y = addr >> voodoo->tile_stride_shift;
 
-                addr -= voodoo->tile_base;
-                addr_off = addr;
-                x = addr & (voodoo->tile_stride-1);
-                y = addr >> voodoo->tile_stride_shift;
-
-                addr = voodoo->tile_base + (x & 127) + ((x >> 7) * 128*32) 
+	addr = voodoo->tile_base + (x & 127) + ((x >> 7) * 128*32) 
 			+ ((y & 31) * 128) + (y >> 5)*voodoo->tile_x_real;
-                addr2 = x + y*voodoo->tile_x;
-//              DEBUG("  Tile %08x->%08x->%08x->%08x %i %i  stride=%i tile_x=%i\n", old_addr, addr_off, addr2, addr, x, y, voodoo->tile_x_real);
-        }
+//	DEBUG("  Tile %08x %i %i  stride=%i tile_x=%i\n", addr, x, y, voodoo->tile_stride, voodoo->tile_x_real);
+    }
 
-        if (addr >= svga->vram_max)
-                return;
+    if (addr >= svga->vram_max)
+	return;
 
-        //egawrites += 4;
+    //egawrites += 4;
 
-        cycles -= video_timing_write_l;
-        //cycles_lost += video_timing_write_l;
+    cycles -= video_timing_write_l;
+    //cycles_lost += video_timing_write_l;
 
-        svga->changedvram[addr >> 12] = changeframecount;
-        *(uint32_t *)&svga->vram[addr & svga->vram_mask] = val;
-        if (addr >= voodoo->cmdfifo_base && addr < voodoo->cmdfifo_end) {
-                //DEBUG("CMDFIFO write %08x %08x  old amin=%08x amax=%08x hlcnt=%i depth_wr=%i rp=%08x\n", addr, val, voodoo->cmdfifo_amin, voodoo->cmdfifo_amax, voodoo->cmdfifo_holecount, voodoo->cmdfifo_depth_wr, voodoo->cmdfifo_rp);
-                if (addr == voodoo->cmdfifo_base && !voodoo->cmdfifo_holecount) {
-//                        if (voodoo->cmdfifo_holecount)
-//                                fatal("CMDFIFO reset pointers while outstanding holes\n");
-                        /*Reset pointers*/
-                        voodoo->cmdfifo_amin = voodoo->cmdfifo_base;
-                        voodoo->cmdfifo_amax = voodoo->cmdfifo_base;
-                        voodoo->cmdfifo_depth_wr++;
-                        voodoo_wake_fifo_thread(voodoo);
-                }
-                else if (voodoo->cmdfifo_holecount) {
-//                      if ((addr <= voodoo->cmdfifo_amin && voodoo->cmdfifo_amin != -4) || addr >= voodoo->cmdfifo_amax)
-//                                fatal("CMDFIFO holecount write outside of amin/amax - amin=%08x amax=%08x holecount=%i\n", voodoo->cmdfifo_amin, voodoo->cmdfifo_amax, voodoo->cmdfifo_holecount);
-//                      DEBUG("holecount %i\n", voodoo->cmdfifo_holecount);
-                        voodoo->cmdfifo_holecount--;
-                        if (!voodoo->cmdfifo_holecount) {
-                                int words_to_add = ((voodoo->cmdfifo_amax - voodoo->cmdfifo_amin) >> 2) + 1;
-                                /*Filled in holes, resume normal operation*/
-                                voodoo->cmdfifo_depth_wr += ((voodoo->cmdfifo_amax - voodoo->cmdfifo_amin) >> 2);
-                                voodoo->cmdfifo_amin = voodoo->cmdfifo_amax;
-                                voodoo_wake_fifo_thread(voodoo);
-//                              DEBUG("hole filled! amin=%08x amax=%08x added %i words\n", voodoo->cmdfifo_amin, voodoo->cmdfifo_amax, words_to_add);
-                        }
-                }
-                else if (addr == voodoo->cmdfifo_amax+4)
-                {
-                        /*In-order write*/
-                        voodoo->cmdfifo_amin = addr;
-                        voodoo->cmdfifo_amax = addr;
-                        voodoo->cmdfifo_depth_wr++;
-                        voodoo_wake_fifo_thread(voodoo);
-		} else {
-                        /*Out-of-order write*/
-                        if (addr < voodoo->cmdfifo_amin) {
-                                /*Reset back to start. Note that write is still out of order!*/
-                                voodoo->cmdfifo_amin = voodoo->cmdfifo_base-4;
-                        }
-//                      else if (addr < voodoo->cmdfifo_amax)
-//                                fatal("Out-of-order write really out of order\n");
-                        voodoo->cmdfifo_amax = addr;
-                        voodoo->cmdfifo_holecount = ((voodoo->cmdfifo_amax - voodoo->cmdfifo_amin) >> 2) - 1;
-//                      DEBUG("CMDFIFO out of order: amin=%08x amax=%08x holecount=%i\n", voodoo->cmdfifo_amin, voodoo->cmdfifo_amax, voodoo->cmdfifo_holecount);
-                }
-        }
+    svga->changedvram[addr >> 12] = changeframecount;
+    *(uint32_t *)&svga->vram[addr & svga->vram_mask] = val;
+    if (addr >= voodoo->cmdfifo_base && addr < voodoo->cmdfifo_end) {
+	//DEBUG("CMDFIFO write %08x %08x  old amin=%08x amax=%08x hlcnt=%i depth_wr=%i rp=%08x\n", addr, val, voodoo->cmdfifo_amin, voodoo->cmdfifo_amax, voodoo->cmdfifo_holecount, voodoo->cmdfifo_depth_wr, voodoo->cmdfifo_rp);
+	if (addr == voodoo->cmdfifo_base && !voodoo->cmdfifo_holecount) {
+//		if (voodoo->cmdfifo_holecount)
+//			fatal("CMDFIFO reset pointers while outstanding holes\n");
+		/*Reset pointers*/
+		voodoo->cmdfifo_amin = voodoo->cmdfifo_base;
+		voodoo->cmdfifo_amax = voodoo->cmdfifo_base;
+		voodoo->cmdfifo_depth_wr++;
+		voodoo_wake_fifo_thread(voodoo);
+	}
+	else if (voodoo->cmdfifo_holecount) {
+//		if ((addr <= voodoo->cmdfifo_amin && voodoo->cmdfifo_amin != -4) || addr >= voodoo->cmdfifo_amax)
+//			fatal("CMDFIFO holecount write outside of amin/amax - amin=%08x amax=%08x holecount=%i\n", voodoo->cmdfifo_amin, voodoo->cmdfifo_amax, voodoo->cmdfifo_holecount);
+//		DEBUG("holecount %i\n", voodoo->cmdfifo_holecount);
+		voodoo->cmdfifo_holecount--;
+		if (!voodoo->cmdfifo_holecount) {
+			/*Filled in holes, resume normal operation*/
+			voodoo->cmdfifo_depth_wr += ((voodoo->cmdfifo_amax - voodoo->cmdfifo_amin) >> 2);
+			voodoo->cmdfifo_amin = voodoo->cmdfifo_amax;
+			voodoo_wake_fifo_thread(voodoo);
+//			DEBUG("hole filled! amin=%08x amax=%08x \n", voodoo->cmdfifo_amin, voodoo->cmdfifo_amax);
+		}
+	}
+	else if (addr == voodoo->cmdfifo_amax+4) {
+		/*In-order write*/
+		voodoo->cmdfifo_amin = addr;
+		voodoo->cmdfifo_amax = addr;
+		voodoo->cmdfifo_depth_wr++;
+		voodoo_wake_fifo_thread(voodoo);
+	} else {
+		/*Out-of-order write*/
+		if (addr < voodoo->cmdfifo_amin) {
+			/*Reset back to start. Note that write is still out of order!*/
+			voodoo->cmdfifo_amin = voodoo->cmdfifo_base-4;
+		}
+//		else if (addr < voodoo->cmdfifo_amax)
+//			fatal("Out-of-order write really out of order\n");
+		voodoo->cmdfifo_amax = addr;
+		voodoo->cmdfifo_holecount = ((voodoo->cmdfifo_amax - voodoo->cmdfifo_amin) >> 2) - 1;
+//		DEBUG("CMDFIFO out of order: amin=%08x amax=%08x holecount=%i\n", voodoo->cmdfifo_amin, voodoo->cmdfifo_amax, voodoo->cmdfifo_holecount);
+	}
+    }
 }
 
 void 
@@ -1731,7 +1731,7 @@ uint8_t banshee_pci_read(int func, int addr, void *priv)
 
                 case 0x07: ret = banshee->pci_regs[0x07] & 0x36; break;
 
-                case 0x08: ret = 1; break; /*Revision ID*/
+                case 0x08: ret = 3; break; /*Revision ID*/
                 case 0x09: ret = 0; break; /*Programming interface*/
 
                 case 0x0a: ret = 0x00; break; /*Supports VGA interface*/
