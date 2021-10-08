@@ -429,7 +429,7 @@ static void voodoo_writel(uint32_t addr, uint32_t val, void *priv)
                 voodoo_queue_command(voodoo, addr | FIFO_WRITEL_FB, val);
         }
         else if ((addr & 0x200000) && (voodoo->fbiInit7 & FBIINIT7_CMDFIFO_ENABLE)) {
-//                DEBUG("Write CMDFIFO %08x(%08x) %08x  %08x\n", addr, voodoo->cmdfifo_base + (addr & 0x3fffc), val, (voodoo->cmdfifo_base + (addr & 0x3fffc)) & voodoo->fb_mask);
+//              DEBUG("Write CMDFIFO %08x(%08x) %08x  %08x\n", addr, voodoo->cmdfifo_base + (addr & 0x3fffc), val, (voodoo->cmdfifo_base + (addr & 0x3fffc)) & voodoo->fb_mask);
                 *(uint32_t *)&voodoo->fb_mem[(voodoo->cmdfifo_base + (addr & 0x3fffc)) & voodoo->fb_mask] = val;
                 voodoo->cmdfifo_depth_wr++;
                 if ((voodoo->cmdfifo_depth_wr - voodoo->cmdfifo_depth_rd) < 20)
@@ -623,14 +623,16 @@ static void voodoo_writel(uint32_t addr, uint32_t val, void *priv)
                         voodoo->fbiInit6 = val;
                 break;
                 case SST_fbiInit7:
-                if (voodoo->initEnable & 0x01)
+                if (voodoo->initEnable & 0x01) {
                         voodoo->fbiInit7 = val;
+			voodoo->cmdfifo_enabled = val & 0X100;
+		}
                 break;
 
                 case SST_cmdFifoBaseAddr:
                 voodoo->cmdfifo_base = (val & 0x3ff) << 12;
                 voodoo->cmdfifo_end = ((val >> 16) & 0x3ff) << 12;
-//                DEBUG("CMDFIFO base=%08x end=%08x\n", voodoo->cmdfifo_base, voodoo->cmdfifo_end);
+//              DEBUG("CMDFIFO base=%08x end=%08x\n", voodoo->cmdfifo_base, voodoo->cmdfifo_end);
                 break;
 
                 case SST_cmdFifoRdPtr:

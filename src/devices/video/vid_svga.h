@@ -82,7 +82,7 @@ typedef struct svga_t
 	vram_display_mask,
 	hwcursor_on, dac_hwcursor_on, overlay_on,
 	hwcursor_oddeven, dac_hwcursor_oddeven, overlay_oddeven,
-	set_override, char_width;;
+	set_override, char_width;
 
     /*The three variables below allow us to implement memory maps like that seen on a 1MB Trio64 :
       0MB-1MB - VRAM

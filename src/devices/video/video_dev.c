@@ -158,7 +158,9 @@ static const struct {
     { "virge375_pci",		&s3_virge_375_pci_device	},
     { "virge375_vbe20_pci",	&s3_virge_375_4_pci_device	},
     { "tgui9440_pci",		&tgui9440_pci_device		},
+#if defined(DEV_BRANCH)
     { "voodoo_banshee_pci",	&voodoo_banshee_device  	},
+#endif
 
     { "mach64gx_vlb",		&mach64gx_vlb_device		},
 #if defined(DEV_BRANCH)

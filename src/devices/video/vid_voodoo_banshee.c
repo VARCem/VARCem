@@ -189,6 +189,7 @@ enum
 
 #define VGAINIT0_EXTENDED_SHIFT_OUT (1 << 12)
 
+#define VIDPROCCFG_HALF_MODE (1 << 4)
 #define VIDPROCCFG_OVERLAY_ENABLE (1 << 8)
 #define VIDPROCCFG_H_SCALE_ENABLE (1 << 14)
 #define VIDPROCCFG_V_SCALE_ENABLE (1 << 15)
@@ -496,33 +497,43 @@ banshee_updatemapping(banshee_t *banshee)
 static void 
 banshee_render_16bpp_tiled(svga_t *svga)
 {
-        banshee_t *banshee = (banshee_t *)svga->p;
-        int x;
-        int offset = 32;
-        pel_t *p;
-	uint32_t dat;
-        uint32_t addr = banshee->desktop_addr + (banshee->desktop_y & 31) * 128 +
-			((banshee->desktop_y >> 5) * banshee->desktop_stride_tiled);
+    banshee_t *banshee = (banshee_t *)svga->p;
+    int x, xx;
+    int offset = 32;
+    int drawn = 0;
+    pel_t *p;
+    uint32_t addr;
 
-        p = &screen->line[svga->displine][offset];
+    p = &screen->line[svga->displine][offset];
 
+    if (banshee->vidProcCfg & VIDPROCCFG_HALF_MODE)
+	addr = banshee->desktop_addr + ((banshee->desktop_y >> 1) & 31) * 128 + ((banshee->desktop_y >> 6) * banshee->desktop_stride_tiled);
+    else
+	addr = banshee->desktop_addr + (banshee->desktop_y & 31) * 128 + ((banshee->desktop_y >> 5) * banshee->desktop_stride_tiled);
+    
+    for (x = 0; x <= svga->hdisp; x += 64) {
+	if (svga->hwcursor_on || svga->overlay_on)
+		svga->changedvram[addr >> 12] = 2;
+
+	if (svga->changedvram[addr >> 12] || svga->fullchange) {
+		uint16_t *vram_p = (uint16_t *)&svga->vram[addr & svga->vram_display_mask];
+
+		for (xx = 0; xx < 64; xx++)
+			p++->val = video_16to32[*vram_p++];
+		drawn = 1;
+	} else
+		p += 64;
+                
+	addr += 128*32;
+    }
+
+    if (drawn) {
 	if (svga->firstline_draw == 2000)
-                svga->firstline_draw = svga->displine;
-        svga->lastline_draw = svga->displine;
+		svga->firstline_draw = svga->displine;
+	svga->lastline_draw = svga->displine;
+    }
 
-        for (x = 0; x <= svga->hdisp; x += 64) {
-                int xx;
-
-                for (xx = 0; xx < 64; xx += 2) {
-                        dat = *(uint32_t *)(&svga->vram[(addr + (xx << 1)) & svga->vram_display_mask]);
-                        p++->val = video_16to32[dat & 0xffff];
-                        p++->val = video_16to32[dat >> 16];
-                }
-
-                addr += 128*32;
-        }
-
-        banshee->desktop_y++;
+    banshee->desktop_y++;
 }
 
 static void banshee_recalctimings(svga_t *svga)
@@ -551,7 +562,7 @@ static void banshee_recalctimings(svga_t *svga)
         if (svga->crtc[0x1b] & 0x04) svga->dispend     += 0x400;
         if (svga->crtc[0x1b] & 0x10) svga->vblankstart += 0x400;
         if (svga->crtc[0x1b] & 0x40) svga->vsyncstart  += 0x400;
-        DEBUG("svga->hdisp=%i\n", svga->hdisp);
+        //DEBUG("svga->hdisp=%i\n", svga->hdisp);
 
         if (banshee->vgaInit0 & VGAINIT0_EXTENDED_SHIFT_OUT)
         {
@@ -603,14 +614,13 @@ static void banshee_recalctimings(svga_t *svga)
                 if (svga->overlay.xsize <= 0 || svga->overlay.ysize <= 0)
                         svga->overlay.ena = 0;
                 if (svga->overlay.ena) {
-                        DEBUG("Overlay enabled : start=%i,%i end=%i,%i size=%i,%i pitch=%x\n",
+                        /*DEBUG("Overlay enabled : start=%i,%i end=%i,%i size=%i,%i pitch=%x\n",
                                 voodoo->overlay.start_x, voodoo->overlay.start_y,
                                 voodoo->overlay.end_x, voodoo->overlay.end_y,
                                 voodoo->overlay.size_x, voodoo->overlay.size_y,
-                                svga->overlay.pitch);
+                                svga->overlay.pitch);*/
 			if (!voodoo->overlay.start_x && !voodoo->overlay.start_y &&
-                            svga->hdisp == voodoo->overlay.size_x && svga->dispend == voodoo->overlay.size_y)
-                        {
+                            svga->hdisp == voodoo->overlay.size_x && svga->dispend == voodoo->overlay.size_y) {
                                 /*Overlay is full screen, so don't bother rendering the desktop
                                   behind it*/
                                 svga->render = svga_render_null;
@@ -623,7 +633,7 @@ static void banshee_recalctimings(svga_t *svga)
                 svga->video_res_y = svga->dispend;
                 svga->video_bpp = svga->bpp;
         } else {
-                DEBUG("Normal shift out\n");
+                //DEBUG("Normal shift out\n");
                 svga->bpp = 8;
                 svga->set_override = 0;
         }
@@ -648,7 +658,10 @@ static uint32_t banshee_status(banshee_t *banshee)
     int fifo_size = 0xffff - fifo_entries;
     int swap_count = voodoo->swap_count;
     int written = voodoo->cmd_written + voodoo->cmd_written_fifo;
-    int busy = (written - voodoo->cmd_read) || (voodoo->cmdfifo_depth_rd != voodoo->cmdfifo_depth_wr) || voodoo->render_voodoo_busy[0] || voodoo->render_voodoo_busy[1];
+    int busy = (written - voodoo->cmd_read) || (voodoo->cmdfifo_depth_rd != voodoo->cmdfifo_depth_wr) ||
+                voodoo->render_voodoo_busy[0] || voodoo->render_voodoo_busy[1] ||
+                //voodoo->render_voodoo_busy[2] || voodoo->render_voodoo_busy[3] ||
+                voodoo->voodoo_busy;
     uint32_t ret;
 
     ret = 0;
@@ -1070,7 +1083,8 @@ banshee_cmd_write(banshee_t *banshee, uint32_t addr, uint32_t val)
                 case cmdBaseSize0:
                 voodoo->cmdfifo_size = val;
                 voodoo->cmdfifo_end = voodoo->cmdfifo_base + (((voodoo->cmdfifo_size & 0xff) + 1) << 12);
-                break;
+                voodoo->cmdfifo_enabled = val & 0x100;
+		break;
 
 
                 case cmdRdPtrL0:
@@ -1562,7 +1576,7 @@ banshee_writel_linear(uint32_t addr, uint32_t val, priv_t priv)
 
     svga->changedvram[addr >> 12] = changeframecount;
     *(uint32_t *)&svga->vram[addr & svga->vram_mask] = val;
-    if (addr >= voodoo->cmdfifo_base && addr < voodoo->cmdfifo_end) {
+    if (voodoo->cmdfifo_enabled && addr >= voodoo->cmdfifo_base && addr < voodoo->cmdfifo_end) {
 	//DEBUG("CMDFIFO write %08x %08x  old amin=%08x amax=%08x hlcnt=%i depth_wr=%i rp=%08x\n", addr, val, voodoo->cmdfifo_amin, voodoo->cmdfifo_amax, voodoo->cmdfifo_holecount, voodoo->cmdfifo_depth_wr, voodoo->cmdfifo_rp);
 	if (addr == voodoo->cmdfifo_base && !voodoo->cmdfifo_holecount) {
 //		if (voodoo->cmdfifo_holecount)
@@ -1719,7 +1733,7 @@ uint8_t banshee_pci_read(int func, int addr, void *priv)
 
         uint8_t ret = 0;
 
-        DEBUG("Banshee PCI read %08X  ", addr);
+        //DEBUG("Banshee PCI read %08X  ", addr);
         switch (addr) {
                 case 0x00: ret = 0x1a; break; /*3DFX*/
                 case 0x01: ret = 0x12; break;
@@ -1767,7 +1781,7 @@ uint8_t banshee_pci_read(int func, int addr, void *priv)
                 case 0x3f: ret = 0xff; break;
 
         }
-        DEBUG("%02X\n", ret);
+        //DEBUG("%02X\n", ret);
         return ret;
 
 }
@@ -1776,7 +1790,7 @@ void banshee_pci_write(int func, int addr, uint8_t val, void *priv)
 {
         banshee_t *banshee = (banshee_t *)priv;
         
-        DEBUG("Banshee PCI write %08X %02X %04X:%08X\n", addr, val, CS, cpu_state.pc);
+        //DEBUG("Banshee PCI write %08X %02X %04X:%08X\n", addr, val, CS, cpu_state.pc);
         switch (addr) {
                 case 0x00: case 0x01: case 0x02: case 0x03:
                 case 0x08: case 0x09: case 0x0a: case 0x0b:

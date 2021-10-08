@@ -872,7 +872,8 @@ VIDOBJ		:= video.obj \
 		    vid_tgui9440.obj vid_tkd8001_ramdac.obj \
 		    vid_s3.obj vid_s3_virge.obj \
 		    vid_sdac_ramdac.obj \
-		    vid_voodoo.obj vid_voodoo_blitter.obj vid_voodoo_display.obj \
+		    vid_voodoo.obj vid_voodoo_banshee.obj \
+		    vid_voodoo_blitter.obj vid_voodoo_banshee_blitter.obj vid_voodoo_display.obj \
 		    vid_voodoo_fb.obj vid_voodoo_fifo.obj vid_voodoo_reg.obj \
 		    vid_voodoo_render.obj vid_voodoo_setup.obj vid_voodoo_texture.obj
 

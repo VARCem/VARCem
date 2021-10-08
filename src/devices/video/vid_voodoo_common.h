@@ -219,166 +219,167 @@ typedef struct clip_t
 
 typedef struct voodoo_t
 {
-        mem_map_t mapping;
-                
-        int pci_enable;
+	mem_map_t mapping;
 
-        uint8_t dac_data[8];
-        int dac_reg, dac_reg_ff;
-        uint8_t dac_readdata;
-        uint16_t dac_pll_regs[16];
-        
-        float pixel_clock;
-        int line_time;
-        
-        voodoo_params_t params;
-        
-        uint32_t fbiInit0, fbiInit1, fbiInit2, fbiInit3, fbiInit4;
-        uint32_t fbiInit5, fbiInit6, fbiInit7; /*Voodoo 2*/
-        
-        uint32_t initEnable;
-        
-        uint32_t lfbMode;
-        
-        uint32_t memBaseAddr;
+	int pci_enable;
 
-        int_float fvertexAx, fvertexAy, fvertexBx, fvertexBy, fvertexCx, fvertexCy;
+	uint8_t dac_data[8];
+	int dac_reg, dac_reg_ff;
+	uint8_t dac_readdata;
+	uint16_t dac_pll_regs[16];
 
-        uint32_t front_offset, back_offset;
-        
-        uint32_t fb_read_offset, fb_write_offset;
-        
-        int row_width, aux_row_width;
-        int block_width;
+	float pixel_clock;
+	int line_time;
+
+	voodoo_params_t params;
+
+	uint32_t fbiInit0, fbiInit1, fbiInit2, fbiInit3, fbiInit4;
+	uint32_t fbiInit5, fbiInit6, fbiInit7; /*Voodoo 2*/
+
+	uint32_t initEnable;
+
+	uint32_t lfbMode;
+
+	uint32_t memBaseAddr;
+
+	int_float fvertexAx, fvertexAy, fvertexBx, fvertexBy, fvertexCx, fvertexCy;
+
+	uint32_t front_offset, back_offset;
+
+	uint32_t fb_read_offset, fb_write_offset;
+
+	int row_width, aux_row_width;
+	int block_width;
 
 	int col_tiled, aux_tiled;
-        
-        uint8_t *fb_mem, *tex_mem[2];
-        uint16_t *tex_mem_w[2];
-               
-        int rgb_sel;
-        
-        uint32_t trexInit1[2];
-        
-        uint32_t tmuConfig;
-        
-        int swap_count;
-        
-        int disp_buffer, draw_buffer;
-        tmrval_t timer_count;
-        
-        int line;
-        svga_t *svga;
-        
-        uint32_t backPorch;
-        uint32_t videoDimensions;
-        uint32_t hSync, vSync;
-        
-        int h_total, v_total, v_disp;
-        int h_disp;
-        int v_retrace;
 
-        struct
-        {
-                uint32_t y[4], i[4], q[4];
-        } nccTable[2][2];
+	uint8_t *fb_mem, *tex_mem[2];
+	uint16_t *tex_mem_w[2];
 
-        rgba_u palette[2][256];
-        
-        rgba_u ncc_lookup[2][2][256];
-        int ncc_dirty[2];
+	int rgb_sel;
 
-        thread_t *fifo_thread;
-        thread_t *render_thread[2];
-        event_t *wake_fifo_thread;
-        event_t *wake_main_thread;
-        event_t *fifo_not_full_event;
-        event_t *render_not_full_event[2];
-        event_t *wake_render_thread[2];
-        
-        int voodoo_busy;
-        int render_voodoo_busy[2];
-        
-        int render_threads;
-        int odd_even_mask;
-        
-        int pixel_count[2], texel_count[2], tri_count, frame_count;
-        int pixel_count_old[2], texel_count_old[2];
-        int wr_count, rd_count, tex_count;
-        
-        int retrace_count;
-        int swap_interval;
-        uint32_t swap_offset;
-        int swap_pending;
-        
-        int bilinear_enabled;
-        
-        int fb_size;
-        uint32_t fb_mask;
+	uint32_t trexInit1[2];
 
-        int texture_size;
-        uint32_t texture_mask;
-        
-        int dual_tmus;
-        int type;
-        
-        fifo_entry_t fifo[FIFO_SIZE];
-        volatile int fifo_read_idx, fifo_write_idx;
+	uint32_t tmuConfig;
+
+	int swap_count;
+
+	int disp_buffer, draw_buffer;
+	tmrval_t timer_count;
+
+	int line;
+	svga_t *svga;
+
+	uint32_t backPorch;
+	uint32_t videoDimensions;
+	uint32_t hSync, vSync;
+
+	int h_total, v_total, v_disp;
+	int h_disp;
+	int v_retrace;
+
+	struct
+	{
+		uint32_t y[4], i[4], q[4];
+	} nccTable[2][2];
+
+	rgba_u palette[2][256];
+
+	rgba_u ncc_lookup[2][2][256];
+	int ncc_dirty[2];
+
+	thread_t *fifo_thread;
+	thread_t *render_thread[2];
+	event_t *wake_fifo_thread;
+	event_t *wake_main_thread;
+	event_t *fifo_not_full_event;
+	event_t *render_not_full_event[2];
+	event_t *wake_render_thread[2];
+
+	int voodoo_busy;
+	int render_voodoo_busy[2];
+
+	int render_threads;
+	int odd_even_mask;
+
+	int pixel_count[2], texel_count[2], tri_count, frame_count;
+	int pixel_count_old[2], texel_count_old[2];
+	int wr_count, rd_count, tex_count;
+
+	int retrace_count;
+	int swap_interval;
+	uint32_t swap_offset;
+	int swap_pending;
+
+	int bilinear_enabled;
+
+	int fb_size;
+	uint32_t fb_mask;
+
+	int texture_size;
+	uint32_t texture_mask;
+
+	int dual_tmus;
+	int type;
+
+	fifo_entry_t fifo[FIFO_SIZE];
+	volatile int fifo_read_idx, fifo_write_idx;
 	volatile int cmd_read, cmd_written, cmd_written_fifo;
 
-        voodoo_params_t params_buffer[PARAM_SIZE];
-        volatile int params_read_idx[2], params_write_idx;
-        
-        uint32_t cmdfifo_base, cmdfifo_end, cmdfifo_size;
-        int cmdfifo_rp;
-        volatile int cmdfifo_depth_rd, cmdfifo_depth_wr;
-        uint32_t cmdfifo_amin, cmdfifo_amax;
-	int cmdfifo_holecount;
-        
-        uint32_t sSetupMode;
-	vert_t verts[4];
-        int vertex_num;
-	unsigned int vertex_ages[3];
-        unsigned int vertex_next_age;
-        int num_verticies;
-	int cull_pingpong;
-        
-        int flush;
+	voodoo_params_t params_buffer[PARAM_SIZE];
+	volatile int params_read_idx[2], params_write_idx;
 
-        int scrfilter;
+	uint32_t cmdfifo_base, cmdfifo_end, cmdfifo_size;
+	int cmdfifo_rp;
+	volatile int cmdfifo_depth_rd, cmdfifo_depth_wr;
+	volatile int cmdfifo_enabled;
+	uint32_t cmdfifo_amin, cmdfifo_amax;
+	int cmdfifo_holecount;
+
+	uint32_t sSetupMode;
+	vert_t verts[4];
+	int vertex_num;
+	unsigned int vertex_ages[3];
+	unsigned int vertex_next_age;
+	int num_verticies;
+	int cull_pingpong;
+
+	int flush;
+
+	int scrfilter;
 	int scrfilterEnabled;
 	int scrfilterThreshold;
 	int scrfilterThresholdOld;
 
-        uint32_t last_write_addr;
+	uint32_t last_write_addr;
 
-        uint32_t fbiPixelsIn;
-        uint32_t fbiChromaFail;
-        uint32_t fbiZFuncFail;
-        uint32_t fbiAFuncFail;
-        uint32_t fbiPixelsOut;
+	uint32_t fbiPixelsIn;
+	uint32_t fbiChromaFail;
+	uint32_t fbiZFuncFail;
+	uint32_t fbiAFuncFail;
+	uint32_t fbiPixelsOut;
 
-        uint32_t bltSrcBaseAddr;
-        uint32_t bltDstBaseAddr;
-        int bltSrcXYStride, bltDstXYStride;
-        uint32_t bltSrcChromaRange, bltDstChromaRange;
-        int bltSrcChromaMinR, bltSrcChromaMinG, bltSrcChromaMinB;
-        int bltSrcChromaMaxR, bltSrcChromaMaxG, bltSrcChromaMaxB;
-        int bltDstChromaMinR, bltDstChromaMinG, bltDstChromaMinB;
-        int bltDstChromaMaxR, bltDstChromaMaxG, bltDstChromaMaxB;
+	uint32_t bltSrcBaseAddr;
+	uint32_t bltDstBaseAddr;
+	int bltSrcXYStride, bltDstXYStride;
+	uint32_t bltSrcChromaRange, bltDstChromaRange;
+	int bltSrcChromaMinR, bltSrcChromaMinG, bltSrcChromaMinB;
+	int bltSrcChromaMaxR, bltSrcChromaMaxG, bltSrcChromaMaxB;
+	int bltDstChromaMinR, bltDstChromaMinG, bltDstChromaMinB;
+	int bltDstChromaMaxR, bltDstChromaMaxG, bltDstChromaMaxB;
 
-        int bltClipRight, bltClipLeft;
-        int bltClipHighY, bltClipLowY;
+	int bltClipRight, bltClipLeft;
+	int bltClipHighY, bltClipLowY;
 
-        int bltSrcX, bltSrcY;
-        int bltDstX, bltDstY;
-        int bltSizeX, bltSizeY;
-        int bltRop[4];
-        uint16_t bltColorFg, bltColorBg;
-        
-        uint32_t bltCommand;
+	int bltSrcX, bltSrcY;
+	int bltDstX, bltDstY;
+	int bltSizeX, bltSizeY;
+	int bltRop[4];
+	uint16_t bltColorFg, bltColorBg;
 
-	 uint32_t leftOverlayBuf;
+	uint32_t bltCommand;
+
+	uint32_t leftOverlayBuf;
 
         struct
         {
