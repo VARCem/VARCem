@@ -89,13 +89,15 @@ void voodoo_reg_writel(uint32_t addr, uint32_t val, void *priv)
         switch (addr) {
                 case SST_swapbufferCMD:
  			if (voodoo->type == VOODOO_BANSHEE) {
-	                        voodoo_wait_for_render_thread_idle(voodoo);
-        	                if (!(val & 1)) {
-                	                banshee_set_overlay_addr(voodoo->priv, voodoo->leftOverlayBuf);
-                        	        if (voodoo->swap_count > 0)
-                                	        voodoo->swap_count--;
-                                	voodoo->frame_count++;
-                        	}
+                               voodoo_wait_for_render_thread_idle(voodoo);
+                               if (!(val & 1)) {
+                                        banshee_set_overlay_addr(voodoo->priv, voodoo->leftOverlayBuf);
+                                        thread_wait_mutex(voodoo->swap_mutex);
+                                        if (voodoo->swap_count > 0)
+                                                voodoo->swap_count--;
+                                        thread_release_mutex(voodoo->swap_mutex);
+                                        voodoo->frame_count++;
+                                }
                         else if (TRIPLE_BUFFER) {
                                 if (voodoo->swap_pending)
                                         voodoo_wait_for_swap_complete(voodoo);
@@ -131,10 +133,12 @@ void voodoo_reg_writel(uint32_t addr, uint32_t val, void *priv)
                 if (!(val & 1)) {
                         memset(voodoo->dirty_line, 1, 1024);
                         voodoo->front_offset = voodoo->params.front_offset;
+                        thread_wait_mutex(voodoo->swap_mutex);
                         if (voodoo->swap_count > 0)
                                 voodoo->swap_count--;
+                        thread_release_mutex(voodoo->swap_mutex);
                 }
-		else if (TRIPLE_BUFFER) {
+                else if (TRIPLE_BUFFER) {
                         if (voodoo->swap_pending)
                                 voodoo_wait_for_swap_complete(voodoo);
                                 
@@ -580,10 +584,12 @@ void voodoo_reg_writel(uint32_t addr, uint32_t val, void *priv)
                 case SST_colBufferStride:
                 if (voodoo->type == VOODOO_BANSHEE) {
                         voodoo->col_tiled = val & (1 << 15);
+                        voodoo->params.col_tiled = voodoo->col_tiled;
                         if (voodoo->col_tiled)
                                 voodoo->row_width = (val & 0x7f) * 128*32;
                         else
                                 voodoo->row_width = val & 0x3fff;
+                        voodoo->params.row_width = voodoo->row_width;
                 }
                 break;
                 case SST_auxBufferAddr:
@@ -596,10 +602,12 @@ void voodoo_reg_writel(uint32_t addr, uint32_t val, void *priv)
 		case SST_auxBufferStride:
                 if (voodoo->type == VOODOO_BANSHEE) {
                         voodoo->aux_tiled = val & (1 << 15);
+                        voodoo->params.aux_tiled = voodoo->aux_tiled;
                         if (voodoo->aux_tiled)
                                 voodoo->aux_row_width = (val & 0x7f) * 128*32;
                         else
                                 voodoo->aux_row_width = val & 0x3fff;
+                        voodoo->params.aux_row_width = voodoo->aux_row_width;
                 }
                 break;
 

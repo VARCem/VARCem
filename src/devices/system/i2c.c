@@ -45,7 +45,6 @@
 
 
 #define NADDRS		128		/* I2C supports 128 addresses */
-//#define MAX(a, b) ((a) > (b) ? (a) : (b))
 
 
 typedef struct _i2c_ {
@@ -238,21 +237,6 @@ i2c_handler(int set, void *bus_handle, uint8_t base, int size,
 
 
 uint8_t
-i2c_has_device(void *bus_handle, uint8_t addr)
-{
-    i2c_bus_t *bus = (i2c_bus_t *)bus_handle;
-
-    if (bus == NULL)
-	return 0;
-
-    DEBUG("I2C: has_device(%s, %02X) = %d\n",
-	bus->name, addr, !!bus->devices[addr]);
-
-    return(!!bus->devices[addr]);
-}
-
-
-uint8_t
 i2c_start(void *bus_handle, uint8_t addr, int8_t read)
 {
     i2c_bus_t *bus = (i2c_bus_t *) bus_handle;
@@ -272,7 +256,7 @@ i2c_start(void *bus_handle, uint8_t addr, int8_t read)
 	}
     }
 
-    DEBUG("I2C: start(%s, %02X)\n", bus->name, addr);
+    DEBUG("I2C %s: start(%02X) = %d\n", bus->name, addr, ret);
 
     return(ret);
 }
@@ -299,7 +283,7 @@ i2c_read(void *bus_handle, uint8_t addr)
 	}
     }
 
-    DEBUG("I2C: read(%s, %02X) = %02X\n", bus->name, addr, ret);
+    DEBUG("I2C %s: read(%02X) = %02X\n", bus->name, addr, ret);
 
     return(ret);
 }
@@ -325,7 +309,7 @@ i2c_write(void *bus_handle, uint8_t addr, uint8_t data)
 	}
     }
 
-    DEBUG("I2C: write(%s, %02X, %02X) = %d\n", bus->name, addr, data, ret);
+    DEBUG("I2C %s: write(%02X, %02X) = %d\n", bus->name, addr, data, ret);
 
     return(ret);
 }
@@ -350,5 +334,5 @@ i2c_stop(void *bus_handle, uint8_t addr)
 	}
     }
 
-    DEBUG("I2C: stop(%s, %02X)\n", bus->name, addr);
+    DEBUG("I2C %s: stop(%02X)\n", bus->name, addr);
 }

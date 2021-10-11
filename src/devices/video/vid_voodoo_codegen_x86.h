@@ -77,11 +77,12 @@ typedef struct voodoo_x86_data_t
         uint32_t fbzColorPath;
         uint32_t textureMode[2];
         uint32_t tLOD[2];
-        uint32_t trexInit1;        
+        uint32_t trexInit1;
+	int is_tiled;
 } voodoo_x86_data_t;
 
-static int last_block[2] = {0, 0};
-static int next_block_to_write[2] = {0, 0};
+static int last_block[4] = {0, 0};
+static int next_block_to_write[4] = {0, 0};
 
 #define addbyte(val)                                            \
         do {                                                    \
@@ -212,9 +213,7 @@ static inline int codegen_texture_fetch(uint8_t *code_block, voodoo_t *voodoo, v
                 addbyte(0x89); /*MOV state->lod, EAX*/
                 addbyte(0x87);
                 addlong(offsetof(voodoo_state_t, lod));
-        }
-        else
-        {
+        } else {
                 addbyte(0xf3); /*MOVQ XMM4, state->tmu0_s*/
                 addbyte(0x0f);
                 addbyte(0x7e);
@@ -266,10 +265,8 @@ static inline int codegen_texture_fetch(uint8_t *code_block, voodoo_t *voodoo, v
                 addlong(offsetof(voodoo_state_t, lod));
         }
         /*EAX = state->lod*/
-        if (params->fbzColorPath & FBZCP_TEXTURE_ENABLED)
-        {
-                if (voodoo->bilinear_enabled && (params->textureMode[tmu] & 6))
-                {
+        if (params->fbzColorPath & FBZCP_TEXTURE_ENABLED) {
+                if (voodoo->bilinear_enabled && (params->textureMode[tmu] & 6)) {
                         addbyte(0x8b); /*MOV ECX, state->tex_lod[tmu]*/
                         addbyte(0x8f);
                         addlong(offsetof(voodoo_state_t, tex_lod[tmu]));
@@ -290,8 +287,7 @@ static inline int codegen_texture_fetch(uint8_t *code_block, voodoo_t *voodoo, v
                         addbyte(0x8b); /*MOV EBX, state->tex_t[EDI]*/
                         addbyte(0x9f);
                         addlong(offsetof(voodoo_state_t, tex_t));
-                        if (params->tLOD[tmu] & LOD_TMIRROR_S)
-                        {
+                        if (params->tLOD[tmu] & LOD_TMIRROR_S) {
                                 addbyte(0xa9); /*TEST EAX, 0x1000*/
                                 addlong(0x1000);
                                 addbyte(0x74); /*JZ +*/
@@ -299,8 +295,7 @@ static inline int codegen_texture_fetch(uint8_t *code_block, voodoo_t *voodoo, v
                                 addbyte(0xf7); /*NOT EAX*/
                                 addbyte(0xd0);
                         }
-                        if (params->tLOD[tmu] & LOD_TMIRROR_T)
-                        {
+                        if (params->tLOD[tmu] & LOD_TMIRROR_T) {
                                 addbyte(0xf7); /*TEST EBX, 0x1000*/
                                 addbyte(0xc3);
                                 addlong(0x1000);
@@ -392,9 +387,7 @@ static inline int codegen_texture_fetch(uint8_t *code_block, voodoo_t *voodoo, v
                                 addbyte(0x47);
                                 addbyte(0x9e);
                                 addlong(offsetof(voodoo_params_t, tex_h_mask[tmu]));
-                        }
-                        else
-                        {
+                        } else {
                                 addbyte(0x23); /*AND EDX, params->tex_h_mask[ESI]*/
                                 addbyte(0x96);
                                 addlong(offsetof(voodoo_params_t, tex_h_mask[tmu]));
@@ -415,8 +408,7 @@ static inline int codegen_texture_fetch(uint8_t *code_block, voodoo_t *voodoo, v
                         addbyte(0x54);
                         addbyte(0x95);
                         addbyte(0);
-                        if (state->clamp_s[tmu])
-                        {
+                        if (state->clamp_s[tmu]) {
                                 addbyte(0x8b); /*MOV EBP, params->tex_w_mask[ESI]*/
                                 addbyte(0xae);
                                 addlong(offsetof(voodoo_params_t, tex_w_mask[tmu]));
@@ -438,9 +430,7 @@ static inline int codegen_texture_fetch(uint8_t *code_block, voodoo_t *voodoo, v
                                 addbyte(0xc5);
                                 addbyte(0x73); /*JAE + - clamp on +*/
                                 addbyte(5+5+2);
-                        }
-                        else
-                        {
+                        } else {
                                 addbyte(0x3b); /*CMP EAX, params->tex_w_mask[ESI] - is S at texture edge (ie will wrap/clamp)?*/
                                 addbyte(0x86);
                                 addlong(offsetof(voodoo_params_t, tex_w_mask[tmu]));
@@ -485,9 +475,7 @@ static inline int codegen_texture_fetch(uint8_t *code_block, voodoo_t *voodoo, v
                                 addbyte(0x0f);
                                 addbyte(0x62);
                                 addbyte(0xc9);
-                        }
-                        else
-                        {
+                        } else {
                                 addbyte(0xeb); /*JMP +*/
                                 addbyte(5+5+5+5+6+6);
 
@@ -742,7 +730,7 @@ static inline void voodoo_generate(uint8_t *code_block, voodoo_t *voodoo, voodoo
         addbyte(0x74);
         addbyte(0x24);
         addbyte(8+16);
-	if (voodoo->col_tiled || voodoo->aux_tiled) {
+	if (params->col_tiled || params->aux_tiled) {
                 addbyte(0x8b); /*MOV EAX, state->x[EDI]*/
                 addbyte(0x87);
                 addlong(offsetof(voodoo_state_t, x));
@@ -768,8 +756,7 @@ static inline void voodoo_generate(uint8_t *code_block, voodoo_t *voodoo, voodoo
         addbyte(0xef);
         addbyte(0xd2);
 
-        if ((params->fbzMode & FBZ_W_BUFFER) || (params->fogMode & (FOG_ENABLE|FOG_CONSTANT|FOG_Z|FOG_ALPHA)) == FOG_ENABLE)
-        {
+        if ((params->fbzMode & FBZ_W_BUFFER) || (params->fogMode & (FOG_ENABLE|FOG_CONSTANT|FOG_Z|FOG_ALPHA)) == FOG_ENABLE) {
                 addbyte(0xb8); /*MOV new_depth, 0*/
                 addlong(0);
                 addbyte(0x66); /*TEST w+4, 0xffff*/
@@ -780,7 +767,7 @@ static inline void voodoo_generate(uint8_t *code_block, voodoo_t *voodoo, voodoo
                 addbyte(0x75); /*JNZ got_depth*/
                 depth_jump_pos = block_pos;
                 addbyte(0);
-//                addbyte(4+5+2+3+2+5+5+3+2+2+2+/*3+*/3+2+6+4+5+2+3);
+//              addbyte(4+5+2+3+2+5+5+3+2+2+2+/*3+*/3+2+6+4+5+2+3);
                 addbyte(0x8b); /*MOV EDX, w*/
                 addbyte(0x97);
                 addlong(offsetof(voodoo_state_t, w));
@@ -794,7 +781,7 @@ static inline void voodoo_generate(uint8_t *code_block, voodoo_t *voodoo, voodoo
                 addbyte(0x74); /*JZ got_depth*/
                 depth_jump_pos2 = block_pos;
                 addbyte(0);
-//                addbyte(5+5+3+2+2+2+/*3+*/3+2+6+4+5+2+3);
+//              addbyte(5+5+3+2+2+2+/*3+*/3+2+6+4+5+2+3);
                 addbyte(0xb9); /*MOV ECX, 19*/
                 addlong(19);
                 addbyte(0x0f); /*BSR EAX, EDX*/
@@ -894,7 +881,7 @@ static inline void voodoo_generate(uint8_t *code_block, voodoo_t *voodoo, voodoo
         if ((params->fbzMode & FBZ_DEPTH_ENABLE) && (depthop != DEPTHOP_ALWAYS) && (depthop != DEPTHOP_NEVER)) {
                 addbyte(0x8b); /*MOV EBX, state->x[EDI]*/
                 addbyte(0x9f);
-                if (voodoo->aux_tiled)
+                if (params->aux_tiled)
                         addlong(offsetof(voodoo_state_t, x_tiled));
                 else
                         addlong(offsetof(voodoo_state_t, x));
@@ -1695,20 +1682,51 @@ static inline void voodoo_generate(uint8_t *code_block, voodoo_t *voodoo, voodoo
                 addbyte(0x7e);
                 addbyte(0xc1);
         }
-        if (cc_mselect == CC_MSELECT_TEXRGB)
-        {
+        if (cc_mselect == CC_MSELECT_TEXRGB) {
                 addbyte(0xf3); /*MOVD XMM4, XMM0*/
                 addbyte(0x0f);
                 addbyte(0x7e);
                 addbyte(0xe0);
         }
 
-        if ((params->fbzMode & FBZ_CHROMAKEY))
-        {
-                addbyte(0x66); /*MOVD EAX, XMM0*/
-                addbyte(0x0f);
-                addbyte(0x7e);
-                addbyte(0xc0);
+        if ((params->fbzMode & FBZ_CHROMAKEY)) {
+                switch (_rgb_sel) {
+                        case CC_LOCALSELECT_ITER_RGB:
+                        addbyte(0xf3); /*MOVDQU XMM0, ib*/ /* ir, ig and ib must be in same dqword!*/
+                        addbyte(0x0f);
+                        addbyte(0x6f);
+                        addbyte(0x87);
+                        addlong(offsetof(voodoo_state_t, ib));
+                        addbyte(0x66); /*PSRAD XMM0, 12*/
+                        addbyte(0x0f);
+                        addbyte(0x72);
+                        addbyte(0xe0);
+                        addbyte(12);
+                        addbyte(0x66); /*PACKSSDW XMM0, XMM0*/
+                        addbyte(0x0f);
+                        addbyte(0x6b);
+                        addbyte(0xc0);
+                        addbyte(0x66); /*PACKUSWB XMM0, XMM0*/
+                        addbyte(0x0f);
+                        addbyte(0x67);
+                        addbyte(0xc0);
+                        addbyte(0x66); /*MOVD EAX, XMM0*/
+                        addbyte(0x0f);
+                        addbyte(0x7e);
+                        addbyte(0xc0);
+                        break;
+                        case CC_LOCALSELECT_COLOR1:
+                        addbyte(0x8b); /*MOV EAX, params->color1[ESI]*/
+                        addbyte(0x86);
+                        addlong(offsetof(voodoo_params_t, color1));
+                        break;
+                        case CC_LOCALSELECT_TEX:
+                        addbyte(0x66); /*MOVD EAX, XMM0*/
+                        addbyte(0x0f);
+                        addbyte(0x7e);
+                        addbyte(0xc0);
+                        break;
+                }
                 addbyte(0x8b); /*MOV EBX, params->chromaKey[ESI]*/
                 addbyte(0x9e);
                 addlong(offsetof(voodoo_params_t, chromaKey));
@@ -2497,7 +2515,7 @@ static inline void voodoo_generate(uint8_t *code_block, voodoo_t *voodoo, voodoo
         if (params->alphaMode & (1 << 4)) {
                 addbyte(0x8b); /*MOV EAX, state->x[EDI]*/
                 addbyte(0x87);
-                if (voodoo->col_tiled)
+                if (params->col_tiled)
                         addlong(offsetof(voodoo_state_t, x_tiled));
                 else
                         addlong(offsetof(voodoo_state_t, x));
@@ -2879,7 +2897,7 @@ static inline void voodoo_generate(uint8_t *code_block, voodoo_t *voodoo, voodoo
 
         addbyte(0x8b); /*MOV EDX, state->x[EDI]*/
         addbyte(0x97);
-        if (voodoo->col_tiled)
+        if (params->col_tiled)
                 addlong(offsetof(voodoo_state_t, x_tiled));
         else
                 addlong(offsetof(voodoo_state_t, x));
@@ -2943,7 +2961,7 @@ static inline void voodoo_generate(uint8_t *code_block, voodoo_t *voodoo, voodoo
                         }
                         addbyte(0x8b); /*MOV EDX, state->x[EDI]*/
                         addbyte(0x97);
-                        if (voodoo->col_tiled)
+                        if (params->col_tiled)
                                 addlong(offsetof(voodoo_state_t, x_tiled));
                         else
                                 addlong(offsetof(voodoo_state_t, x));
@@ -3026,7 +3044,7 @@ static inline void voodoo_generate(uint8_t *code_block, voodoo_t *voodoo, voodoo
         if ((params->fbzMode & (FBZ_DEPTH_WMASK | FBZ_DEPTH_ENABLE)) == (FBZ_DEPTH_WMASK | FBZ_DEPTH_ENABLE)) {
                 addbyte(0x8b); /*MOV EDX, state->x[EDI]*/
                 addbyte(0x97);
-                if (voodoo->aux_tiled)
+                if (params->aux_tiled)
                         addlong(offsetof(voodoo_state_t, x_tiled));
                 else
                         addlong(offsetof(voodoo_state_t, x));
@@ -3301,7 +3319,7 @@ static inline void *voodoo_get_block(voodoo_t *voodoo, voodoo_params_t *params, 
         
         for (c = 0; c < 8; c++)
         {
-                data = &codegen_data[odd_even + b*2];
+                data = &codegen_data[odd_even + b*4];
                 
                 if (state->xdir == data->xdir &&
                     params->alphaMode == data->alphaMode &&
@@ -3312,7 +3330,8 @@ static inline void *voodoo_get_block(voodoo_t *voodoo, voodoo_params_t *params, 
                     params->textureMode[0] == data->textureMode[0] &&
                     params->textureMode[1] == data->textureMode[1] &&
                     (params->tLOD[0] & LOD_MASK) == data->tLOD[0] &&
-                    (params->tLOD[1] & LOD_MASK) == data->tLOD[1])
+                    (params->tLOD[1] & LOD_MASK) == data->tLOD[1] &&
+                    ((params->col_tiled || params->aux_tiled) ? 1 : 0) == data->is_tiled)
                 {
                         last_block[odd_even] = b;
                         return data->code_block;
@@ -3321,8 +3340,8 @@ static inline void *voodoo_get_block(voodoo_t *voodoo, voodoo_params_t *params, 
                 b = (b + 1) & 7;
         }
 voodoo_recomp++;
-        data = &codegen_data[odd_even + next_block_to_write[odd_even]*2];
-//        code_block = data->code_block;
+        data = &codegen_data[odd_even + next_block_to_write[odd_even]*4];
+//      code_block = data->code_block;
         
         voodoo_generate(data->code_block, voodoo, params, state, depth_op);
 
@@ -3336,6 +3355,7 @@ voodoo_recomp++;
         data->textureMode[1] = params->textureMode[1];
         data->tLOD[0] = params->tLOD[0] & LOD_MASK;
         data->tLOD[1] = params->tLOD[1] & LOD_MASK;
+        data->is_tiled = (params->col_tiled || params->aux_tiled) ? 1 : 0;
 
         next_block_to_write[odd_even] = (next_block_to_write[odd_even] + 1) & 7;
         
@@ -3353,14 +3373,14 @@ void voodoo_codegen_init(voodoo_t *voodoo)
 #endif
 
 #if defined WIN32 || defined _WIN32 || defined _WIN32
-        voodoo->codegen_data = VirtualAlloc(NULL, sizeof(voodoo_x86_data_t) * BLOCK_NUM*2, MEM_COMMIT, PAGE_EXECUTE_READWRITE);
+        voodoo->codegen_data = VirtualAlloc(NULL, sizeof(voodoo_x86_data_t) * BLOCK_NUM*4, MEM_COMMIT, PAGE_EXECUTE_READWRITE);
 #else
-        voodoo->codegen_data = mem_alloc(sizeof(voodoo_x86_data_t) * BLOCK_NUM*2);
+        voodoo->codegen_data = mem_alloc(sizeof(voodoo_x86_data_t) * BLOCK_NUM*4);
 #endif
 
 #ifdef __linux__
 	start = (void *)((long)voodoo->codegen_data & pagemask);
-	len = ((sizeof(voodoo_x86_data_t) * BLOCK_NUM*2) + pagesize) & pagemask;
+	len = ((sizeof(voodoo_x86_data_t) * BLOCK_NUM*4) + pagesize) & pagemask;
 	if (mprotect(start, len, PROT_READ | PROT_WRITE | PROT_EXEC) != 0)
 	{
 		perror("mprotect");

@@ -488,6 +488,9 @@ svga_recalctimings(svga_t *svga)
     svga->ma_latch = ((svga->crtc[0xc] << 8) | svga->crtc[0xd]) + ((svga->crtc[8] & 0x60) >> 5);
 	svga->ca_adj = 0;
 
+    svga->rowcount = svga->crtc[9] & 0x1f;
+    svga->linedbl = svga->crtc[9] & 0x80;
+
     svga->hdisp_time = svga->hdisp;
     svga->render = svga_render_blank;
     if (!svga->scrblank && svga->attr_palette_enable) {
@@ -556,8 +559,6 @@ svga_recalctimings(svga_t *svga)
 	}
     }
 
-    svga->linedbl = svga->crtc[9] & 0x80;
-    svga->rowcount = svga->crtc[9] & 31;
     svga->char_width = (svga->seqregs[1] & 1) ? 8 : 9;
     if (enable_overscan) {
 	overscan_y = (svga->rowcount + 1) << 1;

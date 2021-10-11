@@ -153,7 +153,9 @@ void voodoo_recalc(voodoo_t *voodoo)
         if (voodoo->fbiInit1 & (1 << 24))
                 voodoo->block_width += 32;
         voodoo->row_width = voodoo->block_width * 32 * 2;
+	voodoo->params.row_width = voodoo->row_width;
 	voodoo->aux_row_width = voodoo->row_width;
+	voodoo->params.aux_row_width = voodoo->aux_row_width;
 
 /*        DEBUG("voodoo_recalc : front_offset %08X  back_offset %08X  aux_offset %08X draw_offset %08x\n", voodoo->params.front_offset, voodoo->back_offset, voodoo->params.aux_offset, voodoo->params.draw_offset);
         DEBUG("                fb_read_offset %08X  fb_write_offset %08X  row_width %i  %08x %08x\n", voodoo->fb_read_offset, voodoo->fb_write_offset, voodoo->row_width, voodoo->lfbMode, voodoo->params.fbzMode);*/
@@ -387,7 +389,7 @@ static uint32_t voodoo_readl(uint32_t addr, void *priv)
                 break;
                 
                 default:
-                fatal("voodoo_readl  : bad addr %08X\n", addr);
+                DEBUG("voodoo_readl  : bad addr %08X\n", addr);
                 temp = 0xffffffff;
         }
         
@@ -446,7 +448,9 @@ static void voodoo_writel(uint32_t addr, uint32_t val, void *priv)
                 
                 case SST_swapbufferCMD:
                 voodoo->cmd_written++;
+                thread_wait_mutex(voodoo->swap_mutex);
                 voodoo->swap_count++;
+                thread_release_mutex(voodoo->swap_mutex);
                 if (voodoo->fbiInit7 & FBIINIT7_CMDFIFO_ENABLE)
                         return;
                 voodoo_queue_command(voodoo, addr | FIFO_WRITEL_REG, val);
@@ -524,7 +528,9 @@ static void voodoo_writel(uint32_t addr, uint32_t val, void *priv)
                 if (voodoo->initEnable & 0x01) {
                         if ((voodoo->fbiInit1 & FBIINIT1_VIDEO_RESET) && !(val & FBIINIT1_VIDEO_RESET)) {
                                 voodoo->line = 0;
+                                thread_wait_mutex(voodoo->swap_mutex);
                                 voodoo->swap_count = 0;
+                                thread_release_mutex(voodoo->swap_mutex);
                                 voodoo->retrace_count = 0;
                         }
                         voodoo->fbiInit1 = (val & ~5) | (voodoo->fbiInit1 & 5);
@@ -903,16 +909,26 @@ void *voodoo_card_init()
         voodoo->wake_fifo_thread = thread_create_event();
         voodoo->wake_render_thread[0] = thread_create_event();
         voodoo->wake_render_thread[1] = thread_create_event();
+        voodoo->wake_render_thread[2] = thread_create_event();
+        voodoo->wake_render_thread[3] = thread_create_event();
         voodoo->wake_main_thread = thread_create_event();
         voodoo->fifo_not_full_event = thread_create_event();
         voodoo->render_not_full_event[0] = thread_create_event();
         voodoo->render_not_full_event[1] = thread_create_event();
+        voodoo->render_not_full_event[2] = thread_create_event();
+        voodoo->render_not_full_event[3] = thread_create_event();
         voodoo->fifo_thread = thread_create(voodoo_fifo_thread, voodoo);
         voodoo->render_thread[0] = thread_create(voodoo_render_thread_1, voodoo);
-        if (voodoo->render_threads == 2)
+        if (voodoo->render_threads >= 2)
                 voodoo->render_thread[1] = thread_create(voodoo_render_thread_2, voodoo);
+        if (voodoo->render_threads == 4) {
+		voodoo->render_thread[2] = thread_create(voodoo_render_thread_3, voodoo);
+		voodoo->render_thread[3] = thread_create(voodoo_render_thread_4, voodoo);
+	}
 
-        timer_add(voodoo_wake_timer, voodoo,
+        voodoo->swap_mutex = thread_create_mutex(L"VARCem.VoodooMutex");
+
+	timer_add(voodoo_wake_timer, voodoo,
 		  &voodoo->wake_timer, &voodoo->wake_timer);
         
         for (c = 0; c < 0x100; c++) {
@@ -1008,7 +1024,9 @@ void *voodoo_2d3d_card_init(int type)
                 }
         }
 
-        timer_add(voodoo_callback, voodoo,
+        voodoo->swap_mutex = thread_create_mutex(L"VARCem.Voodoo2DMutex");
+
+	timer_add(voodoo_callback, voodoo,
 		  &voodoo->timer_count, TIMER_ALWAYS_ENABLED);
 
         voodoo->fbiInit0 = 0;
@@ -1016,14 +1034,22 @@ void *voodoo_2d3d_card_init(int type)
         voodoo->wake_fifo_thread = thread_create_event();
         voodoo->wake_render_thread[0] = thread_create_event();
         voodoo->wake_render_thread[1] = thread_create_event();
+        voodoo->wake_render_thread[2] = thread_create_event();
+        voodoo->wake_render_thread[3] = thread_create_event();
         voodoo->wake_main_thread = thread_create_event();
         voodoo->fifo_not_full_event = thread_create_event();
         voodoo->render_not_full_event[0] = thread_create_event();
         voodoo->render_not_full_event[1] = thread_create_event();
+        voodoo->render_not_full_event[2] = thread_create_event();
+        voodoo->render_not_full_event[3] = thread_create_event();
         voodoo->fifo_thread = thread_create(voodoo_fifo_thread, voodoo);
         voodoo->render_thread[0] = thread_create(voodoo_render_thread_1, voodoo);
-        if (voodoo->render_threads == 2)
+        if (voodoo->render_threads >= 2)
                 voodoo->render_thread[1] = thread_create(voodoo_render_thread_2, voodoo);
+	if (voodoo->render_threads == 4) {
+		voodoo->render_thread[2] = thread_create(voodoo_render_thread_3, voodoo);
+		voodoo->render_thread[3] = thread_create(voodoo_render_thread_4, voodoo);
+	}
 
         timer_add(voodoo_wake_timer, voodoo,
 		  &voodoo->wake_timer, &voodoo->wake_timer);
@@ -1175,8 +1201,12 @@ voodoo_card_close(voodoo_t *voodoo)
 
         thread_kill(voodoo->fifo_thread);
         thread_kill(voodoo->render_thread[0]);
-        if (voodoo->render_threads == 2)
+        if (voodoo->render_threads >= 2)
                 thread_kill(voodoo->render_thread[1]);
+	if (voodoo->render_threads == 4) {
+		thread_kill(voodoo->render_thread[2]);
+		thread_kill(voodoo->render_thread[3]);
+	}
         thread_destroy_event(voodoo->fifo_not_full_event);
         thread_destroy_event(voodoo->wake_main_thread);
         thread_destroy_event(voodoo->wake_fifo_thread);
@@ -1285,6 +1315,9 @@ static const device_config_t voodoo_config[] =
                         },
                         {
                                 "2",2
+                        },
+			{
+                                "4",4
                         },
                         {
                                 NULL

@@ -666,7 +666,7 @@ static int voodoo_recomp = 0;
 
 static void voodoo_half_triangle(voodoo_t *voodoo, voodoo_params_t *params, voodoo_state_t *state, int ystart, int yend, int odd_even)
 {
-/*        int rgb_sel                 = params->fbzColorPath & 3;
+/*      int rgb_sel                 = params->fbzColorPath & 3;
         int a_sel                   = (params->fbzColorPath >> 2) & 3;
         int cc_localselect          = params->fbzColorPath & (1 << 4);
         int cca_localselect         = (params->fbzColorPath >> 5) & 3;
@@ -697,6 +697,7 @@ static void voodoo_half_triangle(voodoo_t *voodoo, voodoo_params_t *params, vood
 #endif
 	uint8_t cother_r = 0, cother_g = 0, cother_b = 0;
         int y_diff = SLI_ENABLED ? 2 : 1;
+        int y_origin = (voodoo->type >= VOODOO_BANSHEE) ? voodoo->y_origin_swap : (voodoo->v_disp - 1);
 
         if ((params->textureMode[0] & TEXTUREMODE_MASK) == TEXTUREMODE_PASSTHROUGH ||
             (params->textureMode[0] & TEXTUREMODE_LOCAL_MASK) == TEXTUREMODE_LOCAL)
@@ -749,7 +750,7 @@ static void voodoo_half_triangle(voodoo_t *voodoo, voodoo_params_t *params, vood
         }
 
         if ((params->fbzMode & 1) && (yend >= params->clipHighY))
-                yend = params->clipHighY-1;
+                yend = params->clipHighY;
 
         state->y = ystart;
 //        yend--;
@@ -758,13 +759,12 @@ static void voodoo_half_triangle(voodoo_t *voodoo, voodoo_params_t *params, vood
                 int test_y;
                 
                 if (params->fbzMode & (1 << 17))
-                        test_y = (voodoo->v_disp-1) - state->y;
+                        test_y = y_origin - state->y;
                 else
                         test_y = state->y;
                         
                 if ((!(voodoo->initEnable & INITENABLE_SLI_MASTER_SLAVE) && (test_y & 1)) ||
-                    ((voodoo->initEnable & INITENABLE_SLI_MASTER_SLAVE) && !(test_y & 1)))
-                {
+                    ((voodoo->initEnable & INITENABLE_SLI_MASTER_SLAVE) && !(test_y & 1))) {
                         state->y++;
 
                         state->base_r += params->dRdY;
@@ -825,7 +825,7 @@ static void voodoo_half_triangle(voodoo_t *voodoo, voodoo_params_t *params, vood
                         x2 = (state->vertexBx << 12) + ((state->dxBC * (real_y - state->vertexBy)) >> 4);
 
                 if (params->fbzMode & (1 << 17))
-                        real_y = (voodoo->v_disp-1) - (real_y >> 4);
+                        real_y = y_origin - (real_y >> 4);
                 else
                         real_y >>= 4;
 
@@ -927,17 +927,17 @@ static void voodoo_half_triangle(voodoo_t *voodoo, voodoo_params_t *params, vood
                         goto next_line;
 
                 if (SLI_ENABLED) {
-                        state->fb_mem = fb_mem = (uint16_t *)&voodoo->fb_mem[params->draw_offset + ((real_y >> 1) * voodoo->row_width)];
-                        state->aux_mem = aux_mem = (uint16_t *)&voodoo->fb_mem[(params->aux_offset + ((real_y >> 1) * voodoo->row_width)) & voodoo->fb_mask];
+                        state->fb_mem = fb_mem = (uint16_t *)&voodoo->fb_mem[params->draw_offset + ((real_y >> 1) * params->row_width)];
+                        state->aux_mem = aux_mem = (uint16_t *)&voodoo->fb_mem[(params->aux_offset + ((real_y >> 1) * params->row_width)) & voodoo->fb_mask];
                 } else {
-                        if (voodoo->col_tiled)
-                                state->fb_mem = fb_mem = (uint16_t *)&voodoo->fb_mem[params->draw_offset + (real_y >> 5) * voodoo->row_width + (real_y & 31) * 128];
+                        if (params->col_tiled)
+                                state->fb_mem = fb_mem = (uint16_t *)&voodoo->fb_mem[params->draw_offset + (real_y >> 5) * params->row_width + (real_y & 31) * 128];
                         else
-                                state->fb_mem = fb_mem = (uint16_t *)&voodoo->fb_mem[params->draw_offset + (real_y * voodoo->row_width)];
-                        if (voodoo->aux_tiled)
-                                state->aux_mem = aux_mem = (uint16_t *)&voodoo->fb_mem[(params->aux_offset + (real_y >> 5) * voodoo->aux_row_width + (real_y & 31) * 128) & voodoo->fb_mask];
+                                state->fb_mem = fb_mem = (uint16_t *)&voodoo->fb_mem[params->draw_offset + (real_y * params->row_width)];
+                        if (params->aux_tiled)
+                                state->aux_mem = aux_mem = (uint16_t *)&voodoo->fb_mem[(params->aux_offset + (real_y >> 5) * params->aux_row_width + (real_y & 31) * 128) & voodoo->fb_mask];
                         else
-                                state->aux_mem = aux_mem = (uint16_t *)&voodoo->fb_mem[(params->aux_offset + (real_y * voodoo->row_width)) & voodoo->fb_mask];
+                                state->aux_mem = aux_mem = (uint16_t *)&voodoo->fb_mem[(params->aux_offset + (real_y * params->row_width)) & voodoo->fb_mask];
                 }
                 
                 if (voodoo_output)
@@ -1000,12 +1000,12 @@ static void voodoo_half_triangle(voodoo_t *voodoo, voodoo_params_t *params, vood
                                         new_depth = CLAMP16(new_depth + (int16_t)params->zaColor);                                        
 
                                 if (params->fbzMode & FBZ_DEPTH_ENABLE) {
-                                        uint16_t old_depth = voodoo->aux_tiled ? aux_mem[x_tiled] : aux_mem[x];
+                                        uint16_t old_depth = voodoo->params.aux_tiled ? aux_mem[x_tiled] : aux_mem[x];
 
                                         DEPTH_TEST((params->fbzMode & FBZ_DEPTH_SOURCE) ? (params->zaColor & 0xffff) : new_depth);
                                 }
                                 
-                                dat = voodoo->col_tiled ? fb_mem[x_tiled] : fb_mem[x];
+                                dat = voodoo->params.col_tiled ? fb_mem[x_tiled] : fb_mem[x];
                                 dest_r = (dat >> 8) & 0xf8;
                                 dest_g = (dat >> 3) & 0xfc;
                                 dest_b = (dat << 3) & 0xf8;
@@ -1313,13 +1313,13 @@ static void voodoo_half_triangle(voodoo_t *voodoo, voodoo_params_t *params, vood
                                         }
 
                                         if (params->fbzMode & FBZ_RGB_WMASK) {
-                                                if (voodoo->col_tiled)
+                                                if (voodoo->params.col_tiled)
                                                         fb_mem[x_tiled] = src_b | (src_g << 5) | (src_r << 11);
                                                 else
                                                         fb_mem[x] = src_b | (src_g << 5) | (src_r << 11);
                                         }
                                         if ((params->fbzMode & (FBZ_DEPTH_WMASK | FBZ_DEPTH_ENABLE)) == (FBZ_DEPTH_WMASK | FBZ_DEPTH_ENABLE)) {
-                                                if (voodoo->aux_tiled)
+                                                if (voodoo->params.aux_tiled)
                                                         aux_mem[x_tiled] = new_depth;
                                                 else
                                                         aux_mem[x] = new_depth;
@@ -1564,7 +1564,7 @@ static void render_thread(void *param, int odd_even)
                 thread_reset_event(voodoo->wake_render_thread[odd_even]);
                 voodoo->render_voodoo_busy[odd_even] = 1;
 
-                while (!(odd_even ? PARAM_EMPTY_2 : PARAM_EMPTY_1)) {
+                while (!PARAM_EMPTY(odd_even)) {
                         uint64_t start_time = plat_timer_read();
                         uint64_t end_time;
                         voodoo_params_t *params = &voodoo->params_buffer[voodoo->params_read_idx[odd_even] & PARAM_MASK];
@@ -1573,7 +1573,7 @@ static void render_thread(void *param, int odd_even)
 
                         voodoo->params_read_idx[odd_even]++;                                                
                         
-                        if ((odd_even ? PARAM_ENTRIES_2 : PARAM_ENTRIES_1) > (PARAM_SIZE - 10))
+                        if (PARAM_ENTRIES(odd_even) > (PARAM_SIZE - 10))
                                 thread_set_event(voodoo->render_not_full_event[odd_even]);
 
                         end_time = plat_timer_read();
@@ -1592,22 +1592,37 @@ void voodoo_render_thread_2(void *param)
 {
         render_thread(param, 1);
 }
+void voodoo_render_thread_3(void *param)
+{
+        render_thread(param, 2);
+}
+void voodoo_render_thread_4(void *param)
+{
+        render_thread(param, 3);
+}
 
 void queue_triangle(voodoo_t *voodoo, voodoo_params_t *params)
 {
         voodoo_params_t *params_new = &voodoo->params_buffer[voodoo->params_write_idx & PARAM_MASK];
 
-        while (PARAM_FULL_1 || (voodoo->render_threads == 2 && PARAM_FULL_2))
+    while (PARAM_FULL(0) || (voodoo->render_threads >= 2 && PARAM_FULL(1)) ||
+                (voodoo->render_threads == 4 && (PARAM_FULL(2) || PARAM_FULL(3))))
         {
                 thread_reset_event(voodoo->render_not_full_event[0]);
-                if (voodoo->render_threads == 2)
+                if (voodoo->render_threads >= 2)
                         thread_reset_event(voodoo->render_not_full_event[1]);
-                if (PARAM_FULL_1) {
-                        thread_wait_event(voodoo->render_not_full_event[0], -1); /*Wait for room in ringbuffer*/
-                }
-                if (voodoo->render_threads == 2 && PARAM_FULL_2) {
-                        thread_wait_event(voodoo->render_not_full_event[1], -1); /*Wait for room in ringbuffer*/
-                }
+                if (voodoo->render_threads == 4) {
+                        thread_reset_event(voodoo->render_not_full_event[2]);
+                        thread_reset_event(voodoo->render_not_full_event[3]);
+		}
+		if (PARAM_FULL(0))
+			thread_wait_event(voodoo->render_not_full_event[0], -1); /*Wait for room in ringbuffer*/
+                if (voodoo->render_threads >= 2 && PARAM_FULL(1))
+			thread_wait_event(voodoo->render_not_full_event[1], -1); /*Wait for room in ringbuffer*/
+		if (voodoo->render_threads == 4 && PARAM_FULL(2))
+			thread_wait_event(voodoo->render_not_full_event[2], -1); /*Wait for room in ringbuffer*/
+		if (voodoo->render_threads == 4 && PARAM_FULL(3))	
+			thread_wait_event(voodoo->render_not_full_event[3], -1); /*Wait for room in ringbuffer*/
         }
         
         use_texture(voodoo, params, 0);
@@ -1618,7 +1633,8 @@ void queue_triangle(voodoo_t *voodoo, voodoo_params_t *params)
         
         voodoo->params_write_idx++;
         
-        if (PARAM_ENTRIES_1 < 4 || (voodoo->render_threads == 2 && PARAM_ENTRIES_2 < 4))
+        if (PARAM_ENTRIES(0) < 4 || (voodoo->render_threads >= 2 && PARAM_ENTRIES(1) < 4) ||
+		(voodoo->render_threads == 4 && (PARAM_ENTRIES(2) < 4 || PARAM_ENTRIES(3) < 4)))
                 voodoo_wake_render_thread(voodoo);
 }
 

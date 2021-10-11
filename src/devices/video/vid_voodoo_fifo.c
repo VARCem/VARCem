@@ -143,38 +143,44 @@ void voodoo_wake_fifo_threads(voodoo_set_t *set, voodoo_t *voodoo)
 
 void voodoo_wait_for_swap_complete(voodoo_t *voodoo)
 {
-        while (voodoo->swap_pending) {
-                thread_wait_event(voodoo->wake_fifo_thread, -1);
-                thread_reset_event(voodoo->wake_fifo_thread);
-                if ((voodoo->swap_pending && voodoo->flush) || FIFO_FULL)
-                {
-                        /*Main thread is waiting for FIFO to empty, so skip vsync wait and just swap*/
-                        memset(voodoo->dirty_line, 1, 1024);
-                        voodoo->front_offset = voodoo->params.front_offset;
-                        if (voodoo->swap_count > 0)
-                                voodoo->swap_count--;
-                        voodoo->swap_pending = 0;
-                        break;
-                }
-        }
+    while (voodoo->swap_pending) {
+	thread_wait_event(voodoo->wake_fifo_thread, -1);
+	thread_reset_event(voodoo->wake_fifo_thread);
+
+	thread_wait_mutex(voodoo->swap_mutex);
+	if ((voodoo->swap_pending && voodoo->flush) || FIFO_FULL) {
+		/*Main thread is waiting for FIFO to empty, so skip vsync wait and just swap*/
+		memset(voodoo->dirty_line, 1, 1024);
+		voodoo->front_offset = voodoo->params.front_offset;
+		if (voodoo->swap_count > 0)
+			voodoo->swap_count--;
+		voodoo->swap_pending = 0;
+		thread_release_mutex(voodoo->swap_mutex);
+		break;
+	} else
+		thread_release_mutex(voodoo->swap_mutex);
+    }
 }
 
 static uint32_t cmdfifo_get(voodoo_t *voodoo)
 {
-        uint32_t val;
-        
-        while (voodoo->cmdfifo_depth_rd == voodoo->cmdfifo_depth_wr) {
-                thread_wait_event(voodoo->wake_fifo_thread, -1);
-                thread_reset_event(voodoo->wake_fifo_thread);
-        }
+    uint32_t val;
 
-        val = *(uint32_t *)&voodoo->fb_mem[voodoo->cmdfifo_rp & voodoo->fb_mask];
-        
-        voodoo->cmdfifo_depth_rd++;
-        voodoo->cmdfifo_rp += 4;
+    if (!voodoo->cmdfifo_in_sub) {
+	while (voodoo->cmdfifo_depth_rd == voodoo->cmdfifo_depth_wr) {
+		thread_wait_event(voodoo->wake_fifo_thread, -1);
+		thread_reset_event(voodoo->wake_fifo_thread);
+	}
+    }
 
-//        DEBUG("  CMDFIFO get %08x\n", val);
-        return val;
+    val = *(uint32_t *)&voodoo->fb_mem[voodoo->cmdfifo_rp & voodoo->fb_mask];
+
+    if (!voodoo->cmdfifo_in_sub)
+	voodoo->cmdfifo_depth_rd++;
+    voodoo->cmdfifo_rp += 4;
+
+//  DEBUG("  CMDFIFO get %08x\n", val);
+    return val;
 }
 
 static inline float cmdfifo_get_f(voodoo_t *voodoo)
@@ -209,7 +215,7 @@ void voodoo_fifo_thread(void *param)
                                         voodoo_reg_writel(fifo->addr_type & FIFO_ADDR, fifo->val, voodoo);
                                         fifo->addr_type = FIFO_INVALID;
                                         voodoo->fifo_read_idx++;
-					if (FIFO_EMPTY)
+                                        if (FIFO_EMPTY)
                                                 break;
                                         fifo = &voodoo->fifo[voodoo->fifo_read_idx & FIFO_MASK];
                                 }
@@ -231,7 +237,7 @@ void voodoo_fifo_thread(void *param)
                                         voodoo_fb_writel(fifo->addr_type & FIFO_ADDR, fifo->val, voodoo);
                                         fifo->addr_type = FIFO_INVALID;
                                         voodoo->fifo_read_idx++;
-					if (FIFO_EMPTY)
+                                        if (FIFO_EMPTY)
                                                 break;
                                         fifo = &voodoo->fifo[voodoo->fifo_read_idx & FIFO_MASK];
                                 }
@@ -242,7 +248,7 @@ void voodoo_fifo_thread(void *param)
                                                 voodoo_tex_writel(fifo->addr_type & FIFO_ADDR, fifo->val, voodoo);
                                         fifo->addr_type = FIFO_INVALID;
                                         voodoo->fifo_read_idx++;
-					if (FIFO_EMPTY)
+                                        if (FIFO_EMPTY)
                                                 break;
                                         fifo = &voodoo->fifo[voodoo->fifo_read_idx & FIFO_MASK];
                                 }
@@ -269,7 +275,8 @@ void voodoo_fifo_thread(void *param)
                         voodoo->time += end_time - start_time;
                 }
 
-                while (voodoo->cmdfifo_enabled && voodoo->cmdfifo_depth_rd != voodoo->cmdfifo_depth_wr) {
+                while (voodoo->cmdfifo_enabled && 
+                        (voodoo->cmdfifo_depth_rd != voodoo->cmdfifo_depth_wr || voodoo->cmdfifo_in_sub)) {
                         uint64_t start_time = plat_timer_read();
                         uint64_t end_time;
                         uint32_t header = cmdfifo_get(voodoo);
@@ -284,14 +291,26 @@ void voodoo_fifo_thread(void *param)
                 
                         switch (header & 7) {
                                 case 0:
-//                                DEBUG("CMDFIFO0\n");
+//                              DEBUG("CMDFIFO0\n");
                                 switch ((header >> 3) & 7) {
                                         case 0: /*NOP*/
+                                        break;
+
+                                        case 1: /*JSR*/
+//                                      DEBUG("JSR %08x\n", (header >> 4) & 0xfffffc);
+                                        voodoo->cmdfifo_ret_addr = voodoo->cmdfifo_rp;
+                                        voodoo->cmdfifo_rp = (header >> 4) & 0xfffffc;
+                                        voodoo->cmdfifo_in_sub = 1;
+                                        break;
+
+                                        case 2: /*RET*/
+                                        voodoo->cmdfifo_rp = voodoo->cmdfifo_ret_addr;
+                                        voodoo->cmdfifo_in_sub = 0;
                                         break;
                                         
                                         case 3: /*JMP local frame buffer*/
                                         voodoo->cmdfifo_rp = (header >> 4) & 0xfffffc;
-//                                        DEBUG("JMP to %08x %04x\n", voodoo->cmdfifo_rp, header);
+//                                      DEBUG("JMP to %08x %04x\n", voodoo->cmdfifo_rp, header);
                                         break;
                                         
                                         default:
@@ -302,13 +321,13 @@ void voodoo_fifo_thread(void *param)
                                 case 1:
                                 num = header >> 16;
                                 addr = (header & 0x7ff8) >> 1;
-//                                DEBUG("CMDFIFO1 addr=%08x\n",addr);
+//                              DEBUG("CMDFIFO1 addr=%08x\n",addr);
                                 while (num--) {
                                         uint32_t val = cmdfifo_get(voodoo);
                                         if ((addr & (1 << 13)) && voodoo->type == VOODOO_BANSHEE) {
-//                                                if (voodoo->type != VOODOO_BANSHEE)
-//                                                        fatal("CMDFIFO1: Not Banshee\n");
-//                                                pclog("CMDFIFO1: write %08x %08x\n", addr, val);
+//                                              if (voodoo->type != VOODOO_BANSHEE)
+//                                                      fatal("CMDFIFO1: Not Banshee\n");
+//                                              DEBUG("CMDFIFO1: write %08x %08x\n", addr, val);
                                                 voodoo_2d_reg_writel(voodoo, addr, val);
                                         } else {
                                                 if ((addr & 0x3ff) == SST_triangleCMD || (addr & 0x3ff) == SST_ftriangleCMD ||
@@ -351,24 +370,20 @@ void voodoo_fifo_thread(void *param)
                                 v_num = 0;
                                 if (((header >> 3) & 7) == 2)
                                         v_num = 1;
-//                                DEBUG("CMDFIFO3: num=%i verts=%i mask=%02x\n", num, num_verticies, (header >> 10) & 0xff);
-//                                DEBUG("CMDFIFO3 %02x %i\n", (header >> 10), (header >> 3) & 7);
+//                              DEBUG("CMDFIFO3: num=%i verts=%i mask=%02x\n", num, num_verticies, (header >> 10) & 0xff);
+//                              DEBUG("CMDFIFO3 %02x %i\n", (header >> 10), (header >> 3) & 7);
 
                                 while (num_verticies--) {
                                         voodoo->verts[3].sVx = cmdfifo_get_f(voodoo);
                                         voodoo->verts[3].sVy = cmdfifo_get_f(voodoo);
-                                        if (mask & CMDFIFO3_PC_MASK_RGB)
-                                        {
-                                                if (header & CMDFIFO3_PC)
-                                                {
+                                        if (mask & CMDFIFO3_PC_MASK_RGB) {
+                                                if (header & CMDFIFO3_PC) {
                                                         uint32_t val = cmdfifo_get(voodoo);
                                                         voodoo->verts[3].sBlue  = (float)(val & 0xff);
                                                         voodoo->verts[3].sGreen = (float)((val >> 8) & 0xff);
                                                         voodoo->verts[3].sRed   = (float)((val >> 16) & 0xff);
                                                         voodoo->verts[3].sAlpha = (float)((val >> 24) & 0xff);
-                                                }
-                                                else
-                                                {
+                                                } else {
                                                         voodoo->verts[3].sRed = cmdfifo_get_f(voodoo);
                                                         voodoo->verts[3].sGreen = cmdfifo_get_f(voodoo);
                                                         voodoo->verts[3].sBlue = cmdfifo_get_f(voodoo);
@@ -406,7 +421,7 @@ void voodoo_fifo_thread(void *param)
                                 num = (header >> 29) & 7;
                                 mask = (header >> 15) & 0x3fff;
                                 addr = (header & 0x7ff8) >> 1;
-//                                DEBUG("CMDFIFO4 addr=%08x\n",addr);
+//                              DEBUG("CMDFIFO4 addr=%08x\n",addr);
                                 while (mask) {
                                         if (mask & 1) {
                                                 uint32_t val = cmdfifo_get(voodoo);
@@ -434,17 +449,17 @@ void voodoo_fifo_thread(void *param)
                                 break;
                         
                                 case 5:
-//                                if (header & 0x3fc00000)
-//                                        fatal("CMDFIFO packet 5 has byte disables set %08x\n", header);
+//                              if (header & 0x3fc00000)
+//                                      fatal("CMDFIFO packet 5 has byte disables set %08x\n", header);
                                 num = (header >> 3) & 0x7ffff;
                                 addr = cmdfifo_get(voodoo) & 0xffffff;
 				if (!num)
                                         num = 1;
-//                                DEBUG("CMDFIFO5 addr=%08x num=%i\n", addr, num);
+//                              DEBUG("CMDFIFO5 addr=%08x num=%i\n", addr, num);
                                 switch (header >> 30) {
 					case 0: /*Linear framebuffer (Banshee)*/
                                         if (voodoo->texture_present[0][(addr & voodoo->texture_mask) >> TEX_DIRTY_SHIFT]) {
-//                                                pclog("texture_present at %08x %i\n", addr, (addr & voodoo->texture_mask) >> TEX_DIRTY_SHIFT);
+//                                              DEBUG("texture_present at %08x %i\n", addr, (addr & voodoo->texture_mask) >> TEX_DIRTY_SHIFT);
                                                 flush_texture_cache(voodoo, addr & voodoo->texture_mask, 0);
                                         }
                                         while (num--) {
