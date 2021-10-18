@@ -61,7 +61,8 @@ enum
         VOODOO_1 = 0,
 	VOODOO_SB50,
         VOODOO_2,
-        VOODOO_BANSHEE
+        VOODOO_BANSHEE,
+        VOODOO_3
 };
 
 typedef union {
@@ -476,7 +477,7 @@ typedef struct voodoo_t
         rgbp_t clutData256[256];
         uint32_t video_16to32[0x10000];
         
-        uint8_t dirty_line[1024];
+        uint8_t dirty_line[2048];
         int dirty_line_low, dirty_line_high;
         
         int fb_write_buffer, fb_draw_buffer;
