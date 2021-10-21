@@ -9,7 +9,7 @@
  *		Implementation of a generic Magneto-Optical Disk drive
  *		commands, for both ATAPI and SCSI usage.
  *
- * Version:	@(#)mo.h	1.0.2	2021/04/07
+ * Version:	@(#)mo.h	1.0.3	2021/10/21
  *
  * Authors:	Natalia Portillo <claunia@claunia.com>
  *          Fred N. van Kempen, <decwiz@yahoo.com>
@@ -282,7 +282,7 @@ char
 {
     char *temp;
 
-    temp = (char*) malloc(26*sizeof(char));
+    temp = (char*) mem_alloc(26*sizeof(char));
 
     memset(temp, 0, 26);
 	memcpy(temp, mo_drive_types[type].vendor, 8);
