@@ -54,6 +54,9 @@
 #include "vid_voodoo_blitter.h"
 #include "vid_voodoo_regs.h"
 #include "vid_voodoo_render.h"
+#ifdef _MSC_VER
+# include <malloc.h>
+#endif
 
 #define FILTDIV 256
 

@@ -42,7 +42,10 @@
 #define FLAG_EXTRA_BANKS	1
 #define FLAG_ADDR_BY8		2
 #define FLAG_EXT_WRITE		4
-#define FLAG_LATCH8			8
+#define FLAG_LATCH8		8
+#define FLAG_NOSKEW		16
+#define FLAG_ADDR_BY16		32
+#define FLAG_RAMDAC_SHIFT	64
 
 typedef struct {
     int ena,
@@ -82,7 +85,7 @@ typedef struct svga_t
 	vram_display_mask,
 	hwcursor_on, dac_hwcursor_on, overlay_on,
 	hwcursor_oddeven, dac_hwcursor_oddeven, overlay_oddeven,
-	set_override, char_width;
+	set_override, char_width, hsync_divisor;
 
     /*The three variables below allow us to implement memory maps like that seen on a 1MB Trio64 :
       0MB-1MB - VRAM
@@ -132,7 +135,18 @@ typedef struct svga_t
 
     /*If set then another device is driving the monitor output and the SVGA
       card should not attempt to display anything */
-    int		override;
+    int override;
+
+    /*Tseng-style chain4 mode - CRTC dword mode is the same as byte mode, chain4
+	  addresses are shifted to match*/
+    int packed_chain4;
+    /*Force CRTC to dword mode, regardless of CR14/CR17. Required for S3 enhanced mode*/
+    int force_dword_mode;
+    int force_byte_mode;
+
+    int remap_required;
+    uint32_t (*remap_func)(struct svga_t *svga, uint32_t in_addr);
+
     priv_t	p;
 
     uint8_t crtc[128], gdcreg[64], attrregs[32], seqregs[64],

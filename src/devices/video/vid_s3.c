@@ -10,7 +10,7 @@
  *
  * NOTE:	ROM images need more/better organization per chipset.
  *
- * Version:	@(#)vid_s3.c	1.0.24	2021/02/22
+ * Version:	@(#)vid_s3.c	1.0.25	2021/10/22
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -267,6 +267,26 @@ wake_fifo_thread(s3_t *s3)
 {
     /*Wake up FIFO thread if moving from idle*/
     thread_set_event(s3->wake_fifo_thread);
+}
+
+/*Remap address for chain-4/doubleword style layout*/
+static __inline uint32_t dword_remap(uint32_t in_addr)
+{
+    return ((in_addr << 2) & 0x3fff0) |
+	((in_addr >> 14) & 0xc) |
+	(in_addr & ~0x3fffc);
+}
+static __inline uint32_t dword_remap_w(uint32_t in_addr)
+{
+    return ((in_addr << 2) & 0x1fff8) |
+	((in_addr >> 14) & 0x6) |
+	(in_addr & ~0x1fffe);
+}
+static __inline uint32_t dword_remap_l(uint32_t in_addr)
+{
+    return ((in_addr << 2) & 0xfffc) |
+	((in_addr >> 14) & 0x3) |
+	(in_addr & ~0xffff);
 }
 
 
@@ -1092,7 +1112,7 @@ void s3_hwcursor_draw(svga_t *svga, int displine)
 	int xx;
 	int offset = svga->hwcursor_latch.x - svga->hwcursor_latch.xoff;
 	int y_add, x_add;
-	uint32_t fg, bg;
+	uint32_t fg, bg, remapped_addr;
 
 	y_add = (enable_overscan && !suppress_overscan) ? (overscan_y >> 1) : 0;
 	x_add = (enable_overscan && !suppress_overscan) ? 8 : 0;
@@ -1115,13 +1135,10 @@ void s3_hwcursor_draw(svga_t *svga, int displine)
 		break;
 
 		default:
-		if (s3->chip == S3_TRIO32 || s3->chip == S3_TRIO64)
-		{
+		if (s3->chip == S3_TRIO32 || s3->chip == S3_TRIO64) {
 			fg = svga->pallook[s3->hwc_fg_col & 0xff];
 			bg = svga->pallook[s3->hwc_bg_col & 0xff];
-		}
-		else
-		{
+		} else {
 			fg = svga->pallook[svga->crtc[0xe]];
 			bg = svga->pallook[svga->crtc[0xf]];
 		}
@@ -1131,14 +1148,12 @@ void s3_hwcursor_draw(svga_t *svga, int displine)
 	if (svga->interlace && svga->hwcursor_oddeven)
 		svga->hwcursor_latch.addr += 16;
 
-	for (x = 0; x < 64; x += 16)
-	{
-		dat[0] = (svga->vram[svga->hwcursor_latch.addr]     << 8) | svga->vram[svga->hwcursor_latch.addr + 1];
-		dat[1] = (svga->vram[svga->hwcursor_latch.addr + 2] << 8) | svga->vram[svga->hwcursor_latch.addr + 3];
-		for (xx = 0; xx < 16; xx++)
-		{
-			if (offset >= svga->hwcursor_latch.x)
-			{
+	for (x = 0; x < 64; x += 16) {
+		remapped_addr = dword_remap(svga->hwcursor_latch.addr);
+		dat[0] = (svga->vram[remapped_addr]     << 8) | svga->vram[remapped_addr + 1];
+		dat[1] = (svga->vram[remapped_addr + 2] << 8) | svga->vram[remapped_addr + 3];
+		for (xx = 0; xx < 16; xx++) {
+			if (offset >= svga->hwcursor_latch.x) {
 				if (!(dat[0] & 0x8000))
 				   screen->line[displine + y_add][offset + 32 + x_add].val  = (dat[1] & 0x8000) ? fg : bg;
 				else if (dat[1] & 0x8000)
@@ -1312,10 +1327,10 @@ void s3_out(uint16_t addr, uint8_t val, priv_t priv)
 			return;
 		old = svga->crtc[svga->crtcreg];
 		svga->crtc[svga->crtcreg] = val;
-		switch (svga->crtcreg)
-		{
+		switch (svga->crtcreg) {
 			case 0x31:
 			s3->ma_ext = (s3->ma_ext & 0x1c) | ((val & 0x30) >> 4);
+			svga->force_dword_mode = val & 0x08;
 			break;
 			case 0x32:
 			svga->vram_display_mask = (val & 0x40) ? 0x3ffff : s3->vram_mask;
@@ -2247,15 +2262,15 @@ static void polygon_setup(s3_t *s3)
 	}
 }
 
-#define READ_SRC(addr, dat) if (s3->bpp == 0)      dat = svga->vram[  (addr) & s3->vram_mask]; \
-			    else if (s3->bpp == 1) dat = vram_w[(addr) & (s3->vram_mask >> 1)]; \
-			    else		   dat = vram_l[(addr) & (s3->vram_mask >> 2)]; \
+#define READ_SRC(addr, dat) if (s3->bpp == 0)      dat = svga->vram[  dword_remap(addr) & s3->vram_mask]; \
+			    else if (s3->bpp == 1) dat = vram_w[dword_remap_w(addr) & (s3->vram_mask >> 1)]; \
+			    else                   dat = vram_l[dword_remap_l(addr) & (s3->vram_mask >> 2)]; \
 			    if (vram_mask)					   \
 				    dat = ((dat & rd_mask) == rd_mask);
 
-#define READ_DST(addr, dat) if (s3->bpp == 0)      dat = svga->vram[  (addr) & s3->vram_mask]; \
-			    else if (s3->bpp == 1) dat = vram_w[(addr) & (s3->vram_mask >> 1)]; \
-			    else		   dat = vram_l[(addr) & (s3->vram_mask >> 2)];
+#define READ_DST(addr, dat) if (s3->bpp == 0)      dat = svga->vram[  dword_remap(addr) & s3->vram_mask]; \
+			    else if (s3->bpp == 1) dat = vram_w[dword_remap_w(addr) & (s3->vram_mask >> 1)]; \
+			    else                   dat = vram_l[dword_remap_l(addr) & (s3->vram_mask >> 2)];
 
 #define MIX_READ {												\
 			switch ((mix_dat & mix_mask) ? (s3->accel.frgd_mix & 0xf) : (s3->accel.bkgd_mix & 0xf)) \
@@ -2288,18 +2303,18 @@ static void polygon_setup(s3_t *s3)
 
 #define WRITE(addr)     if (s3->bpp == 0)									       \
 			{											       \
-				svga->vram[(addr) & s3->vram_mask] = dest_dat;					  \
-				svga->changedvram[((addr) & s3->vram_mask) >> 12] = changeframecount;		   \
+				svga->vram[dword_remap(addr) & s3->vram_mask] = dest_dat;					  \
+				svga->changedvram[(dword_remap(addr) & s3->vram_mask) >> 12] = changeframecount;		   \
 			}											       \
 			else if (s3->bpp == 1)									  \
 			{											       \
-				vram_w[(addr) & (s3->vram_mask >> 1)] = dest_dat;				       \
-				svga->changedvram[((addr) & (s3->vram_mask >> 1)) >> 11] = changeframecount;	    \
+				vram_w[dword_remap_w(addr) & (s3->vram_mask >> 1)] = dest_dat;				       \
+				svga->changedvram[(dword_remap_w(addr) & (s3->vram_mask >> 1)) >> 11] = changeframecount;	    \
 			}											       \
 			else											    \
 			{											       \
-				vram_l[(addr) & (s3->vram_mask >> 2)] = dest_dat;				       \
-				svga->changedvram[((addr) & (s3->vram_mask >> 2)) >> 10] = changeframecount;	    \
+				vram_l[dword_remap_l(addr) & (s3->vram_mask >> 2)] = dest_dat;			       \
+				svga->changedvram[(dword_remap_l(addr) & (s3->vram_mask >> 2)) >> 10] = changeframecount;    \
 			}
 
 int s3_accel_count(s3_t *s3)
