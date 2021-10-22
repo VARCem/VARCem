@@ -8,7 +8,7 @@
  *
  *		Implementation of the Settings dialog.
  *
- * Version:	@(#)win_settings_network.h	1.0.17	2021/03/20
+ * Version:	@(#)win_settings_network.h	1.0.18	2021/10/22
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -57,7 +57,6 @@ network_recalc_combos(HWND hdlg)
 
     net_ignore_message = 1;
 
-    /* Everything disabled. */
     h1 = GetDlgItem(hdlg, IDC_COMBO_PCAP);
      EnableWindow(h1, FALSE);
     h2 = GetDlgItem(hdlg, IDC_NET_SRV_ADDR);
@@ -65,9 +64,7 @@ network_recalc_combos(HWND hdlg)
     h3 = GetDlgItem(hdlg, IDC_NET_SRV_PORT);
      EnableWindow(h3, FALSE);
     h4 = GetDlgItem(hdlg, IDC_COMBO_NET_CARD);
-     EnableWindow(h4, FALSE);
     h5 = GetDlgItem(hdlg, IDC_CONFIGURE_NET_CARD);
-     EnableWindow(h5, FALSE);
 
     switch (temp_cfg.network_type) {
 	case NET_SLIRP:
@@ -91,6 +88,11 @@ network_recalc_combos(HWND hdlg)
 		break;
 
 	default:
+		EnableWindow(h1, FALSE);
+		EnableWindow(h2, FALSE);
+		EnableWindow(h3, FALSE);
+		EnableWindow(h4, FALSE);
+		EnableWindow(h5, FALSE);
 		break;
     }
 
