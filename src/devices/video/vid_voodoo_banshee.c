@@ -61,6 +61,7 @@
 #include "vid_svga_render.h"
 #include "vid_voodoo_banshee.h"
 #include "vid_voodoo_common.h"
+#include "vid_voodoo_display.h"
 #include "vid_voodoo_regs.h"
 #include "vid_voodoo_render.h"
 #include "vid_voodoo_fifo.h"
@@ -136,43 +137,44 @@ static const video_timings_t banshee_pci_timing	= {VID_BUS, 2,  2,  1,  20, 20, 
 
 enum
 {
-        Init_status     = 0x00,
-        Init_pciInit0   = 0x04,
-        Init_lfbMemoryConfig = 0x0c,
-        Init_miscInit0  = 0x10,
-        Init_miscInit1  = 0x14,
-        Init_dramInit0  = 0x18,
-        Init_dramInit1  = 0x1c,
-        Init_agpInit0   = 0x20,
-        Init_vgaInit0   = 0x28,
-        Init_vgaInit1   = 0x2c,
-        Init_2dCommand     = 0x30,
-        Init_2dSrcBaseAddr = 0x34,
-        Init_strapInfo  = 0x38,
+    Init_status     = 0x00,
+    Init_pciInit0   = 0x04,
+    Init_lfbMemoryConfig = 0x0c,
+    Init_miscInit0  = 0x10,
+    Init_miscInit1  = 0x14,
+    Init_dramInit0  = 0x18,
+    Init_dramInit1  = 0x1c,
+    Init_agpInit0   = 0x20,
+    Init_vgaInit0   = 0x28,
+    Init_vgaInit1   = 0x2c,
+    Init_2dCommand     = 0x30,
+    Init_2dSrcBaseAddr = 0x34,
+    Init_strapInfo  = 0x38,
 
-        PLL_pllCtrl0    = 0x40,
-        PLL_pllCtrl1    = 0x44,
-        PLL_pllCtrl2    = 0x48,
+    PLL_pllCtrl0    = 0x40,
+    PLL_pllCtrl1    = 0x44,
+    PLL_pllCtrl2    = 0x48,
 
-        DAC_dacMode     = 0x4c,
-        DAC_dacAddr     = 0x50,
-        DAC_dacData     = 0x54,
+    DAC_dacMode     = 0x4c,
+    DAC_dacAddr     = 0x50,
+    DAC_dacData     = 0x54,
 
-        Video_vidProcCfg = 0x5c,
-        Video_hwCurPatAddr = 0x60,
-        Video_hwCurLoc     = 0x64,
-        Video_hwCurC0      = 0x68,
-        Video_hwCurC1      = 0x6c,
-        Video_vidSerialParallelPort = 0x78,
-        Video_vidScreenSize = 0x98,
-        Video_vidOverlayStartCoords = 0x9c,
-        Video_vidOverlayEndScreenCoords = 0xa0,
-        Video_vidOverlayDudx = 0xa4,
-        Video_vidOverlayDudxOffsetSrcWidth = 0xa8,
-        Video_vidOverlayDvdy = 0xac,
-        Video_vidOverlayDvdyOffset = 0xe0,
-        Video_vidDesktopStartAddr = 0xe4,
-        Video_vidDesktopOverlayStride = 0xe8
+    Video_vidProcCfg = 0x5c,
+    Video_maxRgbDelta = 0x58,
+    Video_hwCurPatAddr = 0x60,
+    Video_hwCurLoc     = 0x64,
+    Video_hwCurC0      = 0x68,
+    Video_hwCurC1      = 0x6c,
+    Video_vidSerialParallelPort = 0x78,
+    Video_vidScreenSize = 0x98,
+    Video_vidOverlayStartCoords = 0x9c,
+    Video_vidOverlayEndScreenCoords = 0xa0,
+    Video_vidOverlayDudx = 0xa4,
+    Video_vidOverlayDudxOffsetSrcWidth = 0xa8,
+    Video_vidOverlayDvdy = 0xac,
+    Video_vidOverlayDvdyOffset = 0xe0,
+    Video_vidDesktopStartAddr = 0xe4,
+    Video_vidDesktopOverlayStride = 0xe8
 };
 
 enum
@@ -414,6 +416,12 @@ enum
                         break;                          \
                 }                                       \
         } while (0)
+
+static uint8_t vb_filter_v1_rb[256][256];
+static uint8_t vb_filter_v1_g [256][256];
+
+static uint8_t vb_filter_bx_rb[256][256];
+static uint8_t vb_filter_bx_g [256][256];
 
 static uint32_t banshee_status(banshee_t *banshee);
 
@@ -839,6 +847,17 @@ banshee_ext_outl(uint16_t addr, uint32_t val, priv_t priv)
                 svga->hwcursor.ena = val & VIDPROCCFG_HWCURSOR_ENA;
                 svga->fullchange = changeframecount;
                 svga_recalctimings(svga);
+                break;
+
+                case Video_maxRgbDelta:
+                banshee->voodoo->scrfilterThreshold = val;
+                if (val > 0x00)
+                        banshee->voodoo->scrfilterEnabled = 1;
+                else
+                        banshee->voodoo->scrfilterEnabled = 0;
+                voodoo_threshold_check(banshee->voodoo);
+                DEBUG("Banshee Filter: %06x\n", val);
+
                 break;
 
                 case Video_hwCurPatAddr:
@@ -1781,6 +1800,131 @@ banshee_hwcursor_draw(svga_t *svga, int displine)
     }
 }
 
+/* generate both filters for the static table here */
+void 
+voodoo_generate_vb_filters(voodoo_t *voodoo, int fcr, int fcg)
+{
+    int g, h;
+    float difference, diffg;
+    float thiscol, thiscolg;
+    float clr, clg = 0;
+    float hack = 1.0f;
+    // pre-clamping
+
+    fcr *= hack;
+    fcg *= hack;
+
+    /* box prefilter */
+    for (g=0;g<256;g++) {    	// pixel 1 - our target pixel we want to bleed into
+	for (h=0;h<256;h++) {   // pixel 2 - our main pixel
+		float avg;
+		float avgdiff;
+
+		difference = (float)(g - h);
+		avg = g;
+		avgdiff = avg - h;
+		avgdiff = avgdiff * 0.75f;
+		if (avgdiff < 0) avgdiff *= -1;
+		if (difference < 0) difference *= -1;
+
+		thiscol = thiscolg = g;
+
+		if (h > g) {
+			clr = clg = avgdiff;
+
+			if (clr>fcr) clr=fcr;
+			if (clg>fcg) clg=fcg;
+
+			thiscol = g;
+			thiscolg = g;
+
+			if (thiscol>g+fcr)
+				thiscol=g+fcr;
+			if (thiscolg>g+fcg)
+				thiscolg=g+fcg;
+
+			if (thiscol>g+difference)
+				thiscol=g+difference;
+			if (thiscolg>g+difference)
+				thiscolg=g+difference;
+
+			// hmm this might not be working out..
+			int ugh = g - h;
+			if (ugh < fcr)
+				thiscol = h;
+			if (ugh < fcg)
+				thiscolg = h;
+		}
+
+		if (difference > fcr)
+			thiscol = g;
+		if (difference > fcg)
+			thiscolg = g;
+
+		// clamp
+		if (thiscol < 0) thiscol = 0;
+		if (thiscolg < 0) thiscolg = 0;
+
+		if (thiscol > 255) thiscol = 255;
+		if (thiscolg > 255) thiscolg = 255;
+
+		vb_filter_bx_rb[g][h] = (thiscol);
+		vb_filter_bx_g [g][h] = (thiscolg);
+
+	}
+	float lined = g + 4;
+	if (lined > 255)
+		lined = 255;
+	voodoo->purpleline[g][0] = lined;
+	voodoo->purpleline[g][2] = lined;
+
+	lined = g + 0;
+	if (lined > 255)
+		lined = 255;
+	voodoo->purpleline[g][1] = lined;
+    }
+
+    /* 4x1 and 2x2 filter */
+
+    for (g=0;g<256;g++) {     // pixel 1
+	for (h=0;h<256;h++) {    // pixel 2
+		difference = (float)(h - g);
+		diffg = difference;
+
+		thiscol = thiscolg =  g;
+
+		if (difference > fcr)
+			difference = fcr;
+		if (difference < -fcr)
+			difference = -fcr;
+
+		if (diffg > fcg)
+			diffg = fcg;
+		if (diffg < -fcg)
+			diffg = -fcg;
+
+		if ((difference < fcr) || (-difference > -fcr))
+			thiscol =  g + (difference / 2);
+		if ((diffg < fcg) || (-diffg > -fcg))
+			thiscolg =  g + (diffg / 2);
+
+		if (thiscol < 0)
+			thiscol = 0;
+		if (thiscol > 255)
+			thiscol = 255;
+
+		if (thiscolg < 0)
+			thiscolg = 0;
+		if (thiscolg > 255)
+			thiscolg = 255;
+
+		vb_filter_v1_rb[g][h] = thiscol;
+		vb_filter_v1_g [g][h] = thiscolg;
+	}
+    }
+
+}
+
 
 static void 
 banshee_overlay_draw(svga_t *svga, int displine)
@@ -1827,19 +1971,17 @@ banshee_overlay_draw(svga_t *svga, int displine)
 
     priv = &screen->line[displine][svga->overlay_latch.x + 32];
 
-#if 0
     if (banshee->voodoo->scrfilter && banshee->voodoo->scrfilterEnabled)
 	skip_filtering = ((banshee->vidProcCfg & VIDPROCCFG_FILTER_MODE_MASK) != VIDPROCCFG_FILTER_MODE_BILINEAR &&
 			!(banshee->vidProcCfg & VIDPROCCFG_H_SCALE_ENABLE) && !(banshee->vidProcCfg & VIDPROCCFG_FILTER_MODE_DITHER_4X4) &&
 			!(banshee->vidProcCfg & VIDPROCCFG_FILTER_MODE_DITHER_2X2));
     else
-#endif
 	skip_filtering = ((banshee->vidProcCfg & VIDPROCCFG_FILTER_MODE_MASK) != VIDPROCCFG_FILTER_MODE_BILINEAR &&
 			!(banshee->vidProcCfg & VIDPROCCFG_H_SCALE_ENABLE));
 
     if (skip_filtering) {
-                /*No scaling or filtering required, just write straight to output buffer*/
-                OVERLAY_SAMPLE(((uint32_t *)priv));
+	/*No scaling or filtering required, just write straight to output buffer*/
+	OVERLAY_SAMPLE(((uint32_t *)priv));
     } else { 
 	OVERLAY_SAMPLE(banshee->overlay_buffer[0]);
 
@@ -1889,6 +2031,140 @@ banshee_overlay_draw(svga_t *svga, int displine)
 						(samp1 & 0xff) * y_coeff) >> 16;
 					priv[x].val = (r << 16) | (g << 8) | b;
 				}
+			}
+			break;
+		case VIDPROCCFG_FILTER_MODE_DITHER_4X4:
+			if (banshee->voodoo->scrfilter && banshee->voodoo->scrfilterEnabled) {
+				uint8_t fil[(svga->overlay_latch.xsize) * 3];
+				uint8_t fil3[(svga->overlay_latch.xsize) * 3];
+
+				if (banshee->vidProcCfg & VIDPROCCFG_H_SCALE_ENABLE) { /* leilei HACK - don't know of real 4x1 hscaled behavior yet, double for now */
+					for (x=0; x<svga->overlay_latch.xsize;x++) {
+						fil[x*3] 	= ((banshee->overlay_buffer[0][src_x >> 20]));
+						fil[x*3+1] 	= ((banshee->overlay_buffer[0][src_x >> 20] >> 8));
+						fil[x*3+2] 	= ((banshee->overlay_buffer[0][src_x >> 20] >> 16));
+						fil3[x*3+0] 	= fil[x*3+0];
+						fil3[x*3+1] 	= fil[x*3+1];
+						fil3[x*3+2] 	= fil[x*3+2];
+						src_x += voodoo->overlay.vidOverlayDudx;
+					}
+				} else {
+					for (x=0; x<svga->overlay_latch.xsize;x++) {
+						fil[x*3] 	= ((banshee->overlay_buffer[0][x]));
+						fil[x*3+1] 	= ((banshee->overlay_buffer[0][x] >> 8));
+						fil[x*3+2] 	= ((banshee->overlay_buffer[0][x] >> 16));
+						fil3[x*3+0] 	= fil[x*3+0];
+						fil3[x*3+1] 	= fil[x*3+1];
+						fil3[x*3+2] 	= fil[x*3+2];
+					}
+				}
+				if (y % 2 == 0) {
+					for (x=0; x<svga->overlay_latch.xsize;x++) {
+						fil[x*3] = banshee->voodoo->purpleline[fil[x*3+0]][0];
+						fil[x*3+1] = banshee->voodoo->purpleline[fil[x*3+1]][1];
+						fil[x*3+2] = banshee->voodoo->purpleline[fil[x*3+2]][2];
+					}
+				}
+
+ 				for (x=1; x<svga->overlay_latch.xsize;x++) {
+					fil3[(x)*3]   = vb_filter_v1_rb [fil[x*3]]  [fil[(x-1) *3]];
+					fil3[(x)*3+1] = vb_filter_v1_g  [fil[x*3+1]][fil[(x-1) *3+1]];
+					fil3[(x)*3+2] = vb_filter_v1_rb [fil[x*3+2]] [fil[(x-1) *3+2]];
+				}
+				for (x=1; x<svga->overlay_latch.xsize;x++) {
+					fil[(x)*3]   = vb_filter_v1_rb [fil[x*3]]  [fil3[(x-1) *3]];
+					fil[(x)*3+1] = vb_filter_v1_g  [fil[x*3+1]][fil3[(x-1) *3+1]];
+					fil[(x)*3+2] = vb_filter_v1_rb [fil[x*3+2]] [fil3[(x-1) *3+2]];
+				}
+				for (x=1; x<svga->overlay_latch.xsize;x++) {
+					fil3[(x)*3]   = vb_filter_v1_rb [fil[x*3]]  [fil[(x-1) *3]];
+					fil3[(x)*3+1] = vb_filter_v1_g  [fil[x*3+1]][fil[(x-1) *3+1]];
+					fil3[(x)*3+2] = vb_filter_v1_rb [fil[x*3+2]] [fil[(x-1) *3+2]];
+				}
+				for (x=0; x<svga->overlay_latch.xsize;x++) {
+					fil[(x)*3]   = vb_filter_v1_rb [fil[x*3]]  [fil3[(x+1) *3]];
+					fil[(x)*3+1] = vb_filter_v1_g  [fil[x*3+1]][fil3[(x+1) *3+1]];
+					fil[(x)*3+2] = vb_filter_v1_rb [fil[x*3+2]] [fil3[(x+1) *3+2]];
+					priv[x].val = (fil[x*3+2] << 16) | (fil[x*3+1] << 8) | fil[x*3];
+				}
+			} else { /* filter disabled by emulator option */
+				if (banshee->vidProcCfg & VIDPROCCFG_H_SCALE_ENABLE) {
+					for (x = 0; x < svga->overlay_latch.xsize; x++) {
+						priv[x].val = banshee->overlay_buffer[0][src_x >> 20];
+						src_x += voodoo->overlay.vidOverlayDudx;
+					}
+				} else {
+					for (x = 0; x < svga->overlay_latch.xsize; x++)
+						priv[x].val = banshee->overlay_buffer[0][x];
+				}
+			}
+			break;
+
+		case VIDPROCCFG_FILTER_MODE_DITHER_2X2:
+			if (banshee->voodoo->scrfilter && banshee->voodoo->scrfilterEnabled) {
+				uint8_t fil[(svga->overlay_latch.xsize) * 3];
+				uint8_t soak[(svga->overlay_latch.xsize) * 3];
+				uint8_t soak2[(svga->overlay_latch.xsize) * 3];
+
+				uint8_t samp1[(svga->overlay_latch.xsize) * 3];
+				uint8_t samp2[(svga->overlay_latch.xsize) * 3];
+				uint8_t samp3[(svga->overlay_latch.xsize) * 3];
+				uint8_t samp4[(svga->overlay_latch.xsize) * 3];
+
+				src = &svga->vram[src_addr2 & svga->vram_mask];
+				OVERLAY_SAMPLE(banshee->overlay_buffer[1]);
+				for (x=0; x<svga->overlay_latch.xsize;x++) {
+					samp1[x*3] 	= ((banshee->overlay_buffer[0][x]));
+					samp1[x*3+1] 	= ((banshee->overlay_buffer[0][x] >> 8));
+					samp1[x*3+2] 	= ((banshee->overlay_buffer[0][x] >> 16));
+
+					samp2[x*3+0] 	= ((banshee->overlay_buffer[0][x+1]));
+					samp2[x*3+1] 	= ((banshee->overlay_buffer[0][x+1] >> 8));
+					samp2[x*3+2] 	= ((banshee->overlay_buffer[0][x+1] >> 16));
+
+					samp3[x*3+0] 	= ((banshee->overlay_buffer[1][x]));
+					samp3[x*3+1] 	= ((banshee->overlay_buffer[1][x] >> 8));
+					samp3[x*3+2] 	= ((banshee->overlay_buffer[1][x] >> 16));
+
+					samp4[x*3+0] 	= ((banshee->overlay_buffer[1][x+1]));
+					samp4[x*3+1] 	= ((banshee->overlay_buffer[1][x+1] >> 8));
+					samp4[x*3+2] 	= ((banshee->overlay_buffer[1][x+1] >> 16));
+
+					/* sample two lines */
+					soak[x*3+0]   = vb_filter_bx_rb [samp1[x*3+0]]   [samp2[x*3+0]];
+					soak[x*3+1]   = vb_filter_bx_g  [samp1[x*3+1]]   [samp2[x*3+1]];
+					soak[x*3+2]   = vb_filter_bx_rb [samp1[x*3+2]]   [samp2[x*3+2]];
+
+					soak2[x*3+0]   = vb_filter_bx_rb[samp3[x*3+0]]   [samp4[x*3+0]];
+					soak2[x*3+1]   = vb_filter_bx_g [samp3[x*3+1]]   [samp4[x*3+1]];
+					soak2[x*3+2]   = vb_filter_bx_rb[samp3[x*3+2]]   [samp4[x*3+2]];
+
+					/* then pour it on the rest */
+					fil[x*3+0]   = vb_filter_v1_rb[soak[x*3+0]]   [soak2[x*3+0]];
+					fil[x*3+1]   = vb_filter_v1_g [soak[x*3+1]]   [soak2[x*3+1]];
+					fil[x*3+2]   = vb_filter_v1_rb[soak[x*3+2]]   [soak2[x*3+2]];
+				}
+
+				if (banshee->vidProcCfg & VIDPROCCFG_H_SCALE_ENABLE) {  /* 2x2 on a scaled low res */
+					for (x = 0 ; x < svga->overlay_latch.xsize ; x++) {
+						priv[x].val = (fil[(src_x >> 20)*3+2] << 16) | (fil[(src_x >> 20)*3+1] << 8) | fil[(src_x >> 20)*3];
+						src_x += voodoo->overlay.vidOverlayDudx;
+					}
+				} else {
+					for (x = 0 ; x < svga->overlay_latch.xsize ; x++) {
+						priv[x].val = (fil[x*3+2] << 16) | (fil[x*3+1] << 8) | fil[x*3];
+					}
+				}
+			} else { /* filter disabled by emulator option */
+				if (banshee->vidProcCfg & VIDPROCCFG_H_SCALE_ENABLE) {
+					for (x = 0; x < svga->overlay_latch.xsize; x++) {
+						priv[x].val = banshee->overlay_buffer[0][src_x >> 20];
+						src_x += voodoo->overlay.vidOverlayDudx;
+					}
+				} else {
+					for (x = 0; x < svga->overlay_latch.xsize; x++)
+						priv[x].val = banshee->overlay_buffer[0][x];
+					}
 			}
 			break;
 		case VIDPROCCFG_FILTER_MODE_POINT:
@@ -2090,90 +2366,90 @@ void banshee_pci_write(int func, int addr, uint8_t val, void *priv)
 static priv_t 
 banshee_init(const device_t *info, UNUSED(void *parent))
 {
-        banshee_t *banshee;
+    banshee_t *banshee;
 
-        banshee = (banshee_t *)mem_alloc(sizeof(banshee_t));
-        memset(banshee, 0, sizeof(banshee_t));
+    banshee = (banshee_t *)mem_alloc(sizeof(banshee_t));
+    memset(banshee, 0, sizeof(banshee_t));
 
-        rom_init(&banshee->bios_rom, info->path, 
-	     0xc0000, 0x10000, 0xffff, 0, MEM_MAPPING_EXTERNAL);
-	mem_map_disable(&banshee->bios_rom.mapping);
+    rom_init(&banshee->bios_rom, info->path, 
+	0xc0000, 0x10000, 0xffff, 0, MEM_MAPPING_EXTERNAL);
+    mem_map_disable(&banshee->bios_rom.mapping);
 
-        banshee->mem_size = device_get_config_int("Memory");
+    banshee->mem_size = device_get_config_int("Memory");
 
-        svga_init(&banshee->svga, banshee, (banshee->mem_size << 20),
-                   banshee_recalctimings,
-                   banshee_in, banshee_out,
-                   banshee_hwcursor_draw,
-                   banshee_overlay_draw);
+    svga_init(&banshee->svga, banshee, (banshee->mem_size << 20),
+	banshee_recalctimings,
+	banshee_in, banshee_out,
+	banshee_hwcursor_draw,
+	banshee_overlay_draw);
 
-        banshee->svga.vsync_callback = banshee_vsync_callback;
-	
-        mem_map_add(&banshee->linear_mapping, 0, 0, 
-		banshee_read_linear,  banshee_readw_linear,  banshee_readl_linear,
-                banshee_write_linear, banshee_writew_linear, banshee_writel_linear,
-                NULL, MEM_MAPPING_EXTERNAL, &banshee->svga);
-        mem_map_add(&banshee->reg_mapping_low, 0, 0,
-		banshee_read_reg,  banshee_readw_reg,  banshee_readl_reg,
-                banshee_write_reg, banshee_writew_reg, banshee_writel_reg,
-                NULL, MEM_MAPPING_EXTERNAL, banshee);
-        mem_map_add(&banshee->reg_mapping_high, 0,0,
-            	banshee_read_reg,  banshee_readw_reg,  banshee_readl_reg,
-                banshee_write_reg, banshee_writew_reg, banshee_writel_reg,
-                NULL, MEM_MAPPING_EXTERNAL, banshee);
+    banshee->svga.vsync_callback = banshee_vsync_callback;
+    
+    mem_map_add(&banshee->linear_mapping, 0, 0, 
+	banshee_read_linear,  banshee_readw_linear,  banshee_readl_linear,
+	banshee_write_linear, banshee_writew_linear, banshee_writel_linear,
+	NULL, MEM_MAPPING_EXTERNAL, &banshee->svga);
+    mem_map_add(&banshee->reg_mapping_low, 0, 0,
+	banshee_read_reg,  banshee_readw_reg,  banshee_readl_reg,
+	banshee_write_reg, banshee_writew_reg, banshee_writel_reg,
+	NULL, MEM_MAPPING_EXTERNAL, banshee);
+    mem_map_add(&banshee->reg_mapping_high, 0,0,
+	banshee_read_reg,  banshee_readw_reg,  banshee_readl_reg,
+	banshee_write_reg, banshee_writew_reg, banshee_writel_reg,
+	NULL, MEM_MAPPING_EXTERNAL, banshee);
 
-	//banshee->svga.vblank_start = banshee_vblank_start;
+    //banshee->svga.vblank_start = banshee_vblank_start;
 
-//        io_sethandler(0x03c0, 0x0020, 
-//		banshee_in, NULL, NULL, banshee_out, NULL, NULL, banshee);
+//    io_sethandler(0x03c0, 0x0020, 
+//	banshee_in, NULL, NULL, banshee_out, NULL, NULL, banshee);
 
-	video_inform(DEVICE_VIDEO_GET(info->flags),
-		 (const video_timings_t *)info->vid_timing);
+    video_inform(DEVICE_VIDEO_GET(info->flags),
+	(const video_timings_t *)info->vid_timing);
 
-        banshee->svga.bpp = 8;
-        banshee->svga.miscout = 1;
+    banshee->svga.bpp = 8;
+    banshee->svga.miscout = 1;
 
-        banshee->dramInit0 = 1 << 27;
-        //if (banshee->mem_size == 16)
-                //banshee->dramInit0 |= (1 << 26); /*2xSGRAM = 16 MB*/
-        banshee->dramInit1 = 1 << 30; /*SDRAM*/
-        banshee->svga.decode_mask = 0x1ffffff;
+    banshee->dramInit0 = 1 << 27;
+    //if (banshee->mem_size == 16)
+	//banshee->dramInit0 |= (1 << 26); /*2xSGRAM = 16 MB*/
+    banshee->dramInit1 = 1 << 30; /*SDRAM*/
+    banshee->svga.decode_mask = 0x1ffffff;
 
-        pci_add_card(PCI_ADD_VIDEO, banshee_pci_read, banshee_pci_write, banshee);
+    pci_add_card(PCI_ADD_VIDEO, banshee_pci_read, banshee_pci_write, banshee);
 
-        banshee->voodoo = voodoo_2d3d_card_init(VOODOO_BANSHEE);
-        banshee->voodoo->priv = banshee;
-        banshee->voodoo->vram = banshee->svga.vram;
-        banshee->voodoo->changedvram = banshee->svga.changedvram;
-        banshee->voodoo->fb_mem = banshee->svga.vram;
-        banshee->voodoo->fb_mask = banshee->svga.vram_mask;
-        banshee->voodoo->tex_mem[0] = banshee->svga.vram;
-        banshee->voodoo->tex_mem_w[0] = (uint16_t *)banshee->svga.vram;
-        banshee->voodoo->tex_mem[1] = banshee->svga.vram;
-        banshee->voodoo->tex_mem_w[1] = (uint16_t *)banshee->svga.vram;
-        banshee->voodoo->texture_mask = banshee->svga.vram_mask;
-	//voodoo_generate_filter_v1(banshee->voodoo);
+    banshee->voodoo = voodoo_2d3d_card_init(VOODOO_BANSHEE);
+    banshee->voodoo->priv = banshee;
+    banshee->voodoo->vram = banshee->svga.vram;
+    banshee->voodoo->changedvram = banshee->svga.changedvram;
+    banshee->voodoo->fb_mem = banshee->svga.vram;
+    banshee->voodoo->fb_mask = banshee->svga.vram_mask;
+    banshee->voodoo->tex_mem[0] = banshee->svga.vram;
+    banshee->voodoo->tex_mem_w[0] = (uint16_t *)banshee->svga.vram;
+    banshee->voodoo->tex_mem[1] = banshee->svga.vram;
+    banshee->voodoo->tex_mem_w[1] = (uint16_t *)banshee->svga.vram;
+    banshee->voodoo->texture_mask = banshee->svga.vram_mask;
+    voodoo_generate_filter_v1(banshee->voodoo);
 
 /* Creative Labs 3D Blaster Banshee PCI => SDRAM init */
-        banshee->pci_regs[0x2c] = 0x02;
-        banshee->pci_regs[0x2d] = 0x11;
-        banshee->pci_regs[0x2e] = 0x17;
-        banshee->pci_regs[0x2f] = 0x10;
+    banshee->pci_regs[0x2c] = 0x02;
+    banshee->pci_regs[0x2d] = 0x11;
+    banshee->pci_regs[0x2e] = 0x17;
+    banshee->pci_regs[0x2f] = 0x10;
 /* AGP => SGRAM init */
 #if 0
-        banshee->pci_regs[0x2c] = 0x1a;
-        banshee->pci_regs[0x2d] = 0x12;
-        banshee->pci_regs[0x2e] = 0x04;
-        banshee->pci_regs[0x2f] = 0x00;
+    banshee->pci_regs[0x2c] = 0x1a;
+    banshee->pci_regs[0x2d] = 0x12;
+    banshee->pci_regs[0x2e] = 0x04;
+    banshee->pci_regs[0x2f] = 0x00;
 #endif
 
-        banshee->vidSerialParallelPort = VIDSERIAL_DDC_DCK_W | VIDSERIAL_DDC_DDA_W;
+    banshee->vidSerialParallelPort = VIDSERIAL_DDC_DCK_W | VIDSERIAL_DDC_DDA_W;
 
-        banshee->i2c = i2c_gpio_init("i2c_voodoo_banshee");
-        banshee->i2c_ddc = i2c_gpio_init("ddc_voodoo_banshee");
-        banshee->ddc = ddc_init(i2c_gpio_get_bus(banshee->i2c_ddc));
+    banshee->i2c = i2c_gpio_init("i2c_voodoo_banshee");
+    banshee->i2c_ddc = i2c_gpio_init("ddc_voodoo_banshee");
+    banshee->ddc = ddc_init(i2c_gpio_get_bus(banshee->i2c_ddc));
 
-        return (priv_t)banshee;
+    return (priv_t)banshee;
 }
 
 static void
@@ -2225,6 +2501,9 @@ static const device_config_t banshee_config[] =
         },
         {
                 "bilinear","Bilinear filtering",CONFIG_BINARY,"",1
+        },
+        {
+                "dacfilter","Screen Filter",CONFIG_BINARY,"",0
         },
         {
                 "render_threads","Render threads",CONFIG_SELECTION,"",2,

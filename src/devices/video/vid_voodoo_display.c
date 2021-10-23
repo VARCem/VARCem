@@ -238,130 +238,120 @@ void voodoo_generate_filter_v1(voodoo_t *voodoo)
 
 void voodoo_generate_filter_v2(voodoo_t *voodoo)
 {
-        int g, h;
-        float difference;
-        float thiscol, thiscolg, thiscolb, lined;
-	float clr, clg, clb = 0;
-	float fcr, fcg, fcb = 0;
+    int g, h;
+    float difference;
+    float thiscol, thiscolg, thiscolb;
+    float clr, clg, clb = 0;
+    float fcr, fcg, fcb = 0;
 
-	// pre-clamping
+    // pre-clamping
 
-	fcr = (float)FILTCAP;
-	fcg = (float)FILTCAPG;
-	fcb = (float)FILTCAPB;
+    fcr = (float)FILTCAP;
+    fcg = (float)FILTCAPG;
+    fcb = (float)FILTCAPB;
 
-	if (fcr > 32) fcr = (float)32;
-	if (fcg > 32) fcg = (float)32;
-	if (fcb > 32) fcb = (float)32;
+    if (fcr > 32) fcr = (float)32;
+    if (fcg > 32) fcg = (float)32;
+    if (fcb > 32) fcb = (float)32;
 
-        for (g=0;g<256;g++)         	// pixel 1 - our target pixel we want to bleed into
-        {
-		for (h=0;h<256;h++)      // pixel 2 - our main pixel
-		{
-			float avg;
-			float avgdiff;
+    for (g=0;g<256;g++) {	// pixel 1 - our target pixel we want to bleed into
+	for (h=0;h<256;h++) {   // pixel 2 - our main pixel
+		float avg;
+		float avgdiff;
 		
-			difference = (float)(g - h);
-			avg = (float)((g + g + g + g + h) / 5);
-			avgdiff = avg - (float)((g + h + h + h + h) / 5);
-			if (avgdiff < 0) avgdiff *= -1;
-			if (difference < 0) difference *= -1;
+		difference = (float)(g - h);
+		avg = (float)((g + g + g + g + h) / 5);
+		avgdiff = avg - (float)((g + h + h + h + h) / 5);
+		if (avgdiff < 0) avgdiff *= -1;
+		if (difference < 0) difference *= -1;
 		
-			thiscol = thiscolg = thiscolb = (float)g;
+		thiscol = thiscolg = thiscolb = (float)g;
 	
-			// try lighten
-			if (h > g)
-			{
-				clr = clg = clb = avgdiff;
+		// try lighten
+		if (h > g) {
+			clr = clg = clb = avgdiff;
 		
-				if (clr>fcr) clr=fcr;
-                                if (clg>fcg) clg=fcg;
-				if (clb>fcb) clb=fcb;
+			if (clr>fcr) clr=fcr;
+			if (clg>fcg) clg=fcg;
+			if (clb>fcb) clb=fcb;
 		
+			thiscol = g + clr;
+			thiscolg = g + clg;
+			thiscolb = g + clb;
 		
-				thiscol = g + clr;
-				thiscolg = g + clg;
-				thiscolb = g + clb;
+			if (thiscol>g+FILTCAP)
+				thiscol=(float) (g+FILTCAP);
+			if (thiscolg>g+FILTCAPG)
+				thiscolg=(float) (g+FILTCAPG);
+			if (thiscolb>g+FILTCAPB)
+				thiscolb=(float) (g+FILTCAPB);
 		
-				if (thiscol>g+FILTCAP)
-					thiscol=(float) (g+FILTCAP);
-				if (thiscolg>g+FILTCAPG)
-					thiscolg=(float) (g+FILTCAPG);
-				if (thiscolb>g+FILTCAPB)
-					thiscolb=(float) (g+FILTCAPB);
+			if (thiscol>g+avgdiff)
+				thiscol=g+avgdiff;
+			if (thiscolg>g+avgdiff)
+				thiscolg=g+avgdiff;
+			if (thiscolb>g+avgdiff)
+				thiscolb=g+avgdiff;
 		
-		
-				if (thiscol>g+avgdiff)
-					thiscol=g+avgdiff;
-				if (thiscolg>g+avgdiff)
-					thiscolg=g+avgdiff;
-				if (thiscolb>g+avgdiff)
-					thiscolb=g+avgdiff;
-		
-			}
+		}
 	
-			if (difference > FILTCAP)
-				thiscol = (float)g;
-			if (difference > FILTCAPG)
-				thiscolg = (float)g;
-			if (difference > FILTCAPB)
-				thiscolb = (float)g;
+		if (difference > FILTCAP)
+			thiscol = (float)g;
+		if (difference > FILTCAPG)
+			thiscolg = (float)g;
+		if (difference > FILTCAPB)
+			thiscolb = (float)g;
 	
-			// clamp 
-			if (thiscol < 0) thiscol = (float)0;
-			if (thiscolg < 0) thiscolg = (float)0;
-			if (thiscolb < 0) thiscolb = (float)0;
+		// clamp 
+		if (thiscol < 0) thiscol = (float)0;
+		if (thiscolg < 0) thiscolg = (float)0;
+		if (thiscolb < 0) thiscolb = (float)0;
 	
-			if (thiscol > 255) thiscol = (float)255;
-			if (thiscolg > 255) thiscolg = (float)255;
-			if (thiscolb > 255) thiscolb = (float)255;
+		if (thiscol > 255) thiscol = (float)255;
+		if (thiscolg > 255) thiscolg = (float)255;
+		if (thiscolb > 255) thiscolb = (float)255;
 	
-			// add to the table
-			voodoo->thefilter[g][h] = (uint8_t)thiscol;
-			voodoo->thefilterg[g][h] = (uint8_t)thiscolg;
-			voodoo->thefilterb[g][h] = (uint8_t)thiscolb;
+		// add to the table
+		voodoo->thefilter[g][h] = (uint8_t)thiscol;
+		voodoo->thefilterg[g][h] = (uint8_t)thiscolg;
+		voodoo->thefilterb[g][h] = (uint8_t)thiscolb;
 	
-			// debug the ones that don't give us much of a difference
-			//if (difference < FILTCAP)
-			//DEBUG("Voodoofilter: %ix%i - %f difference, %f average difference, R=%f, G=%f, B=%f\n", g, h, difference, avgdiff, thiscol, thiscolg, thiscolb);	
-                }
-
-                lined = (float) (g + 3);
-                if (lined > 255)
-                        lined = (float)255;
-                voodoo->purpleline[g][0] = (uint16_t)lined;
-                voodoo->purpleline[g][1] = (uint16_t)0;
-                voodoo->purpleline[g][2] = (uint16_t)lined;
-        }
+		// debug the ones that don't give us much of a difference
+		//if (difference < FILTCAP)
+		//DEBUG("Voodoofilter: %ix%i - %f difference, %f average difference, R=%f, G=%f, B=%f\n", g, h, difference, avgdiff, thiscol, thiscolg, thiscolb);	
+	}
+    }
 }
 
 void voodoo_threshold_check(voodoo_t *voodoo)
 {
-	int r, g, b;
+    int r, g, b;
 
-	if (!voodoo->scrfilterEnabled)
-		return;	/* considered disabled; don't check and generate */
+    if (!voodoo->scrfilterEnabled)
+	return;	/* considered disabled; don't check and generate */
 
-	/* Check for changes, to generate anew table */
-	if (voodoo->scrfilterThreshold != voodoo->scrfilterThresholdOld)
-	{
-		r = (voodoo->scrfilterThreshold >> 16) & 0xFF;
-		g = (voodoo->scrfilterThreshold >> 8 ) & 0xFF;
-		b = voodoo->scrfilterThreshold & 0xFF;
-		
-		FILTCAP = r;
-		FILTCAPG = g;
-		FILTCAPB = b;
-		
-		DEBUG("Voodoo Filter Threshold Check: %06x - RED %i GREEN %i BLUE %i\n", voodoo->scrfilterThreshold, r, g, b);	
+    /* Check for changes, to generate anew table */
+    if (voodoo->scrfilterThreshold != voodoo->scrfilterThresholdOld) {
+	r = (voodoo->scrfilterThreshold >> 16) & 0xFF;
+	g = (voodoo->scrfilterThreshold >> 8 ) & 0xFF;
+	b = voodoo->scrfilterThreshold & 0xFF;
+	
+	FILTCAP = r;
+	FILTCAPG = g;
+	FILTCAPB = b;
+	
+	//DEBUG("Voodoo Filter Threshold Check: %06x - RED %i GREEN %i BLUE %i\n", voodoo->scrfilterThreshold, r, g, b);	
 
-		voodoo->scrfilterThresholdOld = voodoo->scrfilterThreshold;
+	voodoo->scrfilterThresholdOld = voodoo->scrfilterThreshold;
 
-		if (voodoo->type == VOODOO_2)
-			voodoo_generate_filter_v2(voodoo);
-		else
-			voodoo_generate_filter_v1(voodoo);
-	}
+	if (voodoo->type == VOODOO_2)
+		voodoo_generate_filter_v2(voodoo);
+	else // FIXME : It means that this filter applies also for BANSHEE.
+		voodoo_generate_filter_v1(voodoo);
+
+	if (voodoo->type >= VOODOO_BANSHEE)
+		voodoo_generate_vb_filters(voodoo, FILTCAP, FILTCAPG);
+    }
 }
 
 static void voodoo_filterline_v1(voodoo_t *voodoo, uint8_t *fil, int column, uint16_t *src, int line)

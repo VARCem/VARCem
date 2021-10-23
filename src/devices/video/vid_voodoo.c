@@ -989,126 +989,126 @@ void *voodoo_card_init()
 
 void *voodoo_2d3d_card_init(int type)
 {
-        int c;
-        voodoo_t *voodoo = (voodoo_t *)mem_alloc(sizeof(voodoo_t));
-        memset(voodoo, 0, sizeof(voodoo_t));
+    int c;
+    voodoo_t *voodoo = (voodoo_t *)mem_alloc(sizeof(voodoo_t));
+    memset(voodoo, 0, sizeof(voodoo_t));
 
-	rgb332 = (rgba8_t *)mem_alloc(sizeof(rgba8_t)*0x100);
-        ai44 = (rgba8_t *)mem_alloc(sizeof(rgba8_t)*0x100);
-        rgb565 = (rgba8_t *)mem_alloc(sizeof(rgba8_t)*0x10000);
-        argb1555 = (rgba8_t *)mem_alloc(sizeof(rgba8_t)*0x10000);
-        argb4444 = (rgba8_t *)mem_alloc(sizeof(rgba8_t)*0x10000);
-        ai88 = (rgba8_t *)mem_alloc(sizeof(rgba8_t)*0x10000);
+    rgb332 = (rgba8_t *)mem_alloc(sizeof(rgba8_t)*0x100);
+    ai44 = (rgba8_t *)mem_alloc(sizeof(rgba8_t)*0x100);
+    rgb565 = (rgba8_t *)mem_alloc(sizeof(rgba8_t)*0x10000);
+    argb1555 = (rgba8_t *)mem_alloc(sizeof(rgba8_t)*0x10000);
+    argb4444 = (rgba8_t *)mem_alloc(sizeof(rgba8_t)*0x10000);
+    ai88 = (rgba8_t *)mem_alloc(sizeof(rgba8_t)*0x10000);
 
-        voodoo->bilinear_enabled = device_get_config_int("bilinear");
-        voodoo->scrfilter = 0;
-        voodoo->render_threads = device_get_config_int("render_threads");
-        voodoo->odd_even_mask = voodoo->render_threads - 1;
+    voodoo->bilinear_enabled = device_get_config_int("bilinear");
+    voodoo->scrfilter = device_get_config_int("dacfilter");
+    voodoo->render_threads = device_get_config_int("render_threads");
+    voodoo->odd_even_mask = voodoo->render_threads - 1;
 #ifndef NO_CODEGEN
-        voodoo->use_recompiler = device_get_config_int("recompiler");
+    voodoo->use_recompiler = device_get_config_int("recompiler");
 #endif
-        voodoo->type = type;
-        voodoo->dual_tmus = 0;
+    voodoo->type = type;
+    voodoo->dual_tmus = 0;
 
-	/*generate filter lookup tables*/
-	voodoo_generate_filter_v2(voodoo);
+    /*generate filter lookup tables*/
+    voodoo_generate_filter_v2(voodoo);
 
-        for (c = 0; c < TEX_CACHE_MAX; c++) {
-                voodoo->texture_cache[0][c].data = (uint32_t *)mem_alloc((256*256 + 256*256 + 128*128 + 64*64 + 32*32 + 16*16 + 8*8 + 4*4 + 2*2) * 4);
-                voodoo->texture_cache[0][c].base = -1; /*invalid*/
-                voodoo->texture_cache[0][c].refcount = 0;
-                if (voodoo->dual_tmus) {
-                        voodoo->texture_cache[1][c].data = (uint32_t *)mem_alloc((256*256 + 256*256 + 128*128 + 64*64 + 32*32 + 16*16 + 8*8 + 4*4 + 2*2) * 4);
-                        voodoo->texture_cache[1][c].base = -1; /*invalid*/
-                        voodoo->texture_cache[1][c].refcount = 0;
-                }
-        }
-
-        voodoo->swap_mutex = thread_create_mutex(L"VARCem.Voodoo2DMutex");
-
-	timer_add(voodoo_callback, voodoo,
-		  &voodoo->timer_count, TIMER_ALWAYS_ENABLED);
-
-        voodoo->fbiInit0 = 0;
-
-        voodoo->wake_fifo_thread = thread_create_event();
-        voodoo->wake_render_thread[0] = thread_create_event();
-        voodoo->wake_render_thread[1] = thread_create_event();
-        voodoo->wake_render_thread[2] = thread_create_event();
-        voodoo->wake_render_thread[3] = thread_create_event();
-        voodoo->wake_main_thread = thread_create_event();
-        voodoo->fifo_not_full_event = thread_create_event();
-        voodoo->render_not_full_event[0] = thread_create_event();
-        voodoo->render_not_full_event[1] = thread_create_event();
-        voodoo->render_not_full_event[2] = thread_create_event();
-        voodoo->render_not_full_event[3] = thread_create_event();
-        voodoo->fifo_thread = thread_create(voodoo_fifo_thread, voodoo);
-        voodoo->render_thread[0] = thread_create(voodoo_render_thread_1, voodoo);
-        if (voodoo->render_threads >= 2)
-                voodoo->render_thread[1] = thread_create(voodoo_render_thread_2, voodoo);
-	if (voodoo->render_threads == 4) {
-		voodoo->render_thread[2] = thread_create(voodoo_render_thread_3, voodoo);
-		voodoo->render_thread[3] = thread_create(voodoo_render_thread_4, voodoo);
+    for (c = 0; c < TEX_CACHE_MAX; c++) {
+	voodoo->texture_cache[0][c].data = (uint32_t *)mem_alloc((256*256 + 256*256 + 128*128 + 64*64 + 32*32 + 16*16 + 8*8 + 4*4 + 2*2) * 4);
+	voodoo->texture_cache[0][c].base = -1; /*invalid*/
+	voodoo->texture_cache[0][c].refcount = 0;
+	if (voodoo->dual_tmus) {
+		voodoo->texture_cache[1][c].data = (uint32_t *)mem_alloc((256*256 + 256*256 + 128*128 + 64*64 + 32*32 + 16*16 + 8*8 + 4*4 + 2*2) * 4);
+		voodoo->texture_cache[1][c].base = -1; /*invalid*/
+		voodoo->texture_cache[1][c].refcount = 0;
 	}
+    }
 
-        timer_add(voodoo_wake_timer, voodoo,
-		  &voodoo->wake_timer, &voodoo->wake_timer);
+    voodoo->swap_mutex = thread_create_mutex(L"VARCem.Voodoo2DMutex");
+
+    timer_add(voodoo_callback, voodoo,
+	  &voodoo->timer_count, TIMER_ALWAYS_ENABLED);
+
+    voodoo->fbiInit0 = 0;
+
+    voodoo->wake_fifo_thread = thread_create_event();
+    voodoo->wake_render_thread[0] = thread_create_event();
+    voodoo->wake_render_thread[1] = thread_create_event();
+    voodoo->wake_render_thread[2] = thread_create_event();
+    voodoo->wake_render_thread[3] = thread_create_event();
+    voodoo->wake_main_thread = thread_create_event();
+    voodoo->fifo_not_full_event = thread_create_event();
+    voodoo->render_not_full_event[0] = thread_create_event();
+    voodoo->render_not_full_event[1] = thread_create_event();
+    voodoo->render_not_full_event[2] = thread_create_event();
+    voodoo->render_not_full_event[3] = thread_create_event();
+    voodoo->fifo_thread = thread_create(voodoo_fifo_thread, voodoo);
+    voodoo->render_thread[0] = thread_create(voodoo_render_thread_1, voodoo);
+    if (voodoo->render_threads >= 2)
+	voodoo->render_thread[1] = thread_create(voodoo_render_thread_2, voodoo);
+    if (voodoo->render_threads == 4) {
+	voodoo->render_thread[2] = thread_create(voodoo_render_thread_3, voodoo);
+	voodoo->render_thread[3] = thread_create(voodoo_render_thread_4, voodoo);
+    }
+
+    timer_add(voodoo_wake_timer, voodoo,
+	  &voodoo->wake_timer, &voodoo->wake_timer);
 	//timer_add(&voodoo->wake_timer, voodoo_wake_timer, (void *)voodoo, 0);
 
-        for (c = 0; c < 0x100; c++) {
-                rgb332[c].r = c & 0xe0;
-                rgb332[c].g = (c << 3) & 0xe0;
-                rgb332[c].b = (c << 6) & 0xc0;
-                rgb332[c].r = rgb332[c].r | (rgb332[c].r >> 3) | (rgb332[c].r >> 6);
-                rgb332[c].g = rgb332[c].g | (rgb332[c].g >> 3) | (rgb332[c].g >> 6);
-                rgb332[c].b = rgb332[c].b | (rgb332[c].b >> 2);
-                rgb332[c].b = rgb332[c].b | (rgb332[c].b >> 4);
-                rgb332[c].a = 0xff;
+    for (c = 0; c < 0x100; c++) {
+	rgb332[c].r = c & 0xe0;
+	rgb332[c].g = (c << 3) & 0xe0;
+	rgb332[c].b = (c << 6) & 0xc0;
+	rgb332[c].r = rgb332[c].r | (rgb332[c].r >> 3) | (rgb332[c].r >> 6);
+	rgb332[c].g = rgb332[c].g | (rgb332[c].g >> 3) | (rgb332[c].g >> 6);
+	rgb332[c].b = rgb332[c].b | (rgb332[c].b >> 2);
+	rgb332[c].b = rgb332[c].b | (rgb332[c].b >> 4);
+	rgb332[c].a = 0xff;
 
-                ai44[c].a = (c & 0xf0) | ((c & 0xf0) >> 4);
-                ai44[c].r = (c & 0x0f) | ((c & 0x0f) << 4);
-                ai44[c].g = ai44[c].b = ai44[c].r;
-        }
+	ai44[c].a = (c & 0xf0) | ((c & 0xf0) >> 4);
+	ai44[c].r = (c & 0x0f) | ((c & 0x0f) << 4);
+	ai44[c].g = ai44[c].b = ai44[c].r;
+    }
 
-        for (c = 0; c < 0x10000; c++) {
-                rgb565[c].r = (c >> 8) & 0xf8;
-                rgb565[c].g = (c >> 3) & 0xfc;
-                rgb565[c].b = (c << 3) & 0xf8;
-                rgb565[c].r |= (rgb565[c].r >> 5);
-                rgb565[c].g |= (rgb565[c].g >> 6);
-                rgb565[c].b |= (rgb565[c].b >> 5);
-                rgb565[c].a = 0xff;
+    for (c = 0; c < 0x10000; c++) {
+	rgb565[c].r = (c >> 8) & 0xf8;
+	rgb565[c].g = (c >> 3) & 0xfc;
+	rgb565[c].b = (c << 3) & 0xf8;
+	rgb565[c].r |= (rgb565[c].r >> 5);
+	rgb565[c].g |= (rgb565[c].g >> 6);
+	rgb565[c].b |= (rgb565[c].b >> 5);
+	rgb565[c].a = 0xff;
 
-                argb1555[c].r = (c >> 7) & 0xf8;
-                argb1555[c].g = (c >> 2) & 0xf8;
-                argb1555[c].b = (c << 3) & 0xf8;
-                argb1555[c].r |= (argb1555[c].r >> 5);
-                argb1555[c].g |= (argb1555[c].g >> 5);
-                argb1555[c].b |= (argb1555[c].b >> 5);
-                argb1555[c].a = (c & 0x8000) ? 0xff : 0;
+	argb1555[c].r = (c >> 7) & 0xf8;
+	argb1555[c].g = (c >> 2) & 0xf8;
+	argb1555[c].b = (c << 3) & 0xf8;
+	argb1555[c].r |= (argb1555[c].r >> 5);
+	argb1555[c].g |= (argb1555[c].g >> 5);
+	argb1555[c].b |= (argb1555[c].b >> 5);
+	argb1555[c].a = (c & 0x8000) ? 0xff : 0;
 
-                argb4444[c].a = (c >> 8) & 0xf0;
-                argb4444[c].r = (c >> 4) & 0xf0;
-                argb4444[c].g = c & 0xf0;
-                argb4444[c].b = (c << 4) & 0xf0;
-                argb4444[c].a |= (argb4444[c].a >> 4);
-                argb4444[c].r |= (argb4444[c].r >> 4);
-                argb4444[c].g |= (argb4444[c].g >> 4);
-                argb4444[c].b |= (argb4444[c].b >> 4);
+	argb4444[c].a = (c >> 8) & 0xf0;
+	argb4444[c].r = (c >> 4) & 0xf0;
+	argb4444[c].g = c & 0xf0;
+	argb4444[c].b = (c << 4) & 0xf0;
+	argb4444[c].a |= (argb4444[c].a >> 4);
+	argb4444[c].r |= (argb4444[c].r >> 4);
+	argb4444[c].g |= (argb4444[c].g >> 4);
+	argb4444[c].b |= (argb4444[c].b >> 4);
 
-                ai88[c].a = (c >> 8);
-                ai88[c].r = c & 0xff;
-                ai88[c].g = c & 0xff;
-                ai88[c].b = c & 0xff;
-        }
+	ai88[c].a = (c >> 8);
+	ai88[c].r = c & 0xff;
+	ai88[c].g = c & 0xff;
+	ai88[c].b = c & 0xff;
+    }
 #ifndef NO_CODEGEN
-        voodoo_codegen_init(voodoo);
+    voodoo_codegen_init(voodoo);
 #endif
 
-        voodoo->disp_buffer = 0;
-        voodoo->draw_buffer = 1;
+    voodoo->disp_buffer = 0;
+    voodoo->draw_buffer = 1;
 
-        return voodoo;
+    return voodoo;
 }
 
 
