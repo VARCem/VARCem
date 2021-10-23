@@ -8,7 +8,7 @@
  *
  *		Definitions for the CPU module.
  *
- * Version:	@(#)cpu.h	1.0.17	2021/02/15
+ * Version:	@(#)cpu.h	1.0.18	2021/09/12
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -402,7 +402,7 @@ extern x86seg	_oldds;
 #define ss	cpu_state.seg_ss.base
 #define gs	cpu_state.seg_gs.base
 
-#if 1
+#if 0
 # define ISA_CYCLES_SHIFT 6
 # define ISA_CYCLES(x)    ((x * isa_cycles) >> ISA_CYCLES_SHIFT)
 #else

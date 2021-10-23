@@ -168,6 +168,7 @@ extern const device_t	m_tosh_3100e;
 extern const device_t	m_cbm_pc30;
 extern const device_t	m_cbm_sl386sx;
 extern const device_t	m_cbm_sl386sx25;
+extern const device_t	m_cbm_t486dx;
 
 #if defined(DEV_BRANCH) && defined(USE_COMPAQ)
 extern const device_t	m_cpq_p1;
@@ -206,9 +207,7 @@ extern const device_t	m_opti495_486_mr;
 extern const device_t 	m_opti895_hot419;
 extern const device_t	m_opti895_dp4044;
 
-#if defined(DEV_BRANCH) && defined(USE_SL)
 extern const device_t	m_sl82c460_386dx_ami;
-#endif
 
 extern const device_t	m_sis471_ami;
 extern const device_t	m_dtk486;

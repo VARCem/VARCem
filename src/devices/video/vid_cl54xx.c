@@ -947,7 +947,7 @@ gd54xx_out(uint16_t addr, uint8_t val, priv_t priv)
     switch (addr) {
 
 #if 0
-	 case 0x3c3:
+	case 0x3c3:
     	if (dev->mca) {
         	dev->vidsys_ena = val & 1;
         	gd5428_mca_map_update(dev);
@@ -1074,6 +1074,8 @@ gd54xx_out(uint16_t addr, uint8_t val, priv_t priv)
 					break;
 
 				case 0x07:
+					svga->packed_chain4 = svga->seqregs[7] & 1;
+					svga_recalctimings(svga);
 					if (is_5422(svga)) 
 						recalc_mapping(dev);
 					else
@@ -1211,7 +1213,7 @@ gd54xx_out(uint16_t addr, uint8_t val, priv_t priv)
 			}
 			
 			svga->fast = (svga->gdcreg[8] == 0xff && !(svga->gdcreg[3] & 0x18) &&
-				     !svga->gdcreg[1]) && svga->chain4;
+				     !svga->gdcreg[1]) && ((svga->chain4 && svga->packed_chain4) || svga->fb_only);
 			if (((svga->gdcaddr == 5) && ((val ^o) & 0x70)) ||
 			    ((svga->gdcaddr == 6) && ((val ^o) & 1)))
 			        svga_recalctimings(svga);
@@ -1231,6 +1233,8 @@ gd54xx_out(uint16_t addr, uint8_t val, priv_t priv)
 						svga->adv_flags |= FLAG_EXT_WRITE;
 					if (svga->gdcreg[0xb] & 0x08)
 						svga->adv_flags |= FLAG_LATCH8;
+					if (svga->gdcreg[0xb] & 0x10)
+						svga->adv_flags |= FLAG_ADDR_BY16;
 					recalc_banking(dev);
 					break;
 
@@ -2045,8 +2049,7 @@ gd54xx_write_modes45(svga_t *svga, uint8_t val, uint32_t addr)
 
     switch (svga->writemode) {
 	case 4:
-		if (svga->gdcreg[0xb] & 0x10) {
-			addr <<= 2;
+		if (svga->adv_flags & FLAG_ADDR_BY16) {
 			addr &= svga->decode_mask;
 
 			for (i = 0; i < 8; i++) {
@@ -2067,8 +2070,7 @@ gd54xx_write_modes45(svga_t *svga, uint8_t val, uint32_t addr)
 		break;
 
 	case 5:
-		if (svga->gdcreg[0xb] & 0x10) {
-			addr <<= 2;
+		if (svga->adv_flags & FLAG_ADDR_BY16) {
 			addr &= svga->decode_mask;
 
 			for (i = 0; i < 8; i++) {

@@ -8,7 +8,7 @@
  *
  *		Implement the PCI bus.
  *
- * Version:	@(#)pci.c	1.0.12	2019/05/15
+ * Version:	@(#)pci.c	1.0.13	2021/09/30
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -74,12 +74,13 @@ typedef struct {
 int			pci_do_log = ENABLE_BUS_LOG;
 #endif
 
+int		pci_burst_time,
+		pci_nonburst_time;
+
 static pci_card_t	pci_cards[32];
 static uint8_t		last_pci_card = 0;
 static uint8_t		pci_card_to_slot_mapping[32];
 static uint8_t		elcr[2] = { 0, 0 };
-static int		pci_burst_time,
-			pci_nonburst_time;
 static uint8_t		pci_irqs[4];
 static uint64_t		pci_irq_hold[16];
 static pci_mirq_t	pci_mirqs[2];

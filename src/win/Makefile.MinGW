@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows systems using the MinGW32 environment.
 #
-# Version:	@(#)Makefile.minGW	1.0.106	2021/05/31
+# Version:	@(#)Makefile.minGW	1.0.108	2021/09/18
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -727,11 +727,6 @@ ifeq ($(DEV_BRANCH), y)
   DEVBROBJ	+= m_zenith.o m_zenith_vid.o
  endif
 
- ifeq ($(SYMPHONY), y)
-  OPTS		+= -DUSE_SL
-  DEVBROBJ	+= m_sl82c460.o
- endif
-
  ifeq ($(PAS16), y)
   OPTS		+= -DUSE_PAS16
   DEVBROBJ	+= snd_pas16.o
@@ -860,6 +855,7 @@ MCHOBJ		:= machine.o machine_table.o \
 		    m_ali.o m_opti495.o m_opti895.o m_sis471.o m_sis496.o \
 		    m_wd76c10.o m_intel4x0.o \
 		    m_acer.o m_aopen.o m_asus.o m_tyan.o \
+		    m_sl82c460.o \
 		    m_misc.o
 
 DEVOBJ		:= bugger.o \
@@ -971,7 +967,10 @@ VIDOBJ		:= video.o \
 		    vid_tgui9440.o vid_tkd8001_ramdac.o \
 		    vid_s3.o vid_s3_virge.o \
 		    vid_sdac_ramdac.o \
-		    vid_voodoo.o
+		    vid_voodoo.o vid_voodoo_banshee.o \
+		    vid_voodoo_blitter.o vid_voodoo_banshee_blitter.o vid_voodoo_display.o \
+		    vid_voodoo_fb.o vid_voodoo_fifo.o vid_voodoo_reg.o \
+		    vid_voodoo_render.o vid_voodoo_setup.o vid_voodoo_texture.o \
 
 PLATOBJ		:= win.o \
 		   win_lang.o win_dynld.o win_opendir.o win_thread.o \

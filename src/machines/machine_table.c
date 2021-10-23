@@ -159,9 +159,7 @@ static const struct {
     { "[386DX ISA] AMI 386DX (Opti495)",	"ami_386dx_opti495",	&m_opti495_386dx_ami	},
     { "[386DX ISA] Award 386DX (Opti495)",	"award_386dx_opti495",	&m_opti495_386dx_award	},
     { "[386DX ISA] MR 386DX (Opti495)",		"mr_386dx_opti495",	&m_opti495_386dx_mr	},
-#if defined(DEV_BRANCH) && defined(USE_SL)
     { "[386DX ISA] FIC 386-SC-HG (SL Haydn)",   "ami_386dx_sl460",	&m_sl82c460_386dx_ami   },
-#endif
     { "[386DX ISA] Amstrad MegaPC 386DX",	"amstrad_megapc_dx",	&m_amstrad_mega_dx	},
 #if defined(DEV_BRANCH) && defined(USE_COMPAQ)
     { "[386DX ISA] Compaq Portable III (386)",  "portable3_386",	&m_cpq_p3_386		},
@@ -171,18 +169,19 @@ static const struct {
     { "[386DX MCA] IBM PS/2 model 80",		"ibm_ps2_m80",		&m_ps2_m80		},
 
     /* 80486 */
+    { "[486 ISA] Commodore Tower 486DX",	"cbm_t486dx",		&m_cbm_t486dx		},
+    { "[486 ISA] HP Vectra 486VL Series",       "hp_v486",		&m_hpv486		},
     { "[486 ISA] IBM PS/1 model 2133",		"ibm_ps1_2133",		&m_ps1_2133		},
+    { "[486 ISA] Packard Bell PB410A",		"pbell_pb410a",		&m_pb410a		},
 
     { "[486 ISA] Olystar LIL1429 (ALi-1429)",	"ami_486_ali1429",	&m_ali1429_ami		},
-    { "[486 ISA] EPOX 486 (SiS471)",		"ami_486_sis471",	&m_sis471_ami		},
     { "[486 ISA] AMI WinBIOS486 (ALi1429)",	"ami_win486_ali1429",	&m_ali1429_win		},
     { "[486 ISA] Award 486 (Opti495)",		"award_486_opti495",	&m_opti495_486_award	},
     { "[486 ISA] MR 486 (Opti495)",		"mr_486dx_opti495",	&m_opti495_486_mr	},
     { "[486 ISA] Shuttle Hot-419 (Opti895)",	"hot419_opti895",	&m_opti895_hot419	},
     { "[486 ISA] DataExpert EXP4044 (Opti 895)","dp4044_opti895",	&m_opti895_dp4044	},
     { "[486 ISA] DTK 486 (PKM-0038S E-2)",	"dtk_486",		&m_dtk486		},
-    { "[486 ISA] HP Vectra 486VL Series",       "hp_v486",		&m_hpv486		},
-    { "[486 ISA] Packard Bell PB410A",		"pbell_pb410a",		&m_pb410a		},
+    { "[486 ISA] EPOX 486 (SiS471)",		"ami_486_sis471",	&m_sis471_ami		},
 
     { "[486 MCA] IBM PS/2 model 70 (type 4)",	"ibm_ps2_m70_type4",	&m_ps2_m70_4		},
 

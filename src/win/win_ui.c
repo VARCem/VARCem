@@ -8,7 +8,7 @@
  *
  *		Implement the User Interface module for Win32 API.
  *
- * Version:	@(#)win_ui.c	1.0.42	2021/03/18
+ * Version:	@(#)win_ui.c	1.0.43	2021/10/21
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -460,7 +460,7 @@ MainWindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 		vidapi_enable(1);
 
 		/* Re-clip the mouse area if needed. */
-		if (mouse_capture) {
+		if (mouse_capture && hwndRender != NULL) {
 			GetWindowRect(hwndRender, &rect);
 
 			ClipCursor(&rect);
@@ -703,7 +703,7 @@ ui_init(int nCmdShow)
     WNDCLASSEX wincl;			// buffer for main window's class
     INITCOMMONCONTROLSEX icex;		// common controls, new style
     RAWINPUTDEVICE ridev;		// RawInput device
-    MSG messages;			// received-messages buffer
+	MSG messages;			// received-messages buffer
     HACCEL haccel;			// handle to accelerator table
     DWORD flags;
     int ret;
@@ -713,6 +713,9 @@ ui_init(int nCmdShow)
     icex.dwSize = sizeof(INITCOMMONCONTROLSEX);
     icex.dwICC  = ICC_LISTVIEW_CLASSES;
     InitCommonControlsEx(&icex);
+
+	memset(&messages, 0x00, sizeof(MSG));
+
 
     if (settings_only) {
 	if (! pc_init()) {
@@ -940,6 +943,14 @@ again:
 	}
 
 	if (! TranslateAccelerator(hwndMain, haccel, &messages)) {
+
+		/* Don't process other keypresses. */
+		if (messages.message == WM_SYSKEYDOWN ||
+			messages.message == WM_SYSKEYUP ||
+			messages.message == WM_KEYDOWN ||
+			messages.message == WM_KEYUP)
+			continue;
+
                 TranslateMessage(&messages);
                 DispatchMessage(&messages);
 	}

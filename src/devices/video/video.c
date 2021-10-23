@@ -8,7 +8,7 @@
  *
  *		Main video-rendering module.
  *
- * Version:	@(#)video.c	1.0.34	2021/03/16
+ * Version:	@(#)video.c	1.0.35	2021/10/22
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -466,7 +466,7 @@ pixels8(pel_t *pixels)
     int i;
 
     for (i = 0; i < 8; i++)
-	temp |= (!!pixels[i].val << (i ^ 7));
+	temp |= (!!pixels[i].pal << (i ^ 7));
 
     return temp;
 }

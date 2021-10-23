@@ -8,14 +8,14 @@
  *
  *		Hercules emulation.
  *
- * Version:	@(#)vid_hercules.c	1.0.22	2019/05/17
+ * Version:	@(#)vid_hercules.c	1.0.23	2021/10/23
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
- *		Copyright 2016-2019 Miran Grca.
+ *		Copyright 2017-2021 Fred N. van Kempen.
+ *		Copyright 2016-2021 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -58,7 +58,7 @@
 typedef struct {
     mem_map_t	mapping;
 
-    uint8_t	crtc[32];
+    uint8_t	crtc[32], charbuffer[4096];
     int		crtcreg;
 
     uint8_t	ctrl,
@@ -142,23 +142,50 @@ hercules_out(uint16_t addr, uint8_t val, priv_t priv)
 			dev->crtc[11] = 0xc;
 		}
 
-		if (old != val)
-			recalc_timings(dev);
+		if (old != val) {
+			if ((dev->crtcreg < 0xe) || (dev->crtcreg > 0x10)) {
+				fullchange = changeframecount;
+				recalc_timings(dev);
+			}
+		}
 		break;
 
 	case 0x03b8:
 		old = dev->ctrl;
-		dev->ctrl = val;
+		/* Prevent setting of bits if they are disabled in CTRL2. */
+		if ((old & 0x02) && !(val & 0x02))
+			dev->ctrl &= 0xfd;
+		else if ((val & 0x02) && (dev->ctrl2 & 0x01))
+			dev->ctrl |= 0x02;
+
+		if ((old & 0x80) && !(val & 0x80))
+			dev->ctrl &= 0x7f;
+		else if ((val & 0x80) && (dev->ctrl2 & 0x02))
+			dev->ctrl |= 0x80;
+
+		dev->ctrl = (dev->ctrl & 0x82) | (val & 0x7d);
 		if (old != val)
 			recalc_timings(dev);
 		break;
 
 	case 0x03bf:
+		old = dev->ctrl2;
 		dev->ctrl2 = val;
+		/* According to the Programmer's guide to the Hercules graphics cards
+		   by David B. Doty from 1988, the CTRL2 modes (bits 1,0) are as follow:
+		   - 00: DIAG: Text mode only, only page 0 accessible;
+		   - 01: HALF: Graphics mode allowed, only page 0 accessible;
+		   - 11: FULL: Graphics mode allowed, both pages accessible. */
+		if (val & 0x01)
+			mem_map_set_exec(&dev->mapping, dev->vram);
+		else
+			mem_map_set_exec(&dev->mapping, NULL);
 		if (val & 0x02)
 			mem_map_set_addr(&dev->mapping, 0xb0000, 0x10000);
 		  else
 			mem_map_set_addr(&dev->mapping, 0xb0000, 0x08000);
+		if (old ^ val)
+			recalc_timings(dev);
 		break;
 
 	default:
@@ -185,7 +212,12 @@ hercules_in(uint16_t addr, priv_t priv)
 	case 0x03b3:
 	case 0x03b5:
 	case 0x03b7:
-		ret = dev->crtc[dev->crtcreg];
+		if (dev->crtcreg == 0x0c)
+			ret = (dev->ma >> 8) & 0x3f;
+		else if (dev->crtcreg == 0x0d)
+			ret = dev->ma & 0xff;
+		else
+			ret = dev->crtc[dev->crtcreg];
 		break;
 
 	case 0x03ba:
@@ -193,6 +225,10 @@ hercules_in(uint16_t addr, priv_t priv)
 		if (dev->stat & 0x08)
 			ret |= 0x88;
 		ret |= (dev->stat & 0x01);
+		if (dev->stat & 0x08)
+			ret |= 0x80;
+		if ((ret & 0x81) == 0x80)
+			ret |= 0x08;
 		break;
 
 	default:
@@ -219,7 +255,12 @@ hercules_write(uint32_t addr, uint8_t val, priv_t priv)
 {
     hercules_t *dev = (hercules_t *)priv;
 
-    dev->vram[addr & 0xffff] = val;
+    if (dev->ctrl2 & 0x01)
+	addr &= 0xffff;
+    else
+	addr &= 0x0fff;
+
+    dev->vram[addr] = val;
     hercules_waitstates(dev);
 }
 
@@ -228,10 +269,18 @@ static uint8_t
 hercules_read(uint32_t addr, priv_t priv)
 {
     hercules_t *dev = (hercules_t *)priv;
+    uint8_t ret = 0xff;
+
+    if (dev->ctrl2 & 0x01)
+	addr &= 0xffff;
+    else
+	addr &= 0x0fff;
 
     hercules_waitstates(dev);
 
-    return(dev->vram[addr & 0xffff]);
+    ret = (dev->vram[addr]);
+
+    return ret;
 }
 
 
@@ -240,7 +289,7 @@ hercules_poll(priv_t priv)
 {
     hercules_t *dev = (hercules_t *)priv;
     uint8_t chr, attr;
-    uint16_t ca, dat;
+    uint16_t ca, dat, pa;
     int oldsc, blink;
     int x, c, oldvc;
     int drawcursor;
@@ -263,7 +312,7 @@ hercules_poll(priv_t priv)
 		}
 		dev->lastline = dev->displine;
 
-		if ((dev->ctrl & 2) && (dev->ctrl2 & 1)) {
+		if (dev->ctrl & 2) {
 			ca = (dev->sc & 3) * 0x2000;
 			if ((dev->ctrl & 0x80) && (dev->ctrl2 & 2)) 
 				ca += 0x8000;
@@ -306,7 +355,10 @@ hercules_poll(priv_t priv)
 					  else
 						screen->line[dev->displine][(x * 9) + 8].pal = dev->cols[attr][blink][0];
 				}
-				dev->ma++;
+				if (dev->ctrl2 & 0x01)
+					dev->ma = (dev->ma + 1) & 0x3fff;
+				else
+					dev->ma = (dev->ma + 1) & 0x7ff;
 
 				if (drawcursor) {
 					for (c = 0; c < 9; c++)
@@ -349,7 +401,7 @@ hercules_poll(priv_t priv)
 			dev->ma = dev->maback = (dev->crtc[13] | (dev->crtc[12] << 8)) & 0x3fff;
 			dev->sc = 0;
 		}
-	} else if (dev->sc == dev->crtc[9] || ((dev->crtc[8] & 3) == 3 && dev->sc == (dev->crtc[9] >> 1))) {
+	} else if (((dev->crtc[8] & 3) != 3 && dev->sc == dev->crtc[9]) || ((dev->crtc[8] & 3) == 3 && dev->sc == (dev->crtc[9] >> 1))) {
 		dev->maback = dev->ma;
 		dev->sc = 0;
 		oldvc = dev->vc;
@@ -365,16 +417,27 @@ hercules_poll(priv_t priv)
 				dev->dispon = 1;
 			if (! dev->vadj)
 				dev->ma = dev->maback = (dev->crtc[13] | (dev->crtc[12] << 8)) & 0x3fff;
-			if ((dev->crtc[10] & 0x60) == 0x20)
-				dev->cursoron = 0;
-			  else
-				dev->cursoron = dev->blink & 16;
+			switch (dev->crtc[10] & 0x60) {
+				case 0x20:
+					dev->cursoron = 0;
+					break;
+				case 0x60:
+					dev->cursoron = dev->blink & 0x10;
+					break;
+				default:
+					dev->cursoron = dev->blink & 0x08;
+					break;
+			}
 		}
 
 		if (dev->vc == dev->crtc[7]) {
 			dev->dispon = 0;
 			dev->displine = 0;
-			dev->vsynctime = 16;	//(crtcm[3]>>4)+1;
+			//dev->vsynctime = 16;	//(crtcm[3]>>4)+1;
+			if ((dev->crtc[8] & 3) == 3)
+				dev->vsynctime = ((int32_t)dev->crtc[4] * ((dev->crtc[9] >> 1) + 1)) + dev->crtc[5] - dev->crtc[7] + 1;
+			else
+				dev->vsynctime = ((int32_t)dev->crtc[4] * (dev->crtc[9] + 1)) + dev->crtc[5] - dev->crtc[7] + 1;
 			if (dev->crtc[7]) {
 				if ((dev->ctrl & 2) && (dev->ctrl2 & 1))
 					x = dev->crtc[1] << 4;
@@ -397,7 +460,7 @@ hercules_poll(priv_t priv)
 				video_blit_start(1, 0, dev->firstline, 0, ysize, xsize, ysize);
 				frames++;
 
-				if ((dev->ctrl & 2) && (dev->ctrl2 & 1)) {
+				if (dev->ctrl & 2) {
 					video_res_x = dev->crtc[1] * 16;
 					video_res_y = dev->crtc[6] * 4;
 					video_bpp = 1;
@@ -423,6 +486,12 @@ hercules_poll(priv_t priv)
 	if ((dev->sc == (dev->crtc[10] & 31) ||
 	    ((dev->crtc[8] & 3)==3 && dev->sc == ((dev->crtc[10] & 31) >> 1))))
 		dev->con = 1;
+	if (dev->dispon && !(dev->ctrl & 0x02)) {
+		for (x = 0; x < (dev->crtc[1] << 1); x++) {
+			pa = (dev->ctrl & 0x80) ? ((x & 1) ? 0x0000 : 0x8000) : 0x0000;
+			dev->charbuffer[x] = dev->vram[(((dev->ma << 1) + x) & 0x3fff) + pa];
+		}
+	}
     }
 }
 
@@ -446,7 +515,7 @@ hercules_init(const device_t *info, UNUSED(void *parent))
      * Map in the memory, enable exec on it (for software like basich.com
      * that relocates code to it, and executes it from there..)
      */
-    mem_map_add(&dev->mapping, 0xb0000, 0x08000,
+    mem_map_add(&dev->mapping, 0xb0000, 0x10000,
 		hercules_read,NULL,NULL, hercules_write,NULL,NULL,
 		dev->vram, MEM_MAPPING_EXTERNAL, (priv_t)dev);
 

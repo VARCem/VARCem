@@ -48,8 +48,10 @@ extern int	con, cursoron, cgablink;
 extern int	scrollcache;
 extern uint8_t	edatlookup[4][4];
 
+extern void	svga_recalc_remap_func(svga_t *svga);
 
-extern void svga_render_null(svga_t *svga);
+
+extern void	svga_render_null(svga_t *svga);
 extern void	svga_render_blank(svga_t *svga);
 extern void	svga_render_text_40(svga_t *svga);
 extern void	svga_render_text_80(svga_t *svga);

@@ -8,7 +8,7 @@
  *
  *		Emulation of the Tseng Labs ET4000.
  *
- * Version:	@(#)vid_et4000.c	1.0.13	2021/03/05
+ * Version:	@(#)vid_et4000.c	1.0.14	2021/10/21
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -564,6 +564,8 @@ et4000_init(const device_t *info, UNUSED(void *parent))
     dev->svga.ramdac = device_add(&sc1502x_ramdac_device);
 
     dev->vram_mask = dev->vram_size - 1;
+
+    dev->svga.packed_chain4 = 1;
 
     rom_init(&dev->bios_rom, info->path,
 	     0xc0000, 0x8000, 0x7fff, 0, MEM_MAPPING_EXTERNAL);

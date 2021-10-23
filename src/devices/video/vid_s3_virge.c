@@ -8,7 +8,7 @@
  *
  *		S3 ViRGE emulation.
  *
- * Version:	@(#)vid_s3_virge.c	1.0.24	2021/06/26
+ * Version:	@(#)vid_s3_virge.c	1.0.25	2021/10/22
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -2492,8 +2492,8 @@ static void (*tex_read)(s3d_state_t *state, s3d_texture_state_t *texture_state, 
 static void (*tex_sample)(s3d_state_t *state);
 static void (*dest_pixel)(s3d_state_t *state);
 
-#define MAX(a, b) ((a) > (b) ? (a) : (b))
-#define MIN(a, b) ((a) < (b) ? (a) : (b))
+//#define MAX(a, b) ((a) > (b) ? (a) : (b))
+//#define MIN(a, b) ((a) < (b) ? (a) : (b))
 
 static int _x, _y;
 
@@ -4012,6 +4012,9 @@ s3_virge_init(const device_t *info, UNUSED(void *parent))
     virge->svga.crtc[0x37] = 1;
     virge->svga.crtc[0x53] = 1 << 3;
     virge->svga.crtc[0x59] = 0x70;
+
+    //TODO ViRGE does not use packed chain4
+    virge->svga.packed_chain4 = 1;
 
     video_inform(DEVICE_VIDEO_GET(info->flags),
 		 (const video_timings_t *)info->vid_timing);
