@@ -1932,7 +1932,6 @@ banshee_overlay_draw(svga_t *svga, int displine)
     banshee_t *banshee = (banshee_t *)svga->p;
     voodoo_t *voodoo = banshee->voodoo;
     pel_t *priv;
-    //uint32_t *p;
     uint8_t *src;
     uint32_t *clut;
     int x, y, skip_filtering;
@@ -2501,6 +2500,9 @@ static const device_config_t banshee_config[] =
         },
         {
                 "bilinear","Bilinear filtering",CONFIG_BINARY,"",1
+        },
+        {
+                "dithersub","Dither substraction",CONFIG_BINARY,"",1
         },
         {
                 "dacfilter","Screen Filter",CONFIG_BINARY,"",0

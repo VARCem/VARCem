@@ -850,6 +850,7 @@ void *voodoo_card_init()
         memset(voodoo, 0, sizeof(voodoo_t));
 
         voodoo->bilinear_enabled = device_get_config_int("bilinear");
+        voodoo->dithersub_enabled = device_get_config_int("dithersub");
         voodoo->scrfilter = device_get_config_int("dacfilter");
         voodoo->texture_size = device_get_config_int("texture_memory");
         voodoo->texture_mask = (voodoo->texture_size << 20) - 1;
@@ -1001,6 +1002,7 @@ void *voodoo_2d3d_card_init(int type)
     ai88 = (rgba8_t *)mem_alloc(sizeof(rgba8_t)*0x10000);
 
     voodoo->bilinear_enabled = device_get_config_int("bilinear");
+    voodoo->dithersub_enabled = device_get_config_int("dithersub");
     voodoo->scrfilter = device_get_config_int("dacfilter");
     voodoo->render_threads = device_get_config_int("render_threads");
     voodoo->odd_even_mask = voodoo->render_threads - 1;
@@ -1237,20 +1239,20 @@ voodoo_card_close(voodoo_t *voodoo)
 void
 voodoo_close(void *priv)
 {
-        voodoo_set_t *voodoo_set = (voodoo_set_t *)priv;
-        
-        if (voodoo_set->nr_cards == 2)
-                voodoo_card_close(voodoo_set->voodoos[1]);
-        voodoo_card_close(voodoo_set->voodoos[0]);
-        
-        free(rgb332);
-        free(ai44);
-        free(rgb565);
-        free(argb1555);
-        free(argb4444);
-        free(ai88);
-        
-        free(voodoo_set);
+    voodoo_set_t *voodoo_set = (voodoo_set_t *)priv;
+    
+    if (voodoo_set->nr_cards == 2)
+	voodoo_card_close(voodoo_set->voodoos[1]);
+    voodoo_card_close(voodoo_set->voodoos[0]);
+    
+    free(rgb332);
+    free(ai44);
+    free(rgb565);
+    free(argb1555);
+    free(argb4444);
+    free(ai88);
+    
+    free(voodoo_set);
 }
 
 
@@ -1303,6 +1305,9 @@ static const device_config_t voodoo_config[] =
         },
         {
                 "bilinear","Bilinear filtering",CONFIG_BINARY,"",1
+        },
+        {
+                "dithersub","Dither substraction",CONFIG_BINARY,"",1
         },
         {
                 "dacfilter","Screen Filter",CONFIG_BINARY,"",0

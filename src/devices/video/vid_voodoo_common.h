@@ -313,6 +313,7 @@ typedef struct voodoo_t
 	int swap_pending;
 
 	int bilinear_enabled;
+	int dithersub_enabled;
 
 	int fb_size;
 	uint32_t fb_mask;
@@ -509,7 +510,7 @@ typedef struct voodoo_t
         uint64_t time;
         int render_time[4];
         
-        int use_recompiler;        
+        int use_recompiler;
         void *codegen_data;
         
         struct voodoo_set_t *set;

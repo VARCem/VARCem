@@ -133,7 +133,7 @@ enum
         SST_chromaKey = 0x134,
 
         SST_userIntrCMD = 0x13c,
-        SST_stipple = 0x140,                        
+        SST_stipple = 0x140,
         SST_color0 = 0x144,
         SST_color1 = 0x148,
         
@@ -205,14 +205,14 @@ enum
         SST_clutData = 0x228,
         SST_dacData = 0x22c,
 
-	SST_scrFilter = 0x230,
+        SST_scrFilter = 0x230,
 
         SST_hvRetrace = 0x240,
         SST_fbiInit5 = 0x244,
         SST_fbiInit6 = 0x248,
         SST_fbiInit7 = 0x24c,
 
-	SST_swapPending = 0x24c, /*Banshee*/
+        SST_swapPending = 0x24c, /*Banshee*/
         SST_leftOverlayBuf = 0x250, /*Banshee*/
         
         SST_sSetupMode = 0x260,
@@ -237,9 +237,9 @@ enum
         
         SST_bltSrcBaseAddr = 0x2c0,
         SST_bltDstBaseAddr = 0x2c4,
-        SST_bltXYStrides = 0x2c8,        
+        SST_bltXYStrides = 0x2c8,
         SST_bltSrcChromaRange = 0x2cc,
-        SST_bltDstChromaRange = 0x2d0,        
+        SST_bltDstChromaRange = 0x2d0,
         SST_bltClipX = 0x2d4,
         SST_bltClipY = 0x2d8,
 
@@ -254,7 +254,7 @@ enum
         
         SST_textureMode = 0x300,
         SST_tLOD = 0x304,
-        SST_tDetail = 0x308,        
+        SST_tDetail = 0x308,
         SST_texBaseAddr = 0x30c,
         SST_texBaseAddr1 = 0x310,
         SST_texBaseAddr2 = 0x314,
@@ -408,7 +408,7 @@ enum
         FBZ_DRAW_MASK  = 0xc000,
 
         FBZ_DEPTH_BIAS = (1 << 16),
-                
+        FBZ_DITHER_SUB  = (1 << 19),
         FBZ_DEPTH_SOURCE = (1 << 20),
         
         FBZ_PARAM_ADJUST = (1 << 26)
@@ -727,5 +727,6 @@ enum
 #define depth_op ( (params->fbzMode >> 5) & 7)
 #define dither ( params->fbzMode & FBZ_DITHER)
 #define dither2x2 (params->fbzMode & FBZ_DITHER_2x2)
+#define dithersub (params->fbzMode & FBZ_DITHER_SUB)
 
 #endif
