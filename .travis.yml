@@ -8,12 +8,12 @@
 #
 #		Project file for the Travis CI remote builder service.
 #
-# Version:	@(#).travis.yml	1.0.16	2020/06/14
+# Version:	@(#).travis.yml	1.0.17	2021/10/23
 #
 # Authors:	Natalia Portillo, <claunia@claunia.com>
 #		Fred N. van Kempen, <decwiz@yahoo.com>
 #
-#		Copyright 2018-2020 Fred N. van Kempen.
+#		Copyright 2018-2021 Fred N. van Kempen.
 #		Copyright 2018 Natalia Portillo.
 #
 #		Redistribution and  use  in source  and binary forms, with
@@ -89,12 +89,12 @@ addons:
 notifications:
   irc:
     channels:
-      - "chat.freenode.net#varcem-dev"
+      - "ircs://irc.varcem.com:6697#varcem-dev"
     template:
       - "Build #%{build_number} for #%{commit} by %{author} in %{branch} %{result}."
-      - "Commit changes: %{commit_subject}"
-      - "Build details on %{build_url}"
-#     - "Details on %{build_url}, changes on %{compare_url}"
+      - "Commit subject: %{commit_subject}"
+      - "View changes at %{compare_url}"
+      - "View build details at %{build_url}"
 
 after_success:
   - ./.travis-deploy.sh
