@@ -8,7 +8,7 @@
  *
  *		Definitions for the video controller module.
  *
- * Version:	@(#)video.h	1.0.41	2021/03/16
+ * Version:	@(#)video.h	1.0.42	2021/09/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -341,6 +341,7 @@ extern const device_t	vga_ps1_mca_device;
 
 /* 3Dfx VooDoo-series cards. */
 extern const device_t	voodoo_device;
+extern const device_t	voodoo_banshee_device;
 
 /* Wyse700 cards. */
 extern const device_t	wy700_device;

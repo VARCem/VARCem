@@ -8,7 +8,7 @@
  *
  *		Miscellaneous instructions.
  *
- * Version:	@(#)codegen_ops_fpu.h	1.0.4	2018/10/23
+ * Version:	@(#)codegen_ops_fpu.h	1.0.5	2021/10/18
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -183,7 +183,7 @@ static uint32_t ropFSTs(uint8_t opcode, uint32_t fetchdat, uint32_t op_32, uint3
 static uint32_t ropFSTd(uint8_t opcode, uint32_t fetchdat, uint32_t op_32, uint32_t op_pc, codeblock_t *block)
 {
         x86seg *target_seg;
-        int host_reg1 = 0, host_reg2 = 0;
+	int host_reg1, host_reg2;	
         
         FP_ENTER();
         op_pc--;
@@ -593,7 +593,7 @@ static uint32_t ropFISTPl(uint8_t opcode, uint32_t fetchdat, uint32_t op_32, uin
 static uint32_t ropFISTPq(uint8_t opcode, uint32_t fetchdat, uint32_t op_32, uint32_t op_pc, codeblock_t *block)
 {
         x86seg *target_seg;
-        int host_reg1 = 0, host_reg2 = 0;
+        int host_reg1, host_reg2;
 
         FP_ENTER();
         op_pc--;

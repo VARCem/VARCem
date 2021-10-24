@@ -8,7 +8,7 @@
  *
  *		Main include file for the application.
  *
- * Version:	@(#)emu.h	1.0.38	2021/03/18
+ * Version:	@(#)emu.h	1.0.39	2021/09/30
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
@@ -148,6 +148,9 @@
 /* For systems that do not provide these. */
 #ifndef MIN
 # define MIN(a, b)	((a) < (b) ? (a) : (b))
+#endif
+#ifndef MAX
+#define MAX(a, b)	((a) > (b) ? (a) : (b))
 #endif
 #ifndef ABS
 # define ABS(x)		((x) > 0 ? (x) : -(x))

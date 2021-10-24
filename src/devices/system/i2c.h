@@ -8,7 +8,7 @@
  *
  *		Definitions for the I2C handler.
  *
- * Version:	@(#)i2c.h	1.0.1	2021/03/18
+ * Version:	@(#)i2c.h	1.0.2	2021/10/01
  *
  * Author:	RichardG, <richardg867@gmail.com>
  *
@@ -67,7 +67,6 @@ extern void	i2c_handler(int set, void *bus_handle, uint8_t base, int size,
 			void (*stop)(void *, uint8_t, priv_t),
 			priv_t priv);
 
-extern uint8_t	i2c_has_device(void *bus_handle, uint8_t addr);
 extern uint8_t	i2c_start(void *bus_handle, uint8_t addr, int8_t read);
 extern uint8_t	i2c_read(void *bus_handle, uint8_t addr);
 extern uint8_t	i2c_write(void *bus_handle, uint8_t addr, uint8_t data);

@@ -8,7 +8,7 @@
  *
  *		808x CPU emulation.
  *
- * Version:	@(#)808x.c	1.0.24	2021/03/18
+ * Version:	@(#)808x.c	1.0.25	2021/10/21
  *
  * Authors:	Miran Grca, <mgrca8@gmail.com>
  *		Andrew Jenner (reenigne), <andrew@reenigne.org>
@@ -238,8 +238,6 @@ makeznptable(void)
 		znptable8[c] = P_FLAG;
 	if (c == 0xb1)
 		DEBUG("znp8 b1 = %i %02X\n", d, znptable8[c]);
-	if (c == 0x65b1)
-		DEBUG("znp16 65b1 = %i %02X\n", d, znptable16[c]);
 	if (!c)
 		znptable8[c] |= Z_FLAG;
 	if (c & 0x80)

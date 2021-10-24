@@ -8,7 +8,7 @@
  *
  *		Implementation of various Commodore systems.
  *
- * Version:	@(#)m_commodore.c	1.0.20	2021/04/15
+ * Version:	@(#)m_commodore.c	1.0.21	2021/09/04
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Altheos, <altheos@varcem.com>
@@ -53,6 +53,7 @@
 #include "../device.h"
 #include "../devices/chipsets/neat.h"
 #include "../devices/chipsets/scamp.h"
+#include "../devices/chipsets/sl82c460.h"
 #include "../devices/input/keyboard.h"
 #include "../devices/input/mouse.h"
 #include "../devices/ports/parallel.h"
@@ -161,6 +162,15 @@ common_init(const device_t *info, void *arg)
 			device_add(&gd5402_onboard_device);
 		}
 		break;
+	
+	case 85: /* T486DX */
+		device_add(&sl82c460_device);
+		m_at_common_ide_init();
+		device_add(&fdc_at_device);
+		device_add(&keyboard_ps2_ami_device);
+		if (config.mouse_type == MOUSE_INTERNAL)
+			device_add(&mouse_ps2_device);	
+		break;
     }
 
     return(arg);
@@ -220,5 +230,23 @@ const device_t m_cbm_sl386sx25 = {
     common_init, pccomm_close, NULL,
     NULL, NULL, NULL,
     &sl386sx25_info,
+    NULL
+};
+
+static const machine_t t486dx_info = {
+    MACHINE_ISA | MACHINE_VLB | MACHINE_AT | MACHINE_PS2 | MACHINE_HDC | MACHINE_MOUSE,
+    0,
+    1, 32, 1, 128, 0,
+    {{"Intel",cpus_i486},{"AMD",cpus_Am486},{"Cyrix",cpus_Cx486}} /* Supports only 5V CPU */
+};
+
+const device_t m_cbm_t486dx = {
+    "Commodore Tower 486DX",
+    DEVICE_ROOT,
+    85,
+    L"commodore/t486dx",
+    common_init, pccomm_close, NULL,
+    NULL, NULL, NULL,
+    &t486dx_info,
     NULL
 };

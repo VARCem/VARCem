@@ -8,13 +8,13 @@
  *
  *		Video7 VGA 1024i emulation.
  *
- * Version:	@(#)vid_ht216.c	1.0.7	2020/01/20
+ * Version:	@(#)vid_ht216.c	1.0.8	2021/10/22
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2019,2020 Fred N. van Kempen.
+ *		Copyright 2019,2021 Fred N. van Kempen.
  *		Copyright 2019 Miran Grca.
  *		Copyright 2019 Sarah Walker.
  *
@@ -114,6 +114,14 @@ typedef struct {
 
 static const video_timings_t	v7vga_timings = {VID_ISA,5,5,9,20,20,30};
 
+/*Remap address for chain-4/doubleword style layout*/
+static __inline uint32_t
+dword_remap(svga_t *svga, uint32_t in_addr)
+{
+	if (svga->packed_chain4)
+		return in_addr;
+	return ((in_addr & 0xfffc) << 2) | ((in_addr & 0x30000) >> 14) | (in_addr & ~0x3ffff);
+}
 
 static void
 ht216_remap(ht216_t *dev)
@@ -266,9 +274,9 @@ dm_write(ht216_t *dev, uint32_t addr, uint8_t cpu_dat, uint8_t cpu_dat_unexpande
 
     if (! (svga->gdcreg[6] & 1))
 	svga->fullchange = 2;
-    if (svga->chain4 || svga->fb_only) {
+    if (svga->chain4) {
 	writemask2 = 1 << (addr & 3);
-	addr &= ~3;
+	addr = dword_remap(svga, addr) & ~3;
     } else if (svga->chain2_write) {
 	writemask2 &= ~0xa;
 	if (addr & 1)
@@ -492,9 +500,10 @@ dm_extalu_write(ht216_t *dev, uint32_t addr, uint8_t cpu_dat, uint8_t bit_mask, 
     uint8_t input_a = 0, input_b = 0;
     uint8_t fg, bg;
     uint8_t output;
+    uint32_t remapped_addr = dword_remap(svga, addr);
 
     if (dev->ht_regs[0xcd] & HT_REG_CD_RMWMDE) /*RMW*/
-	input_b = svga->vram[addr];
+	input_b = svga->vram[remapped_addr];
     else
 	input_b = dev->bg_latch[addr & 7];
 
@@ -522,8 +531,8 @@ dm_extalu_write(ht216_t *dev, uint32_t addr, uint8_t cpu_dat, uint8_t bit_mask, 
     fg = extalu(dev->ht_regs[0xce] >> 4, input_a, input_b);
     bg = extalu(dev->ht_regs[0xce] & 0xf,  input_a, input_b);
     output = (fg & rop_select) | (bg & ~rop_select);
-    svga->vram[addr] = (svga->vram[addr] & ~bit_mask) | (output & bit_mask);
-    svga->changedvram[addr >> 12] = changeframecount;
+    svga->vram[addr] = (svga->vram[remapped_addr] & ~bit_mask) | (output & bit_mask);
+    svga->changedvram[remapped_addr >> 12] = changeframecount;
 }
 
 
@@ -732,7 +741,7 @@ read_common(ht216_t *dev, uint32_t addr)
 
     cycles -= video_timing_read_b;
 
-    if (svga->chain4 || svga->fb_only) {
+    if (svga->chain4) {
 	addr &= svga->decode_mask;
 	if (addr >= svga->vram_max)
 		return 0xff;
@@ -740,16 +749,16 @@ read_common(ht216_t *dev, uint32_t addr)
 	latch_addr = (addr & svga->vram_mask) & ~7;
 	if (dev->ht_regs[0xcd] & HT_REG_CD_ASTODE)
 		latch_addr += (svga->gdcreg[3] & 7);
-	dev->bg_latch[0] = svga->vram[latch_addr];
-	dev->bg_latch[1] = svga->vram[latch_addr + 1];
-	dev->bg_latch[2] = svga->vram[latch_addr + 2];
-	dev->bg_latch[3] = svga->vram[latch_addr + 3];
-	dev->bg_latch[4] = svga->vram[latch_addr + 4];
-	dev->bg_latch[5] = svga->vram[latch_addr + 5];
-	dev->bg_latch[6] = svga->vram[latch_addr + 6];
-	dev->bg_latch[7] = svga->vram[latch_addr + 7];
+	dev->bg_latch[0] = svga->vram[dword_remap(svga, latch_addr)];
+	dev->bg_latch[1] = svga->vram[dword_remap(svga, latch_addr + 1)];
+	dev->bg_latch[2] = svga->vram[dword_remap(svga, latch_addr + 2)];
+	dev->bg_latch[3] = svga->vram[dword_remap(svga, latch_addr + 3)];
+	dev->bg_latch[4] = svga->vram[dword_remap(svga, latch_addr + 4)];
+	dev->bg_latch[5] = svga->vram[dword_remap(svga, latch_addr + 5)];
+	dev->bg_latch[6] = svga->vram[dword_remap(svga, latch_addr + 6)];
+	dev->bg_latch[7] = svga->vram[dword_remap(svga, latch_addr + 7)];
 
-	return svga->vram[addr & svga->vram_mask];
+	return svga->vram[dword_remap(svga, addr) & svga->vram_mask];
     }
 
     if (svga->chain2_read) {
@@ -974,6 +983,7 @@ ht216_out(uint16_t addr, uint8_t val, priv_t priv)
 					break;
 
 				case 0xa4:
+				case 0xf8:
 					dev->clk_sel = (val >> 2) & 0xf;
 					svga->miscout = (svga->miscout & ~0xc) | ((dev->clk_sel & 3) << 2);
 					break;
@@ -982,6 +992,8 @@ ht216_out(uint16_t addr, uint8_t val, priv_t priv)
 					svga->hwcursor.ena = val & 0x80;
 					break;
 
+				case 0xc0: case 0xc1:
+					break;
 				case 0xc8:
 					if ((old ^ val) & 0x10) {
 						svga->fullchange = changeframecount;
@@ -1008,6 +1020,10 @@ ht216_out(uint16_t addr, uint8_t val, priv_t priv)
 				case 0xf9:
 					dev->read_bank_reg[0]  = (dev->read_bank_reg[0] & ~0x10) | ((val & 1) ? 0x10 : 0);
 					dev->write_bank_reg[0] = (dev->write_bank_reg[0] & ~0x10) | ((val & 1) ? 0x10 : 0);
+					break;
+
+				case 0xfc:
+					svga->packed_chain4 = !!(val & 0x20);
 					break;
 
 				case 0xff:

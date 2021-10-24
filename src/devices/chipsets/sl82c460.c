@@ -8,11 +8,11 @@
  *
  *		Implementation of the Symphony 'Haydn II' chipset (SL82C460).
  *
- * Version:	@(#)sl82c460.c	1.0.3	2021/03/18
+ * Version:	@(#)sl82c460.c	1.0.4	2021/09/12
  *
  * Authors:	Altheos, <altheos@varcem.com>
  *
- *		Copyright 2020 Altheos.
+ *		Copyright 2020-2021 Altheos.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -138,6 +138,11 @@ sl82c460_out(uint16_t port, uint8_t val, priv_t priv)
 	dev->regs[dev->reg_idx] = val;
 
 	switch (dev->reg_idx) {
+		case 0x01:
+			mem_a20_alt = val & 1;
+			mem_a20_recalc();
+			break;
+			
 		case 0X2e: case 0x2f: case 0x30: case 0x31:
 			shadow_recalc(dev);
 			break;

@@ -8,7 +8,7 @@
  *
  *		Emulation of Tandy models 1000, 1000HX and 1000SL2.
  *
- * Version:	@(#)m_tandy1000.c	1.0.26	2021/04/06
+ * Version:	@(#)m_tandy1000.c	1.0.27	2021/10/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -460,15 +460,15 @@ static const scancode_t scancode_tandy[512] = {
     {	{ 0    }, { 0    }	},
     {	{ 0x46 }, { 0xc6 }	},
     {	{ 0x47 }, { 0xc7 }	},
-    {	{ 0x48 }, { 0xc8 }	},
+    {	{ 0x29 }, { 0xa9 }	},
     {	{ 0x49 }, { 0xc9 }	},
     {	{ 0    }, { 0    }	},
-    {	{ 0x4b }, { 0xcb }	},
+    {	{ 0x2b }, { 0xab }	},
     {	{ 0    }, { 0    }	},
-    {	{ 0x4d }, { 0xcd }	},
+    {	{ 0x4e }, { 0xce }	},
     {	{ 0    }, { 0    }	},
     {	{ 0x4f }, { 0xcf }	},
-    {	{ 0x50 }, { 0xd0 }	},
+    {	{ 0x4a }, { 0xca }	},
     {	{ 0x51 }, { 0xd1 }	},
     {	{ 0x52 }, { 0xd2 }	},
     {	{ 0x53 }, { 0xd3 }	},
@@ -974,7 +974,8 @@ eep_init(UNUSED(const device_t *info), UNUSED(void *parent))
     if (fp != NULL) {
 	fread(dev->store, sizeof(dev->store), 1, fp);
 	(void)fclose(fp);
-    }
+    } else
+	memset(dev->store, 0x00, 128);
 
     io_sethandler(0x037c, 1, NULL,NULL,NULL, eep_write,NULL,NULL, dev);
 

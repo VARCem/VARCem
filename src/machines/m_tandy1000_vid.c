@@ -8,7 +8,7 @@
  *
  *		Emulation of video controllers for Tandy models.
  *
- * Version:	@(#)m_tandy1000_vid.c	1.0.7	2021/05/24
+ * Version:	@(#)m_tandy1000_vid.c	1.0.8	2021/10/20
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -71,7 +71,7 @@ typedef struct {
     int		crtcreg;
 
     int		array_index;
-    uint8_t	array[32];
+    uint8_t	array[256];
     int		memctrl;
     uint8_t	mode, col;
     uint8_t	stat;
@@ -202,6 +202,8 @@ vid_out(uint16_t addr, uint8_t val, priv_t priv)
     t1kvid_t *dev = (t1kvid_t *)priv;
     uint8_t old;
 
+    if ((addr >= 0x3d0) && (addr <= 0x3d7))
+	addr = (addr & 0xff9) | 0x004;
     switch (addr) {
 	case 0x03d0: case 0x03d2:
 	case 0x03d4: case 0x03d6:
@@ -271,6 +273,9 @@ vid_in(uint16_t addr, priv_t priv)
 {
     t1kvid_t *dev = (t1kvid_t *)priv;
     uint8_t ret = 0xff;
+
+    if ((addr >= 0x3d0) && (addr <= 0x3d7))
+	addr = (addr & 0xff9) | 0x004;
 
     switch (addr) {
 	case 0x03d4:
@@ -425,8 +430,8 @@ vid_poll(priv_t priv)
 				       dev->vram[((dev->ma << 1) & 0x1fff) + ((dev->sc & 3) * 0x2000) + 1];
 				dev->ma++;
 				for (c = 0; c < 8; c++) {
-					chr  =  (dat >>  7) & 1;
-					chr |= ((dat >> 14) & 2);
+					chr  =  (dat >>  6) & 2;
+					chr |= ((dat >> 15) & 1);
 					screen->line[dev->displine][(x << 3) + 8 + c].pal = dev->array[(chr & dev->array[1]) + 16] + 16;
 					dat <<= 1;
 				}
@@ -487,9 +492,9 @@ vid_poll(priv_t priv)
 						screen->line[dev->displine][(x << 4) + c + 8].pal ^= 15;
 				}
 			}
-		} else if (! (dev->mode& 16)) {
-			cols[0] = (dev->col & 15) | 16;
-			col = (dev->col & 16) ? 24 : 16;
+		} else if (! (dev->mode & 16)) {
+			cols[0] = (dev->col & 15);
+			col = (dev->col & 16) ? 8 : 0;
 			if (dev->mode & 4) {
 				cols[1] = col | 3;
 				cols[2] = col | 4;
@@ -503,6 +508,10 @@ vid_poll(priv_t priv)
 				cols[2] = col | 4;
 				cols[3] = col | 6;
 			}
+			cols[0] = dev->array[(cols[0] & dev->array[1]) + 16] + 16;
+			cols[1] = dev->array[(cols[1] & dev->array[1]) + 16] + 16;
+			cols[2] = dev->array[(cols[2] & dev->array[1]) + 16] + 16;
+			cols[3] = dev->array[(cols[3] & dev->array[1]) + 16] + 16;
 			for (x = 0; x < dev->crtc[1]; x++) {
 				dat = (dev->vram[((dev->ma << 1) & 0x1fff) + ((dev->sc & 1) * 0x2000)] << 8) | 
 				       dev->vram[((dev->ma << 1) & 0x1fff) + ((dev->sc & 1) * 0x2000) + 1];
@@ -765,8 +774,8 @@ vid_poll_sl(priv_t priv)
 				       dev->vram[((dev->ma << 1) & 0x1fff) + ((dev->sc & 3) * 0x2000) + 1];
 				dev->ma++;
 				for (c = 0; c < 8; c++) {
-					chr  =  (dat >>  7) & 1;
-					chr |= ((dat >> 14) & 2);
+					chr  =  (dat >>  6) & 2;
+					chr |= ((dat >> 15) & 1);
 					screen->line[dev->displine][(x << 3) + 8 + c].pal = dev->array[(chr & dev->array[1]) + 16] + 16;
 					dat <<= 1;
 				}
@@ -1081,6 +1090,9 @@ tandy1k_video_init(int type, int display_type, uint32_t base, const wchar_t *fn)
     dev->composite = (display_type != 0);
     if (dev->composite)
 	dev->cpriv = cga_comp_init(1);
+
+    cga_palette = 0;
+    video_palette_rebuild();
 
     if (dev->type == 2) {
 	dev->b8000_limit = 0x8000;
