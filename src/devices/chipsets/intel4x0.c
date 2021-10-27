@@ -8,7 +8,7 @@
  *
  *		Implementation of the Intel 430/440 PCISet chipsets.
  *
- * Version:	@(#)intel4x0.c	1.0.8	2020/01/29
+ * Version:	@(#)intel4x0.c	1.0.9	2021/10/26
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -316,16 +316,19 @@ i4x0_init(const device_t *info, UNUSED(void *parent))
 	case INTEL_440FX:
 		dev->regs[0x02] = 0x37; dev->regs[0x03] = 0x12; /*82441FX*/
 		dev->regs[0x08] = 0x02; /*A0 stepping*/
+		dev->regs[0x09] = 0x00; 
+		dev->regs[0x0a] = 0x00;
 		dev->regs[0x2c] = 0xf4;
 		dev->regs[0x2d] = 0x1a;
 		dev->regs[0x2f] = 0x11;
-		dev->regs[0x51] = 0x01;
+		dev->regs[0x51] = 0x84; /*Uniprocessor, 66 MHz bus*/
 		dev->regs[0x53] = 0x80;
 		dev->regs[0x58] = 0x10;
 		dev->regs[0x5a] = dev->regs[0x5b] = \
 				  dev->regs[0x5c] = dev->regs[0x5d] = 0x11;
 		dev->regs[0x5e] = 0x11;
 		dev->regs[0x5f] = 0x31;
+		dev->regs[0x71] = 0x10;
 		break;
     }
 
