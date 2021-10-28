@@ -8,7 +8,7 @@
  *
  *		Emulation of the 3DFX Voodoo Graphics Banshee controller.
  *
- * Version:	@(#)vid_voodoo_banshee.c	1.0.2	2021/10/11
+ * Version:	@(#)vid_voodoo_banshee.c	1.0.3	2021/10/28
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -2034,8 +2034,8 @@ banshee_overlay_draw(svga_t *svga, int displine)
 			break;
 		case VIDPROCCFG_FILTER_MODE_DITHER_4X4:
 			if (banshee->voodoo->scrfilter && banshee->voodoo->scrfilterEnabled) {
-				uint8_t fil[(svga->overlay_latch.xsize) * 3];
-				uint8_t fil3[(svga->overlay_latch.xsize) * 3];
+				uint8_t *fil = mem_alloc((svga->overlay_latch.xsize) * 3);
+				uint8_t *fil3 = mem_alloc((svga->overlay_latch.xsize) * 3);
 
 				if (banshee->vidProcCfg & VIDPROCCFG_H_SCALE_ENABLE) { /* leilei HACK - don't know of real 4x1 hscaled behavior yet, double for now */
 					for (x=0; x<svga->overlay_latch.xsize;x++) {
@@ -2086,6 +2086,8 @@ banshee_overlay_draw(svga_t *svga, int displine)
 					fil[(x)*3+2] = vb_filter_v1_rb [fil[x*3+2]] [fil3[(x+1) *3+2]];
 					priv[x].val = (fil[x*3+2] << 16) | (fil[x*3+1] << 8) | fil[x*3];
 				}
+                free(fil);
+                free(fil3);
 			} else { /* filter disabled by emulator option */
 				if (banshee->vidProcCfg & VIDPROCCFG_H_SCALE_ENABLE) {
 					for (x = 0; x < svga->overlay_latch.xsize; x++) {
@@ -2101,14 +2103,14 @@ banshee_overlay_draw(svga_t *svga, int displine)
 
 		case VIDPROCCFG_FILTER_MODE_DITHER_2X2:
 			if (banshee->voodoo->scrfilter && banshee->voodoo->scrfilterEnabled) {
-				uint8_t fil[(svga->overlay_latch.xsize) * 3];
-				uint8_t soak[(svga->overlay_latch.xsize) * 3];
-				uint8_t soak2[(svga->overlay_latch.xsize) * 3];
+				uint8_t *fil = mem_alloc((svga->overlay_latch.xsize) * 3);
+				uint8_t *soak = mem_alloc((svga->overlay_latch.xsize) * 3);
+				uint8_t *soak2 = mem_alloc ((svga->overlay_latch.xsize) * 3);
 
-				uint8_t samp1[(svga->overlay_latch.xsize) * 3];
-				uint8_t samp2[(svga->overlay_latch.xsize) * 3];
-				uint8_t samp3[(svga->overlay_latch.xsize) * 3];
-				uint8_t samp4[(svga->overlay_latch.xsize) * 3];
+				uint8_t *samp1 = mem_alloc ((svga->overlay_latch.xsize) * 3);
+				uint8_t *samp2 = mem_alloc ((svga->overlay_latch.xsize) * 3);
+				uint8_t *samp3 = mem_alloc ((svga->overlay_latch.xsize) * 3);
+				uint8_t *samp4 = mem_alloc ((svga->overlay_latch.xsize) * 3);
 
 				src = &svga->vram[src_addr2 & svga->vram_mask];
 				OVERLAY_SAMPLE(banshee->overlay_buffer[1]);
@@ -2154,6 +2156,13 @@ banshee_overlay_draw(svga_t *svga, int displine)
 						priv[x].val = (fil[x*3+2] << 16) | (fil[x*3+1] << 8) | fil[x*3];
 					}
 				}
+                free(fil);
+                free(soak);
+                free(soak2);
+                free(samp1);
+                free(samp2);
+                free(samp3);
+                free(samp4);
 			} else { /* filter disabled by emulator option */
 				if (banshee->vidProcCfg & VIDPROCCFG_H_SCALE_ENABLE) {
 					for (x = 0; x < svga->overlay_latch.xsize; x++) {
