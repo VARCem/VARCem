@@ -8,7 +8,7 @@
  *
  *		Emulation of the 3DFX Voodoo Graphics Setup.
  *
- * Version:	@(#)vid_voodoo_setup.c	1.0.1	2021/09/14
+ * Version:	@(#)vid_voodoo_setup.c	1.0.2	2021/10/29
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -116,7 +116,8 @@ void triangle_setup(voodoo_t *voodoo)
         
         area = dxAB * dyBC - dxBC * dyAB;
 
-        return;
+        if (area == 0.0)
+                return;
 
         if (voodoo->sSetupMode & SETUPMODE_CULLING_ENABLE) {
                 int cull_sign = voodoo->sSetupMode & SETUPMODE_CULLING_SIGN;
@@ -132,7 +133,7 @@ void triangle_setup(voodoo_t *voodoo)
                         return;
         }
 
-	dxAB = verts[va].sVx - verts[vb].sVx;
+	    dxAB = verts[va].sVx - verts[vb].sVx;
         dxBC = verts[vb].sVx - verts[vc].sVx;
         dyAB = verts[va].sVy - verts[vb].sVy;
         dyBC = verts[vb].sVy - verts[vc].sVy;
