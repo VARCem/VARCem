@@ -351,6 +351,7 @@ extern int		is_nec, is_rapidcad, is_cyrix, is_pentium;
 #define CPU_FEATURE_VME   (1 << 4)
 #define CPU_FEATURE_CX8   (1 << 5)
 #define CPU_FEATURE_3DNOW (1 << 6)
+#define CPU_FEATURE_SYSCALL (1 << 7)
 
 extern uint32_t cpu_features;
 

@@ -27,13 +27,13 @@
  *		As stated above, it is hoped that by re-adding these, more
  *		testing will get done so they can be 'completed' sometime.
  *
- * Version:	@(#)m_tyan.c	1.0.4	2019/05/28
+ * Version:	@(#)m_tyan.c	1.0.5	2021/10/27
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
+ *		Copyright 2017-2021 Fred N. van Kempen.
  *		Copyright 2016-2018 Miran Grca.
  *		Copyright 2008-2018 Sarah Walker.
  *
@@ -102,7 +102,7 @@ common_init(const device_t *info, void *arg)
 		m_at_common_init();
 		device_add(&keyboard_ps2_pci_device);
 
-		device_add(&fdc37c669_device);
+		device_add(&fdc37c665_device);
 		break;
 
 	/* S1668: Tyan Titan-Pro ATX/440FX/AMI/SMC FDC37C669 */
@@ -123,7 +123,7 @@ common_init(const device_t *info, void *arg)
 		m_at_common_init();
 		device_add(&keyboard_ps2_ami_pci_device);
 
-		device_add(&fdc37c665_device);
+		device_add(&fdc37c669_device);
 		break;
     }
 
