@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\cpu\codegen_timing_p6.c" />
     <ClCompile Include="..\..\devices\cdrom\cdrom_speed.c" />
     <ClCompile Include="..\..\devices\chipsets\acc2036.c" />
     <ClCompile Include="..\..\devices\chipsets\acc2168.c" />
@@ -33,10 +34,13 @@
     <ClCompile Include="..\..\devices\chipsets\scamp.c" />
     <ClCompile Include="..\..\devices\chipsets\sis471.c" />
     <ClCompile Include="..\..\devices\chipsets\sis496.c" />
+    <ClCompile Include="..\..\devices\chipsets\sl82c460.c" />
     <ClCompile Include="..\..\devices\chipsets\vl82c480.c" />
     <ClCompile Include="..\..\devices\chipsets\wd76c10.c" />
+    <ClCompile Include="..\..\devices\disk\mo.c" />
     <ClCompile Include="..\..\devices\floppy\fdc_pii15xb.c" />
     <ClCompile Include="..\..\devices\floppy\fdd_mfm.c" />
+    <ClCompile Include="..\..\devices\misc\amidisk.c" />
     <ClCompile Include="..\..\devices\misc\bugger.c" />
     <ClCompile Include="..\..\devices\cdrom\cdrom.c" />
     <ClCompile Include="..\..\devices\cdrom\cdrom_dosbox.cpp" />
@@ -54,8 +58,11 @@
     <ClCompile Include="..\..\cpu\codegen_timing_pentium.c" />
     <ClCompile Include="..\..\cpu\codegen_timing_winchip.c" />
     <ClCompile Include="..\..\cpu\codegen_timing_winchip2.c" />
-    <ClCompile Include="..\..\cpu\codegen_x86-64.c" />
-    <ClCompile Include="..\..\cpu\codegen_x86.c" />
+    <ClCompile Include="..\..\cpu\codegen_x86-64.c" Condition="'$(Platform)'=='x64'" />
+    <ClCompile Include="..\..\cpu\codegen_accumulate_x64.c" Condition="'$(Platform)'=='x64'" />
+    <ClCompile Include="..\..\cpu\codegen_x86.c" Condition="'$(Platform)'=='Win32'" />
+    <ClCompile Include="..\..\cpu\codegen_accumulate_x86.c" Condition="'$(Platform)'=='Win32'" />
+    <ClCompile Include="..\..\cpu\codegen_accumulate.h" />
     <ClCompile Include="..\..\cpu\cpu.c" />
     <ClCompile Include="..\..\cpu\cpu_table.c" />
     <ClCompile Include="..\..\cpu\x86seg.c" />
@@ -175,6 +182,9 @@
     <ClCompile Include="..\..\devices\system\apm.c" />
     <ClCompile Include="..\..\devices\system\clk.c" />
     <ClCompile Include="..\..\devices\system\dma.c" />
+    <ClCompile Include="..\..\devices\system\i2c.c" />
+    <ClCompile Include="..\..\devices\system\i2c_eeprom.c" />
+    <ClCompile Include="..\..\devices\system\i2c_gpio.c" />
     <ClCompile Include="..\..\devices\system\intel_flash.c" />
     <ClCompile Include="..\..\devices\system\intel_piix.c" />
     <ClCompile Include="..\..\devices\system\intel_sio.c" />
@@ -218,10 +228,22 @@
     <ClCompile Include="..\..\devices\video\vid_av9194.c" />
     <ClCompile Include="..\..\devices\video\vid_bt48x_ramdac.c" />
     <ClCompile Include="..\..\devices\video\vid_cga_compaq.c" />
+    <ClCompile Include="..\..\devices\video\vid_ddc.c" />
     <ClCompile Include="..\..\devices\video\vid_ht216.c" />
     <ClCompile Include="..\..\devices\video\vid_im1024.c" />
     <ClCompile Include="..\..\devices\video\vid_pgc.c" />
+    <ClCompile Include="..\..\devices\video\vid_sc1148x_ramdac.c" />
     <ClCompile Include="..\..\devices\video\vid_sigma.c" />
+    <ClCompile Include="..\..\devices\video\vid_voodoo_banshee.c" />
+    <ClCompile Include="..\..\devices\video\vid_voodoo_banshee_blitter.c" />
+    <ClCompile Include="..\..\devices\video\vid_voodoo_blitter.c" />
+    <ClCompile Include="..\..\devices\video\vid_voodoo_display.c" />
+    <ClCompile Include="..\..\devices\video\vid_voodoo_fb.c" />
+    <ClCompile Include="..\..\devices\video\vid_voodoo_fifo.c" />
+    <ClCompile Include="..\..\devices\video\vid_voodoo_reg.c" />
+    <ClCompile Include="..\..\devices\video\vid_voodoo_render.c" />
+    <ClCompile Include="..\..\devices\video\vid_voodoo_setup.c" />
+    <ClCompile Include="..\..\devices\video\vid_voodoo_texture.c" />
     <ClCompile Include="..\..\io.c" />
     <ClCompile Include="..\..\machines\machine.c" />
     <ClCompile Include="..\..\machines\machine_table.c" />
@@ -238,6 +260,7 @@
     <ClCompile Include="..\..\machines\m_compaq_vid.c" />
     <ClCompile Include="..\..\machines\m_europc.c" />
     <ClCompile Include="..\..\machines\m_headland.c" />
+    <ClCompile Include="..\..\machines\m_hp.c" />
     <ClCompile Include="..\..\machines\m_intel4x0.c" />
     <ClCompile Include="..\..\machines\m_laserxt.c" />
     <ClCompile Include="..\..\machines\m_misc.c" />
@@ -255,8 +278,10 @@
     <ClCompile Include="..\..\machines\m_scat.c" />
     <ClCompile Include="..\..\machines\m_sis471.c" />
     <ClCompile Include="..\..\machines\m_sis496.c" />
+    <ClCompile Include="..\..\machines\m_sl82c460.c" />
     <ClCompile Include="..\..\machines\m_tandy1000.c" />
     <ClCompile Include="..\..\machines\m_tandy1000_vid.c" />
+    <ClCompile Include="..\..\machines\m_thomson.c" />
     <ClCompile Include="..\..\machines\m_tosh1x00.c" />
     <ClCompile Include="..\..\machines\m_tosh1x00_vid.c" />
     <ClCompile Include="..\..\machines\m_tosh3100e.c" />
@@ -272,7 +297,9 @@
     <ClCompile Include="..\..\devices\network\net_ne2000.c" />
     <ClCompile Include="..\..\devices\network\net_pcap.c" />
     <ClCompile Include="..\..\devices\network\net_slirp.c" />
-    <ClCompile Include="..\..\misc.c" />
+    <ClCompile Include="..\..\misc\misc.c" />
+    <ClCompile Include="..\..\misc\png.c" />
+    <ClCompile Include="..\..\misc\random.c" />
     <ClCompile Include="..\..\nvr.c" />
     <ClCompile Include="..\..\pc.c" />
     <ClCompile Include="..\..\devices\ports\game.c" />
@@ -280,8 +307,6 @@
     <ClCompile Include="..\..\devices\ports\parallel.c" />
     <ClCompile Include="..\..\devices\ports\parallel_dev.c" />
     <ClCompile Include="..\..\devices\ports\serial.c" />
-    <ClCompile Include="..\..\png.c" />
-    <ClCompile Include="..\..\random.c" />
     <ClCompile Include="..\..\rom.c" />
     <ClCompile Include="..\..\rom_load.c" />
     <ClCompile Include="..\..\..\external\munt\src\c_interface\c_interface.cpp" />
@@ -339,16 +364,16 @@
     <ClCompile Include="..\..\win\win_devconf.c" />
     <ClCompile Include="..\..\win\win_dialog.c" />
     <ClCompile Include="..\..\win\win_dynld.c" />
-    <ClCompile Include="..\..\win\win_joystick.cpp" />
     <ClCompile Include="..\..\win\win_keyboard.c" />
     <ClCompile Include="..\..\win\win_midi.c" />
-    <ClCompile Include="..\..\win\win_mouse.cpp" />
     <ClCompile Include="..\..\win\win_opendir.c" />
     <ClCompile Include="..\..\win\win_settings.c" />
     <ClCompile Include="..\..\win\win_snd_gain.c" />
     <ClCompile Include="..\..\win\win_thread.c" />
     <ClCompile Include="..\..\win\win_ui.c" />
+    <ClCompile Include="..\win_joystick.c" />
     <ClCompile Include="..\win_lang.c" />
+    <ClCompile Include="..\win_mouse.c" />
     <ClCompile Include="..\win_new_image.c" />
     <ClCompile Include="..\win_sdl.c" />
   </ItemGroup>
@@ -366,10 +391,13 @@
     <ClInclude Include="..\..\devices\chipsets\scamp.h" />
     <ClInclude Include="..\..\devices\chipsets\sis471.h" />
     <ClInclude Include="..\..\devices\chipsets\sis496.h" />
+    <ClInclude Include="..\..\devices\chipsets\sl82c460.h" />
     <ClInclude Include="..\..\devices\chipsets\vl82c480.h" />
     <ClInclude Include="..\..\devices\chipsets\wd76c10.h" />
+    <ClInclude Include="..\..\devices\disk\mo.h" />
     <ClInclude Include="..\..\devices\floppy\fdc_pii15xb.h" />
     <ClInclude Include="..\..\devices\floppy\fdd_mfm.h" />
+    <ClInclude Include="..\..\devices\misc\amidisk.h" />
     <ClInclude Include="..\..\devices\misc\bugger.h" />
     <ClInclude Include="..\..\devices\cdrom\cdrom.h" />
     <ClInclude Include="..\..\devices\cdrom\cdrom_dosbox.h" />
@@ -389,12 +417,12 @@
     <ClInclude Include="..\..\cpu\codegen_ops_mov.h" />
     <ClInclude Include="..\..\cpu\codegen_ops_shift.h" />
     <ClInclude Include="..\..\cpu\codegen_ops_stack.h" />
-    <ClInclude Include="..\..\cpu\codegen_ops_x86-64.h" />
-    <ClInclude Include="..\..\cpu\codegen_ops_x86.h" />
+    <ClInclude Include="..\..\cpu\codegen_ops_x86-64.h" Condition="'$(Platform)'=='x64'" />
+    <ClInclude Include="..\..\cpu\codegen_ops_x86.h" Condition="'$(Platform)'=='Win32'" />
     <ClInclude Include="..\..\cpu\codegen_ops_xchg.h" />
     <ClInclude Include="..\..\cpu\codegen_timing_common.h" />
-    <ClInclude Include="..\..\cpu\codegen_x86-64.h" />
-    <ClInclude Include="..\..\cpu\codegen_x86.h" />
+    <ClInclude Include="..\..\cpu\codegen_x86-64.h" Condition="'$(Platform)'=='x64'" />
+    <ClInclude Include="..\..\cpu\codegen_x86.h" Condition="'$(Platform)'=='Win32'" />
     <ClInclude Include="..\..\cpu\cpu.h" />
     <ClInclude Include="..\..\cpu\x86.h" />
     <ClInclude Include="..\..\cpu\x86seg.h" />
@@ -520,6 +548,7 @@
     <ClInclude Include="..\..\devices\sound\sound.h" />
     <ClInclude Include="..\..\devices\system\clk.h" />
     <ClInclude Include="..\..\devices\system\dma.h" />
+    <ClInclude Include="..\..\devices\system\i2c.h" />
     <ClInclude Include="..\..\devices\system\intel_flash.h" />
     <ClInclude Include="..\..\devices\system\intel_piix.h" />
     <ClInclude Include="..\..\devices\system\intel_sio.h" />
@@ -536,8 +565,22 @@
     <ClInclude Include="..\..\devices\video\vid_att20c49x_ramdac.h" />
     <ClInclude Include="..\..\devices\video\vid_av9194.h" />
     <ClInclude Include="..\..\devices\video\vid_bt48x_ramdac.h" />
+    <ClInclude Include="..\..\devices\video\vid_ddc.h" />
     <ClInclude Include="..\..\devices\video\vid_mda.h" />
     <ClInclude Include="..\..\devices\video\vid_pgc.h" />
+    <ClInclude Include="..\..\devices\video\vid_sc1148x_ramdac.h" />
+    <ClInclude Include="..\..\devices\video\vid_voodoo_banshee.h" />
+    <ClInclude Include="..\..\devices\video\vid_voodoo_banshee_blitter.h" />
+    <ClInclude Include="..\..\devices\video\vid_voodoo_blitter.h" />
+    <ClInclude Include="..\..\devices\video\vid_voodoo_common.h" />
+    <ClInclude Include="..\..\devices\video\vid_voodoo_display.h" />
+    <ClInclude Include="..\..\devices\video\vid_voodoo_fb.h" />
+    <ClInclude Include="..\..\devices\video\vid_voodoo_fifo.h" />
+    <ClInclude Include="..\..\devices\video\vid_voodoo_reg.h" />
+    <ClInclude Include="..\..\devices\video\vid_voodoo_regs.h" />
+    <ClInclude Include="..\..\devices\video\vid_voodoo_render.h" />
+    <ClInclude Include="..\..\devices\video\vid_voodoo_setup.h" />
+    <ClInclude Include="..\..\devices\video\vid_voodoo_texture.h" />
     <ClInclude Include="..\..\emu.h" />
     <ClInclude Include="..\..\devices\floppy\fdc.h" />
     <ClInclude Include="..\..\devices\floppy\fdd.h" />
@@ -569,6 +612,8 @@
     <ClInclude Include="..\..\devices\network\bswap.h" />
     <ClInclude Include="..\..\devices\network\network.h" />
     <ClInclude Include="..\..\devices\network\net_ne2000.h" />
+    <ClInclude Include="..\..\misc\png.h" />
+    <ClInclude Include="..\..\misc\random.h" />
     <ClInclude Include="..\..\nvr.h" />
     <ClInclude Include="..\..\plat.h" />
     <ClInclude Include="..\..\devices\ports\game.h" />
@@ -576,8 +621,6 @@
     <ClInclude Include="..\..\devices\ports\parallel.h" />
     <ClInclude Include="..\..\devices\ports\parallel_dev.h" />
     <ClInclude Include="..\..\devices\ports\serial.h" />
-    <ClInclude Include="..\..\png.h" />
-    <ClInclude Include="..\..\random.h" />
     <ClInclude Include="..\..\rom.h" />
     <ClInclude Include="..\..\..\external\munt\include\c_interface\c_interface.h" />
     <ClInclude Include="..\..\..\external\munt\include\c_interface\c_types.h" />
@@ -601,8 +644,8 @@
     <ClInclude Include="..\..\devices\video\vid_svga.h" />
     <ClInclude Include="..\..\devices\video\vid_svga_render.h" />
     <ClInclude Include="..\..\devices\video\vid_tkd8001_ramdac.h" />
-    <ClInclude Include="..\..\devices\video\vid_voodoo_codegen_x86-64.h" />
-    <ClInclude Include="..\..\devices\video\vid_voodoo_codegen_x86.h" />
+    <ClInclude Include="..\..\devices\video\vid_voodoo_codegen_x86-64.h" Condition="'$(Platform)'=='x64'" />
+    <ClInclude Include="..\..\devices\video\vid_voodoo_codegen_x86.h" Condition="'$(Platform)'=='Win32'" />
     <ClInclude Include="..\..\devices\video\vid_voodoo_dither.h" />
     <ClInclude Include="..\..\win\resource.h" />
     <ClInclude Include="..\..\win\win.h" />
@@ -622,9 +665,13 @@
   <ItemGroup>
     <ResourceCompile Include="..\VARCem.rc">
       <ShowProgress Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ShowProgress>
+      <ShowProgress Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ShowProgress>
       <ShowProgress Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ShowProgress>
+      <ShowProgress Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ShowProgress>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">_MSC_VER</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">_MSC_VER</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">_MSC_VER</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">_MSC_VER</PreprocessorDefinitions>
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
@@ -716,18 +763,21 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <LibraryPath>$(ProjectDir)\..\Lib\x64;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
+    <LibraryPath>$(ProjectDir)\..\Lib\x64;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(DXSDK_DIR)Lib\x64</LibraryPath>
     <GenerateManifest>false</GenerateManifest>
+    <IncludePath>$(INCLUDE);$(IncludePath);$(DXSDK_DIR)Include</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <LibraryPath>$(ProjectDir)\..\Lib\x86;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86)</LibraryPath>
+    <LibraryPath>$(ProjectDir)\..\Lib\x86;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);$(DXSDK_DIR)Lib\x86</LibraryPath>
     <GenerateManifest>false</GenerateManifest>
+    <IncludePath>$(INCLUDE);$(IncludePath);$(DXSDK_DIR)Include</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <LibraryPath>$(ProjectDir)\..\Lib\x64;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
+    <LibraryPath>$(ProjectDir)\..\Lib\x64;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(DXSDK_DIR)Lib\x64</LibraryPath>
     <GenerateManifest>false</GenerateManifest>
+    <IncludePath>$(INCLUDE);$(IncludePath);$(DXSDK_DIR)Include</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -741,7 +791,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
-      <AdditionalDependencies>winmm.lib;ws2_32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;iphlpapi.lib;psapi.lib;Comctl32.lib;DInput8.lib;d3d9.lib;d3dx9.lib;ddraw.lib;dxguid.lib;version.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>winmm.lib;ws2_32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;iphlpapi.lib;psapi.lib;Comctl32.lib;DInput8.lib;d3d9.lib;d3dx9.lib;ddraw.lib;dxguid.lib;version.lib;hid.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <MinimumRequiredVersion>5.01</MinimumRequiredVersion>
     </Link>
     <ResourceCompile>
@@ -756,11 +806,12 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..\..\external\freetype\include;..\..\..\external\fluidsynth\include;..\..\..\external\munt\include;..\..\..\external\munt\include\c_interface;..\..\..\external\munt\src\srchelper\srctools\include;..\..\..\external\openal\include;..\..\..\external\pcap\include;..\..\..\external\png\include;..\..\..\external\resid\include;..\..\..\external\sdl\include;..\..\..\external\slirp\include;..\..\..\external\vnc\include;..\..\..\external\zlib\include;..\..\..\external\libchdr;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
-      <AdditionalDependencies>winmm.lib;ws2_32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;iphlpapi.lib;psapi.lib;Comctl32.lib;DInput8.lib;d3d9.lib;d3dx9.lib;ddraw.lib;dxguid.lib;version.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>winmm.lib;ws2_32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;iphlpapi.lib;psapi.lib;Comctl32.lib;DInput8.lib;d3d9.lib;d3dx9.lib;ddraw.lib;dxguid.lib;version.lib;hid.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <MinimumRequiredVersion>5.01</MinimumRequiredVersion>
     </Link>
     <ResourceCompile>
@@ -776,13 +827,14 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..\..\external\freetype\include;..\..\..\external\fluidsynth\include;..\..\..\external\munt\include;..\..\..\external\munt\include\c_interface;..\..\..\external\munt\src\srchelper\srctools\include;..\..\..\external\openal\include;..\..\..\external\pcap\include;..\..\..\external\png\include;..\..\..\external\resid\include;..\..\..\external\sdl\include;..\..\..\external\slirp\include;..\..\..\external\vnc\include;..\..\..\external\zlib\include;..\..\..\external\libchdr;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
-      <AdditionalDependencies>winmm.lib;ws2_32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;iphlpapi.lib;psapi.lib;Comctl32.lib;DInput8.lib;d3d9.lib;d3dx9.lib;ddraw.lib;dxguid.lib;version.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>winmm.lib;ws2_32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;iphlpapi.lib;psapi.lib;Comctl32.lib;DInput8.lib;d3d9.lib;d3dx9.lib;ddraw.lib;dxguid.lib;version.lib;hid.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <MinimumRequiredVersion>5.01</MinimumRequiredVersion>
     </Link>
     <ResourceCompile>
@@ -799,13 +851,14 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..\..\external\freetype\include;..\..\..\external\fluidsynth\include;..\..\..\external\munt\include;..\..\..\external\munt\include\c_interface;..\..\..\external\munt\src\srchelper\srctools\include;..\..\..\external\openal\include;..\..\..\external\pcap\include;..\..\..\external\png\include;..\..\..\external\resid\include;..\..\..\external\sdl\include;..\..\..\external\slirp\include;..\..\..\external\vnc\include;..\..\..\external\zlib\include;..\..\..\external\libchdr;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
-      <AdditionalDependencies>winmm.lib;ws2_32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;iphlpapi.lib;psapi.lib;Comctl32.lib;DInput8.lib;d3d9.lib;d3dx9.lib;ddraw.lib;dxguid.lib;version.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>winmm.lib;ws2_32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;iphlpapi.lib;psapi.lib;Comctl32.lib;DInput8.lib;d3d9.lib;d3dx9.lib;ddraw.lib;dxguid.lib;version.lib;hid.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <MinimumRequiredVersion>5.01</MinimumRequiredVersion>
     </Link>
     <ResourceCompile>
