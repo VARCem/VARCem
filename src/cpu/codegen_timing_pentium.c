@@ -20,7 +20,7 @@
  *		  - PMMX decode queue
  *		  - MMX latencies
  *
- * Version:	@(#)codegen_timing_pentium.c	1.0.5	2020/12/15
+ * Version:	@(#)codegen_timing_pentium.c	1.0.6	2021/11/02
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1122,7 +1122,7 @@ static void codegen_instruction(const uint64_t *timings, uint64_t *deps, uint8_t
         }
 }
 
-static void codegen_timing_pentium_opcode(uint8_t opcode, uint32_t fetchdat, int op_32)
+static void codegen_timing_pentium_opcode(uint8_t opcode, uint32_t fetchdat, int op_32, uint32_t op_pc)
 {
         const uint64_t *timings;
         uint64_t *deps;
@@ -1364,5 +1364,6 @@ codegen_timing_t codegen_timing_pentium =
         codegen_timing_pentium_prefix,
         codegen_timing_pentium_opcode,
         codegen_timing_pentium_block_start,
-        codegen_timing_pentium_block_end
+        codegen_timing_pentium_block_end,
+        NULL
 };

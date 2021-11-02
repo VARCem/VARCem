@@ -8,7 +8,7 @@
 #
 #		Makefile for Windows systems using the MinGW32 environment.
 #
-# Version:	@(#)Makefile.minGW	1.0.108	2021/09/18
+# Version:	@(#)Makefile.minGW	1.0.109	2021/10/30
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
@@ -241,6 +241,8 @@ endif
 ifeq ($(X64), y)
  ifeq ($(OPTIM), y)
   DFLAGS	:= -march=native
+ else
+  DFLAGS	:= -march=x86-64
  endif
 endif
 
@@ -304,11 +306,11 @@ ifeq ($(RELEASE), y)
  RFLAGS		+= -DRELEASE_BUILD
 endif
 ifeq ($(X64), y)
- PLATCG		:= codegen_x86-64.o
+ PLATCG		:= codegen_x86-64.o codegen_accumulate_x64.o
  CGOPS		:= codegen_ops_x86-64.h
  VCG		:= vid_voodoo_codegen_x86-64.h
 else
- PLATCG		:= codegen_x86.o
+ PLATCG		:= codegen_x86.o codegen_accumulate_x86.o
  CGOPS		:= codegen_ops_x86.h
  VCG		:= vid_voodoo_codegen_x86.h
 endif
@@ -339,7 +341,9 @@ ifeq ($(DYNAREC), y)
 		    codegen_ops.o \
 		    codegen_timing_common.o codegen_timing_486.o \
 		    codegen_timing_686.o codegen_timing_pentium.o \
-		    codegen_timing_winchip.o codegen_timing_winchip2.o $(PLATCG)
+		    codegen_timing_p6.o \
+		    codegen_timing_winchip.o codegen_timing_winchip2.o \
+		    $(PLATCG)
 endif
 
 # SLiRP: N=no, Y=yes,linked, D=yes,dynamic, S=yes,static (always dynamic)

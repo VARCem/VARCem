@@ -8,7 +8,7 @@
  *
  *		Miscellaneous x86 CPU Instructions.
  *
- * Version:	@(#)x86_ops_flag.h	1.0.2	2020/12/04
+ * Version:	@(#)x86_ops_flag.h	1.0.3	2021/11/02
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -122,7 +122,9 @@ static int opSTI(uint32_t fetchdat)
         else
                 cpu_state.flags |= I_FLAG;
 
-        CPU_BLOCK_END();
+        /*First instruction after STI will always execute, regardless of whether
+          there is a pending interrupt*/
+        cpu_end_block_after_ins = 2;
                                 
         CLOCK_CYCLES(2);
         PREFETCH_RUN(2, 1, -1, 0,0,0,0, 0);

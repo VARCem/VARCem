@@ -6,7 +6,7 @@
  *
  *		This file is part of the VARCem Project.
  *
- *		Instruction timing for 686-class processors.
+ *		Instruction timing for Cyrix 6x86 processors.
  *
  *		Elements taken into account :
  *		  - X/Y pairing
@@ -19,12 +19,12 @@
  *		  - FPU queue
  *		  - Out of order execution (beyond most simplistic approxx)
  *
- * Version:	@(#)codegen_timing_686.c	1.0.2	2018/09/19
+ * Version:	@(#)codegen_timing_686.c	1.0.3	2021/11/02
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2008-2018 Sarah Walker.
+ *		Copyright 2008-2020 Sarah Walker.
  *		Copyright 2016-2018 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -870,7 +870,7 @@ static int check_agi(uint64_t *deps, uint8_t opcode, uint32_t fetchdat, int op_3
 }
 
 
-void codegen_timing_686_opcode(uint8_t opcode, uint32_t fetchdat, int op_32)
+void codegen_timing_686_opcode(uint8_t opcode, uint32_t fetchdat, int op_32, uint32_t op_pc)
 {
         const uint32_t *timings;
         uint64_t *deps;
@@ -1098,5 +1098,6 @@ codegen_timing_t codegen_timing_686 =
         codegen_timing_686_prefix,
         codegen_timing_686_opcode,
         codegen_timing_686_block_start,
-        codegen_timing_686_block_end
+        codegen_timing_686_block_end,
+        NULL
 };

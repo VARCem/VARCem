@@ -8,12 +8,12 @@
  *
  *		Dynamic Recompiler for Intel x64 systems.
  *
- * Version:	@(#)codegen_x86-64.c	1.0.4	2020/11/24
+ * Version:	@(#)codegen_x86-64.c	1.0.5	2021/11/02
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2008-2020 Sarah Walker.
+ *		Copyright 2008-2021 Sarah Walker.
  *		Copyright 2016-2018 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -51,6 +51,7 @@
 #include "386_common.h"
 
 #include "codegen.h"
+#include "codegen_accumulate.h"
 #include "codegen_ops.h"
 #include "codegen_ops_x86-64.h"
 
@@ -514,20 +515,9 @@ void codegen_block_end_recompile(codeblock_t *block)
 {
         codegen_timing_block_end();
 
-        if (codegen_block_cycles)
-        {
-                addbyte(0x81); /*SUB $codegen_block_cycles, cyclcs*/
-                addbyte(0x6d);
-                addbyte((uint8_t)cpu_state_offset(_cycles));
-                addlong((uint32_t)codegen_block_cycles);
-        }
-        if (codegen_block_ins)
-        {
-                addbyte(0x81); /*ADD $codegen_block_ins,ins*/
-                addbyte(0x45);
-                addbyte((uint8_t)cpu_state_offset(cpu_recomp_ins));
-                addlong(codegen_block_ins);
-        }
+        codegen_accumulate(ACCREG_cycles, -codegen_block_cycles);
+
+        codegen_accumulate_flush();
 #if 0
         if (codegen_block_full_ins)
         {
@@ -596,7 +586,7 @@ static int opcode_modrm[256] =
 int opcode_0f_modrm[256] =
 {
         1, 1, 1, 1,  0, 0, 0, 0,  0, 0, 0, 0,  0, 1, 0, 1, /*00*/
-        0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*10*/
+        0, 0, 0, 0,  0, 0, 0, 0,  1, 1, 1, 1,  1, 1, 1, 1, /*10*/
         1, 1, 1, 1,  1, 1, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*20*/
         0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*30*/
 
@@ -1114,44 +1104,42 @@ void codegen_generate_call(uint8_t opcode, OpFn op, uint32_t fetchdat, uint32_t 
         }
         
 generate_call:
-        codegen_timing_opcode(opcode, fetchdat, op_32);
+        codegen_timing_opcode(opcode, fetchdat, op_32, op_pc);
         
-        if ((op_table == x86_dynarec_opcodes &&
+        codegen_accumulate(ACCREG_cycles, -codegen_block_cycles);
+        codegen_block_cycles = 0;
+
+	if ((op_table == x86_dynarec_opcodes &&
               ((opcode & 0xf0) == 0x70 || (opcode & 0xfc) == 0xe0 || opcode == 0xc2 ||
               (opcode & 0xfe) == 0xca || (opcode & 0xfc) == 0xcc || (opcode & 0xfc) == 0xe8 ||
               (opcode == 0xff && ((fetchdat & 0x38) >= 0x10 && (fetchdat & 0x38) < 0x30)))) ||
             (op_table == x86_dynarec_opcodes_0f && ((opcode & 0xf0) == 0x80)))
         {
-                /*Opcode is likely to cause block to exit, update cycle count*/
-                if (codegen_block_cycles)
-                {
-                        addbyte(0x81); /*SUB $codegen_block_cycles, cyclcs*/
-                        addbyte(0x6d);
-                        addbyte((uint8_t)cpu_state_offset(_cycles));
-                        addlong((uint32_t)codegen_block_cycles);
-                        codegen_block_cycles = 0;
-                }
-                if (codegen_block_ins)
-                {
-                        addbyte(0x81); /*ADD $codegen_block_ins,ins*/
-                        addbyte(0x45);
-                        addbyte((uint8_t)cpu_state_offset(cpu_recomp_ins));
-                        addlong(codegen_block_ins);
-                        codegen_block_ins = 0;
-                }
+              /*On some CPUs (eg K6), a jump/branch instruction may be able to pair with
+                  subsequent instructions, so no cycles may have been deducted for it yet.
+                  To prevent having zero cycle blocks (eg with a jump instruction pointing
+                  to itself), apply the cycles that would be taken if this jump is taken,
+                  then reverse it for subsequent instructions if the jump is not taken*/
+                int jump_cycles = 0;
+
+                if (codegen_timing_jump_cycles != NULL)
+                        jump_cycles = codegen_timing_jump_cycles();
+                
+                if (jump_cycles)
+                        codegen_accumulate(ACCREG_cycles, -jump_cycles);
+                codegen_accumulate_flush();
+                if (jump_cycles)
+                        codegen_accumulate(ACCREG_cycles, jump_cycles);
         }
 
-        if ((op_table == x86_dynarec_opcodes_REPNE || op_table == x86_dynarec_opcodes_REPE) && !op_table[opcode | op_32])
-        {
+        if ((op_table == x86_dynarec_opcodes_REPNE || op_table == x86_dynarec_opcodes_REPE) && !op_table[opcode | op_32]) {
                 op_table = x86_dynarec_opcodes;
                 recomp_op_table = recomp_opcodes;
         }
 
-        if (recomp_op_table && recomp_op_table[(opcode | op_32) & 0x1ff])
-        {
+        if (recomp_op_table && recomp_op_table[(opcode | op_32) & 0x1ff]) {
                 uint32_t new_pc = recomp_op_table[(opcode | op_32) & 0x1ff](opcode, fetchdat, op_32, op_pc, block);
-                if (new_pc)
-                {
+                if (new_pc) {
                         if (new_pc != -1)
                                 STORE_IMM_ADDR_L((uintptr_t)&cpu_state.pc, new_pc);
 
@@ -1200,14 +1188,14 @@ generate_call:
                 op_pc -= pc_off;
         }
 
-        if (op_ea_seg != last_ea_seg)
-        {
+        if (op_ea_seg != last_ea_seg) {
                 addbyte(0xC7); /*MOVL $&_ds,(ea_seg)*/
                 addbyte(0x45);
                 addbyte((uint8_t)cpu_state_offset(ea_seg));
                 addlong((uint32_t)(uintptr_t)op_ea_seg);
         }
 
+        codegen_accumulate_flush();
 
         addbyte(0xC7); /*MOVL [pc],new_pc*/
         addbyte(0x45);

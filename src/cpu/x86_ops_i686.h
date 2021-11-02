@@ -8,7 +8,7 @@
  *
  *		x86 i686 (Pentium Pro/Pentium II) CPU Instructions.
  *
- * Version:	@(#)x86_ops_i686.h	1.0.3	2020/12/05
+ * Version:	@(#)x86_ops_i686.h	1.0.4	2021/11/02
  *
  * Author:	Miran Grca, <mgrca8@gmail.com>
  *
@@ -536,4 +536,15 @@ static int opFXSAVESTOR_a32(uint32_t fetchdat)
 	}
 
 	return cpu_state.abrt;
+}
+
+static int opHINTNOP_a16(uint32_t fetchdat)
+{
+    fetch_ea_16(fetchdat);
+    return 0;
+}
+static int opHINTNOP_a32(uint32_t fetchdat)
+{
+    fetch_ea_32(fetchdat);
+    return 0;
 }

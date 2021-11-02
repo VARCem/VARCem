@@ -8,7 +8,7 @@
  *
  *		CPU type handler.
  *
- * Version:	@(#)cpu.c	1.0.18	2021/10/26
+ * Version:	@(#)cpu.c	1.0.19	2021/11/02
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -459,6 +459,7 @@ cpu_activate(void)
 
     timing_misaligned = 0;
     cpu_cyrix_alignment = 0;
+    cpu_CR4_mask = 0;
 
     switch (cpu->type) {
 	case CPU_8088:
@@ -1304,7 +1305,7 @@ cpu_activate(void)
 		msr.fcr = (1 << 8) | (1 << 9) | (1 << 12) |  (1 << 16) | (1 << 19) | (1 << 21);
 		cpu_CR4_mask = CR4_VME | CR4_PVI | CR4_TSD | CR4_DE | CR4_PSE | CR4_MCE | CR4_PCE;
 #ifdef USE_DYNAREC
- 		codegen_timing_set(&codegen_timing_686);
+ 		codegen_timing_set(&codegen_timing_p6);
 #endif
 		break;
 
@@ -1329,20 +1330,39 @@ cpu_activate(void)
 		x86_opcodes_df_a32 = ops_fpu_686_df_a32;
 
 		timing_rr  = 1; /*register dest - register src*/
-		timing_rm  = 1; /*register dest - memory src*/
-		timing_mr  = 1; /*memory dest   - register src*/
-		timing_mm  = 1;
-		timing_rml = 1; /*register dest - memory src long*/
-		timing_mrl = 1; /*memory dest   - register src long*/
-		timing_mml = 1;
+		timing_rm  = 2; /*register dest - memory src*/
+		timing_mr  = 3; /*memory dest   - register src*/
+		timing_mm  = 3;
+		timing_rml = 2; /*register dest - memory src long*/
+		timing_mrl = 3; /*memory dest   - register src long*/
+		timing_mml = 3;
 		timing_bt  = 0; /*branch taken*/
-		timing_bnt = 1; /*branch not taken*/
+		timing_bnt = 2; /*branch not taken*/
+		timing_int = 6;
+		timing_int_rm = 11;
+		timing_int_v86 = 54;
+		timing_int_pm = 25;
+		timing_int_pm_outer = 42;
+		timing_iret_rm = 7;
+		timing_iret_v86 = 27; /*unknown*/
+		timing_iret_pm = 10;
+		timing_iret_pm_outer = 27;
+		timing_call_rm = 4;
+		timing_call_pm = 4;
+		timing_call_pm_gate = 22;
+		timing_call_pm_gate_inner = 44;
+		timing_retf_rm = 4;
+		timing_retf_pm = 4;
+		timing_retf_pm_outer = 23;
+		timing_jmp_rm = 3;
+		timing_jmp_pm = 3;
+		timing_jmp_pm_gate = 18;
 		timing_misaligned = 3;
-		cpu_features = CPU_FEATURE_RDTSC | CPU_FEATURE_MSR | CPU_FEATURE_CR4 | CPU_FEATURE_VME | CPU_FEATURE_MMX | CPU_FEATURE_SYSCALL;
+		cpu_features = CPU_FEATURE_RDTSC | CPU_FEATURE_MSR | CPU_FEATURE_CR4 | CPU_FEATURE_VME | CPU_FEATURE_CX8 | CPU_FEATURE_MMX | CPU_FEATURE_SYSCALL;
 		msr.fcr = (1 << 8) | (1 << 9) | (1 << 12) |  (1 << 16) | (1 << 19) | (1 << 21);
 		cpu_CR4_mask = CR4_VME | CR4_PVI | CR4_TSD | CR4_DE | CR4_PSE | CR4_MCE | CR4_PCE;
 #ifdef USE_DYNAREC
- 		codegen_timing_set(&codegen_timing_686);
+ 		codegen_timing_set(&codegen_timing_p6);
 #endif
 		break;
 #endif
@@ -1367,20 +1387,38 @@ cpu_activate(void)
 		x86_opcodes_df_a32 = ops_fpu_686_df_a32;
 
 		timing_rr  = 1; /*register dest - register src*/
-		timing_rm  = 1; /*register dest - memory src*/
-		timing_mr  = 1; /*memory dest   - register src*/
-		timing_mm  = 1;
-		timing_rml = 1; /*register dest - memory src long*/
-		timing_mrl = 1; /*memory dest   - register src long*/
-		timing_mml = 1;
+		timing_rm  = 2; /*register dest - memory src*/
+		timing_mr  = 3; /*memory dest   - register src*/
+		timing_mm  = 3;
+		timing_rml = 2; /*register dest - memory src long*/
+		timing_mrl = 3; /*memory dest   - register src long*/
+		timing_mml = 3;
 		timing_bt  = 0; /*branch taken*/
-		timing_bnt = 1; /*branch not taken*/
-		timing_misaligned = 3;
-		cpu_features = CPU_FEATURE_RDTSC | CPU_FEATURE_MSR | CPU_FEATURE_CR4 | CPU_FEATURE_VME | CPU_FEATURE_MMX;
+		timing_bnt = 2; /*branch not taken*/
+		timing_int = 6;
+		timing_int_rm = 11;
+		timing_int_v86 = 54;
+		timing_int_pm = 25;
+		timing_int_pm_outer = 42;
+		timing_iret_rm = 7;
+		timing_iret_v86 = 27; /*unknown*/
+		timing_iret_pm = 10;
+		timing_iret_pm_outer = 27;
+		timing_call_rm = 4;
+		timing_call_pm = 4;
+		timing_call_pm_gate = 22;
+		timing_call_pm_gate_inner = 44;
+		timing_retf_rm = 4;
+		timing_retf_pm = 4;
+		timing_retf_pm_outer = 23;
+		timing_jmp_rm = 3;
+		timing_jmp_pm = 3;
+		timing_jmp_pm_gate = 18;
+		cpu_features = CPU_FEATURE_RDTSC | CPU_FEATURE_MSR | CPU_FEATURE_CR4 | CPU_FEATURE_VME | CPU_FEATURE_CX8 | CPU_FEATURE_MMX | CPU_FEATURE_SYSCALL;
 		msr.fcr = (1 << 8) | (1 << 9) | (1 << 12) |  (1 << 16) | (1 << 19) | (1 << 21);
 		cpu_CR4_mask = CR4_VME | CR4_PVI | CR4_TSD | CR4_DE | CR4_PSE | CR4_MCE | CR4_PCE | CR4_OSFXSR;
 #ifdef USE_DYNAREC
-  		codegen_timing_set(&codegen_timing_686);
+  		codegen_timing_set(&codegen_timing_p6);
 #endif
 		break;
 
@@ -1473,6 +1511,9 @@ int
 cpu_set_speed(int new_speed)
 {
     int old_speed = cpu_effective;
+
+    /* Cycles counting */
+    acycs = 0;
 
     if (cpu_effective == new_speed)
 	return(old_speed);
@@ -1880,9 +1921,9 @@ cpu_CPUID(void)
 			EBX = ECX = 0;
 			EDX = CPUID_FPU | CPUID_VME | CPUID_PSE | CPUID_TSC | CPUID_MSR | CPUID_PAE | CPUID_CMPXCHG8B | CPUID_MTRR | CPUID_SEP | CPUID_CMOV;
 		} else if (EAX == 2) {
-			EAX = 0x00000001;
+			EAX = 0x03020101;
 			EBX = ECX = 0;
-			EDX = 0x00000000;
+			EDX = 0x06040a42;
 		} else
 			EAX = EBX = ECX = EDX = 0;
 		break;
@@ -1897,11 +1938,11 @@ cpu_CPUID(void)
 		} else if (EAX == 1) {
 			EAX = CPUID;
 			EBX = ECX = 0;
-			EDX = CPUID_FPU | CPUID_VME | CPUID_PSE | CPUID_TSC | CPUID_MSR | CPUID_CMPXCHG8B | CPUID_MMX | CPUID_SEP | CPUID_CMOV;
+			EDX = CPUID_FPU | CPUID_VME | CPUID_PSE | CPUID_TSC | CPUID_MSR | CPUID_CMPXCHG8B | CPUID_CMOV | CPUID_MMX | CPUID_SEP;
 		} else if (EAX == 2) {
 			EAX = 0x03020101;
 			EBX = ECX = 0;
-			EDX = 0x08040C43;
+			EDX = 0x08040c43; /*512kb L2 cache*/
 		}
 		else
 			EAX = EBX = ECX = EDX = 0;
@@ -1921,7 +1962,7 @@ cpu_CPUID(void)
 		} else if (EAX == 2) {
 			EAX = 0x03020101;
 			EBX = ECX = 0;
-			EDX = 0x08040C44;
+			EDX = 0x08040c44;
 		} else
 			EAX = EBX = ECX = EDX = 0;
 		break;
@@ -2091,22 +2132,29 @@ cpu_RDMSR(void)
 				break;
 
 			case 0x174:
-				if (cpu->type == CPU_PENTIUM_PRO)
-					goto i686_invalid_rdmsr;
-				EAX &= 0xFFFF0000;
-				EAX |= cs_msr;
+				/* FIXME : should be valid
+				if (cpu_get_type() == CPU_PENTIUM_PRO)
+					goto i686_invalid_rdmsr; */
+
+				EAX &= 0xffff0000;
+				EAX |= msr.sysenter_cs;
+				EDX = 0x00000000;
 				break;
 
 			case 0x175:
-				if (cpu->type == CPU_PENTIUM_PRO)
-					goto i686_invalid_rdmsr;
-				EAX = esp_msr;
+				/* if (cpu_get_type() == CPU_PENTIUM_PRO)
+					goto i686_invalid_rdmsr; */
+
+				EAX = msr.sysenter_esp;
+				EDX = 0x00000000;
 				break;
 
 			case 0x176:
-				if (cpu->type == CPU_PENTIUM_PRO)
-					goto i686_invalid_rdmsr;
-				EAX = eip_msr;
+				/* if (cpu_get_type() == CPU_PENTIUM_PRO)
+					goto i686_invalid_rdmsr; */
+
+				EAX = msr.sysenter_eip;
+				EDX = 0x00000000;
 				break;
 
 			case 0x186:
@@ -2205,9 +2253,9 @@ cpu_WRMSR(void)
 			case 0x107:
 				msr.fcr = EAX;
 				if (EAX & (1 << 9))
-                	cpu_features |= CPU_FEATURE_MMX;
-                else
-                    cpu_features &= ~CPU_FEATURE_MMX;
+					cpu_features |= CPU_FEATURE_MMX;
+				else
+					cpu_features &= ~CPU_FEATURE_MMX;
 				if (EAX & (1 << 1))
 					cpu_features |= CPU_FEATURE_CX8;
 				else
@@ -2228,6 +2276,16 @@ cpu_WRMSR(void)
 
 			case 0x109:
 				msr.fcr3 = EAX | ((uint64_t)EDX << 32);
+				break;
+			
+			case 0x174:
+				msr.sysenter_cs = EAX & 0xffff;
+				break;
+			case 0x175:
+				msr.sysenter_esp = EAX;
+				break;
+			case 0x176:
+				msr.sysenter_eip = EAX;
 				break;
 		}
 		break;
