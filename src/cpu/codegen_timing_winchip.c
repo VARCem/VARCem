@@ -8,12 +8,12 @@
  *
  *		Code generation timing for IDT WinChip processors.
  *
- * Version:	@(#)codegen_timing_winchip.c	1.0.3	2021/03/18
+ * Version:	@(#)codegen_timing_winchip.c	1.0.4	2021/11/02
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2008-2018 Sarah Walker.
+ *		Copyright 2008-2020 Sarah Walker.
  *		Copyright 2016-2018 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -337,7 +337,7 @@ static void codegen_timing_winchip_prefix(uint8_t prefix, UNUSED(uint32_t fetchd
         last_prefix = prefix;
 }
 
-static void codegen_timing_winchip_opcode(uint8_t opcode, uint32_t fetchdat, int op_32)
+static void codegen_timing_winchip_opcode(uint8_t opcode, uint32_t fetchdat, int op_32, uint32_t op_pc)
 {
         const int **timings;
         uint64_t *deps;
@@ -453,5 +453,6 @@ codegen_timing_t codegen_timing_winchip =
         codegen_timing_winchip_prefix,
         codegen_timing_winchip_opcode,
         codegen_timing_winchip_block_start,
-        codegen_timing_winchip_block_end
+        codegen_timing_winchip_block_end,
+        NULL
 };

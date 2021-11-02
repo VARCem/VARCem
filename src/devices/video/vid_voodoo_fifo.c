@@ -8,7 +8,7 @@
  *
  *		Emulation of the 3DFX Voodoo Graphics FIFO.
  *
- * Version:	@(#)vid_voodoo_fifo.c	1.0.2	2021/10/06
+ * Version:	@(#)vid_voodoo_fifo.c	1.0.3	2021/11/02
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -324,7 +324,7 @@ void voodoo_fifo_thread(void *param)
 //                              DEBUG("CMDFIFO1 addr=%08x\n",addr);
                                 while (num--) {
                                         uint32_t val = cmdfifo_get(voodoo);
-                                        if ((addr & (1 << 13)) && voodoo->type == VOODOO_BANSHEE) {
+                                        if ((addr & (1 << 13)) && voodoo->type >= VOODOO_BANSHEE) {
 //                                              if (voodoo->type != VOODOO_BANSHEE)
 //                                                      fatal("CMDFIFO1: Not Banshee\n");
 //                                              DEBUG("CMDFIFO1: write %08x %08x\n", addr, val);
@@ -334,7 +334,7 @@ void voodoo_fifo_thread(void *param)
                                                     (addr & 0x3ff) == SST_fastfillCMD || (addr & 0x3ff) == SST_nopCMD)
                                                         voodoo->cmd_written_fifo++;
                                                 
-                                        	if (voodoo->type == VOODOO_BANSHEE && (addr & 0x3ff) == SST_swapbufferCMD)
+                                        	if (voodoo->type >= VOODOO_BANSHEE && (addr & 0x3ff) == SST_swapbufferCMD)
                                                         voodoo->cmd_written_fifo++;
                                                 voodoo_reg_writel(addr, val, voodoo);
 					}
@@ -345,7 +345,7 @@ void voodoo_fifo_thread(void *param)
                                 break;
 
 				case 2:
-                                if (voodoo->type != VOODOO_BANSHEE)
+                                if (voodoo->type < VOODOO_BANSHEE)
                                         fatal("CMDFIFO2: Not Banshee\n");
                                 mask = (header >> 3);
                                 addr = 8;
@@ -425,8 +425,8 @@ void voodoo_fifo_thread(void *param)
                                 while (mask) {
                                         if (mask & 1) {
                                                 uint32_t val = cmdfifo_get(voodoo);
-                                                if ((addr & (1 << 13)) && voodoo->type == VOODOO_BANSHEE) {
-                                                        if (voodoo->type != VOODOO_BANSHEE)
+                                                if ((addr & (1 << 13)) && voodoo->type >= VOODOO_BANSHEE) {
+                                                        if (voodoo->type < VOODOO_BANSHEE)
                                                                 fatal("CMDFIFO1: Not Banshee\n");
 //                                                	DEBUG("CMDFIFO1: write %08x %08x\n", addr, val);
                                                         voodoo_2d_reg_writel(voodoo, addr, val);
@@ -435,7 +435,7 @@ void voodoo_fifo_thread(void *param)
                                                             (addr & 0x3ff) == SST_fastfillCMD || (addr & 0x3ff) == SST_nopCMD)
                                                                 voodoo->cmd_written_fifo++;
 
-                                                        if (voodoo->type == VOODOO_BANSHEE && (addr & 0x3ff) == SST_swapbufferCMD)
+                                                        if (voodoo->type >= VOODOO_BANSHEE && (addr & 0x3ff) == SST_swapbufferCMD)
                                                                 voodoo->cmd_written_fifo++;
                                                         voodoo_reg_writel(addr, val, voodoo);
                                                 }
@@ -461,6 +461,10 @@ void voodoo_fifo_thread(void *param)
                                         if (voodoo->texture_present[0][(addr & voodoo->texture_mask) >> TEX_DIRTY_SHIFT]) {
 //                                              DEBUG("texture_present at %08x %i\n", addr, (addr & voodoo->texture_mask) >> TEX_DIRTY_SHIFT);
                                                 flush_texture_cache(voodoo, addr & voodoo->texture_mask, 0);
+                                        }
+                                        if (voodoo->texture_present[1][(addr & voodoo->texture_mask) >> TEX_DIRTY_SHIFT]) {
+//                                              DEBUG("texture_present at %08x %i\n", addr, (addr & voodoo->texture_mask) >> TEX_DIRTY_SHIFT);
+                                                flush_texture_cache(voodoo, addr & voodoo->texture_mask, 1);
                                         }
                                         while (num--) {
                                                 uint32_t val = cmdfifo_get(voodoo);

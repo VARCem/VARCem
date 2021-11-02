@@ -8,13 +8,13 @@
  *
  *		Definitions for the code generator.
  *
- * Version:	@(#)codegen.h	1.0.7	2020/11/18
+ * Version:	@(#)codegen.h	1.0.9	2021/11/02
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
  *
  *		Copyright 2008-2020 Sarah Walker.
- *		Copyright 2016-2018 Miran Grca.
+ *		Copyright 2016-2021 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -120,9 +120,10 @@ typedef struct
 {
         void (*start)(void);
         void (*prefix)(uint8_t prefix, uint32_t fetchdat);
-        void (*opcode)(uint8_t opcode, uint32_t fetchdat, int op_32);
+        void (*opcode)(uint8_t opcode, uint32_t fetchdat, int op_32, uint32_t op_pc);
         void (*block_start)(void);
         void (*block_end)(void);
+        int (*jump_cycles)();
 } codegen_timing_t;
 
 
@@ -161,6 +162,7 @@ extern int      	cpu_recomp_evicted, cpu_recomp_evicted_latched,
 			cpu_recomp_removed, cpu_recomp_removed_latched;
 
 extern codegen_timing_t	codegen_timing_pentium;
+extern codegen_timing_t	codegen_timing_p6;
 extern codegen_timing_t	codegen_timing_686;
 extern codegen_timing_t	codegen_timing_486;
 extern codegen_timing_t	codegen_timing_winchip;
@@ -170,9 +172,10 @@ extern void	codegen_timing_set(codegen_timing_t *timing);
 
 extern void	(*codegen_timing_start)(void);
 extern void	(*codegen_timing_prefix)(uint8_t prefix, uint32_t fetchdat);
-extern void	(*codegen_timing_opcode)(uint8_t opcode, uint32_t fetchdat, int op_32);
+extern void	(*codegen_timing_opcode)(uint8_t opcode, uint32_t fetchdat, int op_32, uint32_t op_pc);
 extern void	(*codegen_timing_block_start)(void);
 extern void	(*codegen_timing_block_end)(void);
+extern int	(*codegen_timing_jump_cycles)(void);
 
 extern x86seg	*op_ea_seg;
 extern int	op_ssegs;
@@ -184,7 +187,7 @@ extern uint32_t	op_old_pc;
 /*Code block is always entered with the same FPU top-of-stack*/
 #define CODEBLOCK_STATIC_TOP 2
 
-static INLINE codeblock_t *codeblock_tree_find(uint32_t phys, uint32_t __cs)
+static inline codeblock_t *codeblock_tree_find(uint32_t phys, uint32_t __cs)
 {
         codeblock_t *block = pages[phys >> 12].head;
         uint64_t a = __cs | ((uint64_t)phys << 32);
@@ -206,7 +209,7 @@ static INLINE codeblock_t *codeblock_tree_find(uint32_t phys, uint32_t __cs)
         return block;
 }
 
-static INLINE void codeblock_tree_add(codeblock_t *new_block)
+static inline void codeblock_tree_add(codeblock_t *new_block)
 {
         codeblock_t *block = pages[new_block->phys >> 12].head;
         uint64_t a = new_block->_cs | ((uint64_t)new_block->phys << 32);
@@ -240,7 +243,7 @@ static INLINE void codeblock_tree_add(codeblock_t *new_block)
         }
 }
 
-static INLINE void codeblock_tree_delete(codeblock_t *block)
+static inline void codeblock_tree_delete(codeblock_t *block)
 {
         codeblock_t *parent = block->parent;
 
@@ -357,7 +360,7 @@ static INLINE void codeblock_tree_delete(codeblock_t *block)
 
 #define CPU_BLOCK_END() cpu_block_end = 1
 
-static INLINE void addbyte(uint8_t val)
+static inline void addbyte(uint8_t val)
 {
         codeblock[block_current].data[block_pos++] = val;
         if (block_pos >= BLOCK_MAX)
@@ -366,7 +369,7 @@ static INLINE void addbyte(uint8_t val)
         }
 }
 
-static INLINE void addword(uint16_t val)
+static inline void addword(uint16_t val)
 {
 	uint16_t *p = (uint16_t *) &codeblock[block_current].data[block_pos];
         *p = val;
@@ -377,7 +380,7 @@ static INLINE void addword(uint16_t val)
         }
 }
 
-static INLINE void addlong(uint32_t val)
+static inline void addlong(uint32_t val)
 {
 	uint32_t *p = (uint32_t *) &codeblock[block_current].data[block_pos];
         *p = val;
@@ -388,7 +391,7 @@ static INLINE void addlong(uint32_t val)
         }
 }
 
-static INLINE void addquad(uint64_t val)
+static inline void addquad(uint64_t val)
 {
 	uint64_t *p = (uint64_t *) &codeblock[block_current].data[block_pos];
         *p = val;

@@ -8,7 +8,7 @@
  *
  *		Emulation of the 3DFX Voodoo Graphics controller.
  *
- * Version:	@(#)vid_voodoo.c	1.0.26	2021/09/05
+ * Version:	@(#)vid_voodoo.c	1.0.27	2021/11/02
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -1010,7 +1010,7 @@ void *voodoo_2d3d_card_init(int type)
     voodoo->use_recompiler = device_get_config_int("recompiler");
 #endif
     voodoo->type = type;
-    voodoo->dual_tmus = 0;
+    voodoo->dual_tmus = (type == VOODOO_3) ? 1 : 0;
 
     /*generate filter lookup tables*/
     voodoo_generate_filter_v2(voodoo);

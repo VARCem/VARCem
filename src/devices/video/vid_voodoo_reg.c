@@ -8,7 +8,7 @@
  *
  *		Emulation of the 3DFX Voodoo Graphics Reg.
  *
- * Version:	@(#)vid_voodoo_reg.c	1.0.1	2021/09/14
+ * Version:	@(#)vid_voodoo_reg.c	1.0.2	2021/11/02
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -88,7 +88,7 @@ void voodoo_reg_writel(uint32_t addr, uint32_t val, void *priv)
                 addr |= 0x400;
         switch (addr) {
                 case SST_swapbufferCMD:
- 			if (voodoo->type == VOODOO_BANSHEE) {
+ 			if (voodoo->type >= VOODOO_BANSHEE) {
                                voodoo_wait_for_render_thread_idle(voodoo);
                                if (!(val & 1)) {
                                         banshee_set_overlay_addr(voodoo->priv, voodoo->leftOverlayBuf);
@@ -562,27 +562,27 @@ void voodoo_reg_writel(uint32_t addr, uint32_t val, void *priv)
 
 		
                 case SST_clipLeftRight1:
-                if (voodoo->type == VOODOO_BANSHEE) {
+                if (voodoo->type >= VOODOO_BANSHEE) {
                         voodoo->params.clipRight1 = val & 0xfff;
                         voodoo->params.clipLeft1 = (val >> 16) & 0xfff;
                 }
                 break;
                 case SST_clipTopBottom1:
-                if (voodoo->type == VOODOO_BANSHEE) {
+                if (voodoo->type >= VOODOO_BANSHEE) {
                         voodoo->params.clipHighY1 = val & 0xfff;
                         voodoo->params.clipLowY1 = (val >> 16) & 0xfff;
                 }
                 break;
 
                 case SST_colBufferAddr:
-                if (voodoo->type == VOODOO_BANSHEE) {
+                if (voodoo->type >= VOODOO_BANSHEE) {
                         voodoo->params.draw_offset = val & 0xfffff0;
                         voodoo->fb_write_offset = voodoo->params.draw_offset;
 //                      DEBUG("colorBufferAddr=%06x\n", voodoo->params.draw_offset);
                 }
                 break;
                 case SST_colBufferStride:
-                if (voodoo->type == VOODOO_BANSHEE) {
+                if (voodoo->type >= VOODOO_BANSHEE) {
                         voodoo->col_tiled = val & (1 << 15);
                         voodoo->params.col_tiled = voodoo->col_tiled;
                         if (voodoo->col_tiled)
@@ -593,14 +593,14 @@ void voodoo_reg_writel(uint32_t addr, uint32_t val, void *priv)
                 }
                 break;
                 case SST_auxBufferAddr:
-                if (voodoo->type == VOODOO_BANSHEE) {
+                if (voodoo->type >= VOODOO_BANSHEE) {
                         voodoo->params.aux_offset = val & 0xfffff0;
 //                      DEBUG("auxBufferAddr=%06x\n", voodoo->params.aux_offset);
                 }
                 break;
 
 		case SST_auxBufferStride:
-                if (voodoo->type == VOODOO_BANSHEE) {
+                if (voodoo->type >= VOODOO_BANSHEE) {
                         voodoo->aux_tiled = val & (1 << 15);
                         voodoo->params.aux_tiled = voodoo->aux_tiled;
                         if (voodoo->aux_tiled)
@@ -873,7 +873,7 @@ void voodoo_reg_writel(uint32_t addr, uint32_t val, void *priv)
                 break;
                 case SST_texBaseAddr:
                 if (chip & CHIP_TREX0) {
-                        if (voodoo->type == VOODOO_BANSHEE)
+                        if (voodoo->type >= VOODOO_BANSHEE)
                                 voodoo->params.texBaseAddr[0] = val & 0xfffff0;
                         else
                                 voodoo->params.texBaseAddr[0] = (val & 0x7ffff) << 3;
@@ -881,7 +881,7 @@ void voodoo_reg_writel(uint32_t addr, uint32_t val, void *priv)
                         voodoo_recalc_tex(voodoo, 0);
                 }
                 if (chip & CHIP_TREX1) {
-                        if (voodoo->type == VOODOO_BANSHEE)
+                        if (voodoo->type >= VOODOO_BANSHEE)
                                 voodoo->params.texBaseAddr[1] = val & 0xfffff0;
                         else
                                 voodoo->params.texBaseAddr[1] = (val & 0x7ffff) << 3;
@@ -890,14 +890,14 @@ void voodoo_reg_writel(uint32_t addr, uint32_t val, void *priv)
                 break;
                 case SST_texBaseAddr1:
                 if (chip & CHIP_TREX0) {
-                        if (voodoo->type == VOODOO_BANSHEE)
+                        if (voodoo->type >= VOODOO_BANSHEE)
                                 voodoo->params.texBaseAddr1[0] = val & 0xfffff0;
                         else
                                 voodoo->params.texBaseAddr1[0] = (val & 0x7ffff) << 3;
                         voodoo_recalc_tex(voodoo, 0);
                 }
                 if (chip & CHIP_TREX1) {
-                        if (voodoo->type == VOODOO_BANSHEE)
+                        if (voodoo->type >= VOODOO_BANSHEE)
                                 voodoo->params.texBaseAddr1[1] = val & 0xfffff0;
                         else
                                 voodoo->params.texBaseAddr1[1] = (val & 0x7ffff) << 3;
@@ -906,14 +906,14 @@ void voodoo_reg_writel(uint32_t addr, uint32_t val, void *priv)
                 break;
                 case SST_texBaseAddr2:
                 if (chip & CHIP_TREX0) {
-                        if (voodoo->type == VOODOO_BANSHEE)
+                        if (voodoo->type >= VOODOO_BANSHEE)
                                 voodoo->params.texBaseAddr2[0] = val & 0xfffff0;
                         else
                                 voodoo->params.texBaseAddr2[0] = (val & 0x7ffff) << 3;
                         voodoo_recalc_tex(voodoo, 0);
                 }
                 if (chip & CHIP_TREX1) {
-                        if (voodoo->type == VOODOO_BANSHEE)
+                        if (voodoo->type >= VOODOO_BANSHEE)
                                 voodoo->params.texBaseAddr2[1] = val & 0xfffff0;
                         else
                                 voodoo->params.texBaseAddr2[1] = (val & 0x7ffff) << 3;
@@ -922,14 +922,14 @@ void voodoo_reg_writel(uint32_t addr, uint32_t val, void *priv)
                 break;
                 case SST_texBaseAddr38:
                 if (chip & CHIP_TREX0) {
-                         if (voodoo->type == VOODOO_BANSHEE)
+                         if (voodoo->type >= VOODOO_BANSHEE)
                                 voodoo->params.texBaseAddr38[0] = val & 0xfffff0;
                         else
                                 voodoo->params.texBaseAddr38[0] = (val & 0x7ffff) << 3;
                         voodoo_recalc_tex(voodoo, 0);
                 }
                 if (chip & CHIP_TREX1) {
-                        if (voodoo->type == VOODOO_BANSHEE)
+                        if (voodoo->type >= VOODOO_BANSHEE)
                                 voodoo->params.texBaseAddr38[1] = val & 0xfffff0;
                         else
                                 voodoo->params.texBaseAddr38[1] = (val & 0x7ffff) << 3;

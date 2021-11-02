@@ -12,7 +12,7 @@
  *		"extern" reference to its device into the video.h file,
  *		and add an entry for it into the table here.
  *
- * Version:	@(#)video_dev.c	1.0.43	2021/09/20
+ * Version:	@(#)video_dev.c	1.0.44	2021/11/02
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -158,9 +158,9 @@ static const struct {
     { "virge375_pci",		&s3_virge_375_pci_device	},
     { "virge375_vbe20_pci",	&s3_virge_375_4_pci_device	},
     { "tgui9440_pci",		&tgui9440_pci_device		},
-#if defined(DEV_BRANCH)
     { "voodoo_banshee_pci",	&voodoo_banshee_device  	},
-#endif
+//    { "voodoo3_2000_pci",	&voodoo3_2000_pci_device  	},
+//    { "voodoo3_3000_pci",	&voodoo3_3000_pci_device  	},
 
     { "mach64gx_vlb",		&mach64gx_vlb_device		},
 #if defined(DEV_BRANCH)

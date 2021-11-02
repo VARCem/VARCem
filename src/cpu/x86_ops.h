@@ -8,14 +8,14 @@
  *
  *		Miscellaneous x86 CPU Instructions.
  *
- * Version:	@(#)x86_ops.h	1.0.4	2020/11/18
+ * Version:	@(#)x86_ops.h	1.0.5	2021/11/02
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2018,2020 Fred N. van Kempen.
- *		Copyright 2008-2018 Sarah Walker.
+ *		Copyright 2018,2021 Fred N. van Kempen.
+ *		Copyright 2008-2020 Sarah Walker.
  *		Copyright 2016-2018 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -85,6 +85,8 @@ extern const OpFn dynarec_ops_winchip2_0f[1024];
 
 extern const OpFn dynarec_ops_pentium_0f[1024];
 extern const OpFn dynarec_ops_pentiummmx_0f[1024];
+
+extern const OpFn dynarec_ops_c6x86_0f[1024];
 extern const OpFn dynarec_ops_c6x86mx_0f[1024];
 
 #if defined(DEV_BRANCH) && defined(USE_AMD_K)
@@ -180,6 +182,7 @@ extern const OpFn ops_winchip2_0f[1024];
 extern const OpFn ops_pentium_0f[1024];
 extern const OpFn ops_pentiummmx_0f[1024];
 
+extern const OpFn ops_c6x86_0f[1024];
 extern const OpFn ops_c6x86mx_0f[1024];
 
 #if defined(DEV_BRANCH) && defined(USE_AMD_K)

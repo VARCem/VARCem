@@ -8,15 +8,15 @@
  *
  *		Implementation of the CPU's dynamic recompiler.
  *
- * Version:	@(#)386_dynarec.c	1.0.14	2020/12/11
+ * Version:	@(#)386_dynarec.c	1.0.15	2021/11/02
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2018-2020 Fred N. van Kempen.
+ *		Copyright 2018-2021 Fred N. van Kempen.
  *		Copyright 2016-2019 Miran Grca.
- *		Copyright 2008-2018 Sarah Walker.
+ *		Copyright 2008-2020 Sarah Walker.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -90,6 +90,8 @@ int		cpu_block_end = 0;
 int cpl_override=0;
 int fpucount=0;
 int oddeven=0;
+int acycs = 0;
+int cpu_end_block_after_ins = 0;
 
 
 uint32_t rmdat32;
@@ -548,17 +550,17 @@ void exec386_dynarec(int cycs)
 
         int cyc_period = cycs / 2000; /*5us*/
 
+        /* Cycles counting */
+        acycs = 0;
         cycles_main += cycs;
-        while (cycles_main > 0)
-        {
+        while (cycles_main > 0) {
                 int cycles_start;
 
 		cycles += cyc_period;
                 cycles_start = cycles;
 
                 timer_start_period(cycles << TIMER_SHIFT);
-        while (cycles>0)
-        {
+        while (cycles>0) {
                 oldcs = CS;
                 cpu_state.oldpc = cpu_state.pc;
                 cpu_state.op32 = use32;
@@ -609,6 +611,12 @@ void exec386_dynarec(int cycs)
                                 if (nmi && nmi_enable && nmi_mask)
                                         CPU_BLOCK_END();
 
+                                if (cpu_end_block_after_ins) {
+					cpu_end_block_after_ins--;
+						if (!cpu_end_block_after_ins)
+						CPU_BLOCK_END();
+                                }
+
                                 ins++;
                                 
 /*                                if ((cs + pc) == 4)
@@ -616,17 +624,15 @@ void exec386_dynarec(int cycs)
 /*                                if (ins >= 141400000)
                                         output = 3;*/
                         }
-                }
-                else
-                {
+                        cpu_end_block_after_ins = 0;
+                } else {
                 uint32_t phys_addr = get_phys(cs+cpu_state.pc);
                 int hash = HASH(phys_addr);
                 codeblock_t *block = codeblock_hash[hash];
                 int valid_block = 0;
                 trap = 0;
 
-                if (block && !cpu_state.abrt)
-                {
+                if (block && !cpu_state.abrt) {
                         page_t *page = &pages[phys_addr >> 12];
 
                         /*Block must match current CS, PC, code segment size,
@@ -643,8 +649,7 @@ void exec386_dynarec(int cycs)
                                 {
                                         /*Walk page tree to see if we find the correct block*/
                                         codeblock_t *new_block = codeblock_tree_find(phys_addr, cs);
-                                        if (new_block)
-                                        {
+                                        if (new_block) {
                                                 valid_block = (new_block->pc == cs + cpu_state.pc) && (new_block->_cs == cs) &&
                                                                 (new_block->phys == phys_addr) && !((new_block->status ^ cpu_cur_status) & CPU_STATUS_FLAGS) &&
                                                                 ((new_block->status & cpu_cur_status & CPU_STATUS_MASK) == (cpu_cur_status & CPU_STATUS_MASK));
@@ -692,20 +697,20 @@ void exec386_dynarec(int cycs)
                         }
                 }
 
-                if (valid_block && block->was_recompiled)
-                {
+                if (valid_block && block->was_recompiled) {
                         void (*code)() = (void (*)())&block->data[BLOCK_START];
 
                         codeblock_hash[hash] = block;
 
-inrecomp=1;
-                        code();
-inrecomp=0;
+			inrecomp=1;
+			code();
+			/* Cycle Counting */
+                        acycs = 0;
+			inrecomp=0;
                         if (!use32) cpu_state.pc &= 0xffff;
                         cpu_recomp_blocks++;
                 }
-                else if (valid_block && !cpu_state.abrt)
-                {
+                else if (valid_block && !cpu_state.abrt) {
                         start_pc = cpu_state.pc;
                         
                         cpu_block_end = 0;
@@ -716,8 +721,7 @@ inrecomp=0;
                         codegen_block_start_recompile(block);
                         codegen_in_recompile = 1;
 
-                        while (!cpu_block_end)
-                        {
+                        while (!cpu_block_end) {
                                 oldcs=CS;
                                 cpu_state.oldpc = cpu_state.pc;
                                 cpu_state.op32 = use32;
@@ -758,14 +762,19 @@ inrecomp=0;
                                         CPU_BLOCK_END();
 
 
-                                if (cpu_state.abrt)
-                                {
+                                if (cpu_end_block_after_ins) {
+					cpu_end_block_after_ins--;
+					if (!cpu_end_block_after_ins)
+						CPU_BLOCK_END();
+				}
+                                if (cpu_state.abrt) {
                                         codegen_block_remove();
                                         CPU_BLOCK_END();
                                 }
 
                                 ins++;
                         }
+                        cpu_end_block_after_ins = 0;
                         
                         if (!cpu_state.abrt && !x86_was_reset)
                                 codegen_block_end_recompile(block);
@@ -826,15 +835,19 @@ inrecomp=0;
                                 if (nmi && nmi_enable && nmi_mask)
                                         CPU_BLOCK_END();
 
-
-                                if (cpu_state.abrt)
-                                {
+                                if (cpu_end_block_after_ins) {
+					cpu_end_block_after_ins--;
+					if (!cpu_end_block_after_ins)
+						CPU_BLOCK_END();
+				}
+                                if (cpu_state.abrt) {
                                         codegen_block_remove();
                                         CPU_BLOCK_END();
                                 }
 
                                 ins++;
                         }
+                        cpu_end_block_after_ins = 0;
                         
                         if (!cpu_state.abrt && !x86_was_reset)
                                 codegen_block_end();
@@ -845,23 +858,24 @@ inrecomp=0;
                 }
 
                 cycdiff=oldcyc-cycles;
+                /* Cycles counting */
+                if (inrecomp)
+                        cycdiff += acycs;
+                /* */
                 tsc += cycdiff;
                 
-                if (cpu_state.abrt)
-                {
+                if (cpu_state.abrt) {
                         flags_rebuild();
                         tempi = cpu_state.abrt;
                         cpu_state.abrt = 0;
                         x86_doabrt(tempi);
-                        if (cpu_state.abrt)
-                        {
+                        if (cpu_state.abrt) {
                                 cpu_state.abrt = 0;
                                 CS = oldcs;
                                 cpu_state.pc = cpu_state.oldpc;
                                 ERRLOG("CPU: double fault %i\n", ins);
                                 pmodeint(8, 0);
-                                if (cpu_state.abrt)
-                                {
+                                if (cpu_state.abrt) {
                                         cpu_state.abrt = 0;
                                         cpu_reset(0);
 					cpu_set_edx();
