@@ -8,7 +8,7 @@
  *
  *		Emulation of the 3DFX Voodoo Graphics Banshee controller.
  *
- * Version:	@(#)vid_voodoo_banshee.c	1.0.4	2021/11/02
+ * Version:	@(#)vid_voodoo_banshee.c	1.0.5	2021/11/04
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -89,7 +89,7 @@ typedef struct banshee_t
 
     uint8_t pci_regs[256];
 
-    int mem_size, type;
+    int vram_size, type;
 
     uint32_t memBaseAddr0;
     uint32_t memBaseAddr1;
@@ -2402,6 +2402,7 @@ banshee_init(const device_t *info, UNUSED(void *parent))
 			if (info->path != NULL)
 				    video_inform(DEVICE_VIDEO_GET(info->flags),
 					    (const video_timings_t *)info->vid_timing);
+			banshee->vram_size = device_get_config_int("Memory");
 			/* Creative Labs 3D Blaster Banshee PCI => SDRAM init */
 			banshee->pci_regs[0x2c] = 0x02;
 			banshee->pci_regs[0x2d] = 0x11;
@@ -2421,6 +2422,7 @@ banshee_init(const device_t *info, UNUSED(void *parent))
 			if (info->path != NULL)
 				video_inform(DEVICE_VIDEO_GET(info->flags),
 					    (const video_timings_t *)info->vid_timing);
+			banshee->vram_size = 16;
 			banshee->pci_regs[0x2c] = 0x1a;
 			banshee->pci_regs[0x2d] = 0x12;
 			banshee->pci_regs[0x2e] = 0x30;
@@ -2432,6 +2434,7 @@ banshee_init(const device_t *info, UNUSED(void *parent))
 			if (info->path != NULL)
 				video_inform(DEVICE_VIDEO_GET(info->flags),
 					    (const video_timings_t *)info->vid_timing);
+			banshee->vram_size = 16;
 			banshee->pci_regs[0x2c] = 0x1a;
 			banshee->pci_regs[0x2d] = 0x12;
 			banshee->pci_regs[0x2e] = 0x3a;
@@ -2447,9 +2450,7 @@ banshee_init(const device_t *info, UNUSED(void *parent))
 		mem_map_disable(&banshee->bios_rom.mapping);
     }
 
-    banshee->mem_size = device_get_config_int("Memory");
-
-    svga_init(&banshee->svga, banshee, (banshee->mem_size << 20),
+    svga_init(&banshee->svga, banshee, (banshee->vram_size << 20),
 	banshee_recalctimings,
 	banshee_in, banshee_out,
 	banshee_hwcursor_draw,
@@ -2479,7 +2480,7 @@ banshee_init(const device_t *info, UNUSED(void *parent))
     banshee->svga.miscout = 1;
 
     banshee->dramInit0 = 1 << 27;
-    //if (banshee->mem_size == 16)
+    //if (banshee->vram_size == 16)
 	//banshee->dramInit0 |= (1 << 26); /*2xSGRAM = 16 MB*/
     banshee->dramInit1 = 1 << 30; /*SDRAM*/
     banshee->svga.decode_mask = 0x1ffffff;
@@ -2591,6 +2592,44 @@ static const device_config_t banshee_config[] =
         }
 };
 
+static const device_config_t voodoo3_config[] =
+{
+        {
+                "bilinear","Bilinear filtering",CONFIG_BINARY,"",1
+        },
+        {
+                "dithersub","Dither substraction",CONFIG_BINARY,"",1
+        },
+        {
+                "dacfilter","Screen Filter",CONFIG_BINARY,"",0
+        },
+        {
+                "render_threads","Render threads",CONFIG_SELECTION,"",2,
+                {
+                        {
+                                "1",1
+                        },
+                        {
+                                "2",2
+                        },
+                        {
+                                "4",4
+                        },
+                        {
+                                NULL
+                        }
+                },
+        },
+#ifndef NO_CODEGEN
+        {
+                "recompiler","Recompiler",CONFIG_BINARY,"",1
+        },
+#endif
+        {
+                NULL
+        }
+};
+
 const device_t voodoo_banshee_device = {
     "Creative Labs 3D Blaster Banshee PCI",
     DEVICE_PCI,
@@ -2614,7 +2653,7 @@ const device_t voodoo3_2000_pci_device = {
     banshee_speed_changed,
     banshee_force_redraw,
     &banshee_pci_timing,
-    banshee_config
+    voodoo3_config
 };
 
 const device_t voodoo3_3000_pci_device = {
@@ -2627,5 +2666,5 @@ const device_t voodoo3_3000_pci_device = {
     banshee_speed_changed,
     banshee_force_redraw,
     &banshee_pci_timing,
-    banshee_config
+    voodoo3_config
 };
