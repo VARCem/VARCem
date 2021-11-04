@@ -8,15 +8,15 @@
  *
  *		Implementation of 80286+ CPU interpreter.
  *
- * Version:	@(#)386.c	1.0.13	2020/12/12
+ * Version:	@(#)386.c	1.0.14	2021/11/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2018-2020 Fred N. van Kempen.
+ *		Copyright 2018-2021 Fred N. van Kempen.
  *		Copyright 2016-2019 Miran Grca.
- *		Copyright 2008-2018 Sarah Walker.
+ *		Copyright 2008-2020 Sarah Walker.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -202,7 +202,7 @@ exec386(int cycs)
 				    CS,cpu_state.pc,cpu_state.abrt);
 #endif
 
-			tempi = cpu_state.abrt;
+			tempi = cpu_state.abrt & ABRT_MASK;
 			cpu_state.abrt = 0;
 			x86_doabrt(tempi);
 			if (cpu_state.abrt) {

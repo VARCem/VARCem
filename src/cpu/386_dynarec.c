@@ -568,12 +568,10 @@ void exec386_dynarec(int cycs)
 
                 cycdiff=0;
                 oldcyc=cycles;
-                if (!CACHE_ON()) /*Interpret block*/
-                {
+                if (!CACHE_ON()) {/*Interpret block*/
                         cpu_block_end = 0;
-			x86_was_reset = 0;
-                        while (!cpu_block_end)
-                        {
+                        x86_was_reset = 0;
+                        while (!cpu_block_end) {
                                 oldcs=CS;
                                 cpu_state.oldpc = cpu_state.pc;
                                 cpu_state.op32 = use32;
@@ -582,8 +580,7 @@ void exec386_dynarec(int cycs)
                                 cpu_state.ssegs = 0;
                 
                                 fetchdat = fastreadl(cs + cpu_state.pc);
-                                if (!cpu_state.abrt)
-                                {               
+                                if (!cpu_state.abrt) {               
                                         trap = cpu_state.flags & T_FLAG;
                                         opcode = fetchdat & 0xFF;
                                         fetchdat >>= 8;
@@ -762,30 +759,30 @@ void exec386_dynarec(int cycs)
                                         CPU_BLOCK_END();
 
 
-                                if (cpu_end_block_after_ins) {
+				if (cpu_end_block_after_ins) {
 					cpu_end_block_after_ins--;
 					if (!cpu_end_block_after_ins)
 						CPU_BLOCK_END();
 				}
-                                if (cpu_state.abrt) {
-                                        codegen_block_remove();
-                                        CPU_BLOCK_END();
-                                }
+				if (cpu_state.abrt) {
+					if (!(cpu_state.abrt & ABRT_EXPECTED))
+						codegen_block_remove();
+					CPU_BLOCK_END();
+				}
 
-                                ins++;
-                        }
-                        cpu_end_block_after_ins = 0;
+				ins++;
+			}
+			cpu_end_block_after_ins = 0;
                         
-                        if (!cpu_state.abrt && !x86_was_reset)
-                                codegen_block_end_recompile(block);
+			if ((!cpu_state.abrt || (cpu_state.abrt & ABRT_EXPECTED)) && !x86_was_reset)
+				codegen_block_end_recompile(block);
                         
-                        if (x86_was_reset)
-                                codegen_reset();
+			if (x86_was_reset)
+				codegen_reset();
 
-                        codegen_in_recompile = 0;
+			codegen_in_recompile = 0;
                 }
-                else if (!cpu_state.abrt)
-                {
+                else if (!cpu_state.abrt) {
                         /*Mark block but do not recompile*/
                         start_pc = cpu_state.pc;
 
@@ -794,9 +791,9 @@ void exec386_dynarec(int cycs)
 
                         codegen_block_init(phys_addr);
 
-                        while (!cpu_block_end)
-                        {
+                        while (!cpu_block_end) {
                                 oldcs=CS;
+                                //oldcpl = CPL;
                                 cpu_state.oldpc = cpu_state.pc;
                                 cpu_state.op32 = use32;
 
@@ -806,8 +803,7 @@ void exec386_dynarec(int cycs)
                                 codegen_endpc = (cs + cpu_state.pc) + 8;
                                 fetchdat = fastreadl(cs + cpu_state.pc);
 
-                                if (!cpu_state.abrt)
-                                {               
+                                if (!cpu_state.abrt) {
                                         trap = cpu_state.flags & T_FLAG;
                                         opcode = fetchdat & 0xFF;
                                         fetchdat >>= 8;
@@ -829,33 +825,34 @@ void exec386_dynarec(int cycs)
                                 if ((cpu_state.pc - start_pc) > 1000)
                                         CPU_BLOCK_END();
                                         
-                                if (trap)
-                                        CPU_BLOCK_END();
+				if (trap)
+					CPU_BLOCK_END();
 
-                                if (nmi && nmi_enable && nmi_mask)
-                                        CPU_BLOCK_END();
+				if (nmi && nmi_enable && nmi_mask)
+					CPU_BLOCK_END();
 
-                                if (cpu_end_block_after_ins) {
+				if (cpu_end_block_after_ins) {
 					cpu_end_block_after_ins--;
 					if (!cpu_end_block_after_ins)
 						CPU_BLOCK_END();
 				}
-                                if (cpu_state.abrt) {
-                                        codegen_block_remove();
-                                        CPU_BLOCK_END();
-                                }
+				if (cpu_state.abrt) {
+					if (!(cpu_state.abrt & ABRT_EXPECTED))
+						codegen_block_remove();
+					CPU_BLOCK_END();
+				}
 
-                                ins++;
-                        }
-                        cpu_end_block_after_ins = 0;
-                        
-                        if (!cpu_state.abrt && !x86_was_reset)
-                                codegen_block_end();
-                        
-                        if (x86_was_reset)
-                                codegen_reset();
-                }
-                }
+				ins++;
+			}
+			cpu_end_block_after_ins = 0;
+
+			if ((!cpu_state.abrt || (cpu_state.abrt & ABRT_EXPECTED)) && !x86_was_reset)
+				codegen_block_end();
+
+			if (x86_was_reset)
+				codegen_reset();
+		}
+		}
 
                 cycdiff=oldcyc-cycles;
                 /* Cycles counting */
@@ -866,7 +863,7 @@ void exec386_dynarec(int cycs)
                 
                 if (cpu_state.abrt) {
                         flags_rebuild();
-                        tempi = cpu_state.abrt;
+                        tempi = cpu_state.abrt & ABRT_MASK;
                         cpu_state.abrt = 0;
                         x86_doabrt(tempi);
                         if (cpu_state.abrt) {
@@ -878,18 +875,15 @@ void exec386_dynarec(int cycs)
                                 if (cpu_state.abrt) {
                                         cpu_state.abrt = 0;
                                         cpu_reset(0);
-					cpu_set_edx();
+                                        cpu_set_edx();
                                         ERRLOG("CPU: triple fault - reset\n");
                                 }
                         }
                 }
                 
-                if (trap)
-                {
-
+                if (trap) {
                         flags_rebuild();
-                        if (msw&1)
-                        {
+                        if (msw&1) {
                                 pmodeint(1,0);
                         }
                         else
