@@ -8,7 +8,7 @@
  *
  *		Miscellaneous x86 CPU Instructions.
  *
- * Version:	@(#)x86_ops_int.h	1.0.2	2020/12/05
+ * Version:	@(#)x86_ops_int.h	1.0.3	2021/11/03
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -68,10 +68,8 @@ static int opINT(uint32_t fetchdat)
         int cycles_old = cycles; UN_USED(cycles_old);
         uint8_t temp = getbytef();
 
-        if ((cr0 & 1) && (cpu_state.eflags & VM_FLAG) && (IOPL != 3))
-        {
-                if (cr4 & CR4_VME)
-                {
+        if ((cr0 & 1) && (cpu_state.eflags & VM_FLAG) && (IOPL != 3)) {
+                if (cr4 & CR4_VME) {
                         uint16_t t;
                         uint8_t d;
 
@@ -81,22 +79,20 @@ static int opINT(uint32_t fetchdat)
                         if (cpu_state.abrt) return 1;
 
                         t += (temp >> 3);
-                        if (t <= tr.limit)
-                        {
+                        if (t <= tr.limit) {
                                 cpl_override = 1;
                                 d = readmemb(tr.base, t);// + (temp >> 3));
                                 cpl_override = 0;
                                 if (cpu_state.abrt) return 1;
 
-                                if (!(d & (1 << (temp & 7))))
-                                {
+                                if (!(d & (1 << (temp & 7)))) {
                                         x86_int_sw_rm(temp);
                                         PREFETCH_RUN(cycles_old-cycles, 2, -1, 0,0,0,0, 0);
                                         return 1;
                                 }
                         }
                 }
-                x86gpf(NULL,0);
+                x86gpf_expected(NULL,0);
                 return 1;
         }
 

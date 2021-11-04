@@ -13,7 +13,7 @@
  * NOTE:	The MegaPC video device should be moved to the MegaPC
  *		machine file.
  *
- * Version:	@(#)vid_paradise.c	1.0.13	2021/05/29
+ * Version:	@(#)vid_paradise.c	1.0.14	2021/11/04
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -166,10 +166,8 @@ static void paradise_out(uint16_t addr, uint8_t val, priv_t priv)
                 old = svga->crtc[svga->crtcreg];
                 svga->crtc[svga->crtcreg] = val;
 
-                if (old != val)
-                {
-                        if (svga->crtcreg < 0xe ||  svga->crtcreg > 0x10)
-                        {
+                if (old != val) {
+                        if (svga->crtcreg < 0xe ||  svga->crtcreg > 0x10) {
                                 svga->fullchange = changeframecount;
                                 svga_recalctimings(&paradise->svga);
                         }
@@ -187,14 +185,12 @@ static uint8_t paradise_in(uint16_t addr, priv_t priv)
         if (((addr & 0xfff0) == 0x3d0 || (addr & 0xfff0) == 0x3b0) && !(svga->miscout & 1))
                 addr ^= 0x60;
         
-        switch (addr)
-        {
+        switch (addr) {
                 case 0x3c2:
                 return 0x10;
                 
                 case 0x3c5:
-                if (svga->seqaddr > 7)
-                {
+                if (svga->seqaddr > 7) {
                         if (paradise->type < WD90C11 || svga->seqregs[6] != 0x48) 
                            return 0xff;
                         if (svga->seqaddr > 0x12) 
@@ -204,8 +200,7 @@ static uint8_t paradise_in(uint16_t addr, priv_t priv)
                 break;
                         
                 case 0x3cf:
-                if (svga->gdcaddr >= 0x9 && svga->gdcaddr < 0xf)
-                {
+                if (svga->gdcaddr >= 0x9 && svga->gdcaddr < 0xf) {
                         if (svga->gdcreg[0xf] & 0x10)
                            return 0xff;
                         switch (svga->gdcaddr)
@@ -234,32 +229,25 @@ static void paradise_remap(paradise_t *paradise)
 
 	uint8_t mask = (paradise->type == WD90C11) ? 0x7f : 0xff;
         
-        if (svga->seqregs[0x11] & 0x80)
-        {
+        if (svga->seqregs[0x11] & 0x80) {
                 paradise->read_bank[0]  = paradise->read_bank[2]  =  (svga->gdcreg[0x9] & mask) << 12;
                 paradise->read_bank[1]  = paradise->read_bank[3]  = ((svga->gdcreg[0x9] & mask) << 12) + ((svga->gdcreg[6] & 0x08) ? 0 : 0x8000);
                 paradise->write_bank[0] = paradise->write_bank[2] =  (svga->gdcreg[0xa] & mask) << 12;
                 paradise->write_bank[1] = paradise->write_bank[3] = ((svga->gdcreg[0xa] & mask) << 12) + ((svga->gdcreg[6] & 0x08) ? 0 : 0x8000);
         }
-        else if (svga->gdcreg[0xb] & 0x08)
-        {
-                if (svga->gdcreg[0x6] & 0xc)
-                {
+        else if (svga->gdcreg[0xb] & 0x08) {
+                if (svga->gdcreg[0x6] & 0xc) {
                         paradise->read_bank[0]  = paradise->read_bank[2]  =  (svga->gdcreg[0xa] & mask) << 12;
                         paradise->write_bank[0] = paradise->write_bank[2] =  (svga->gdcreg[0xa] & mask) << 12;
                         paradise->read_bank[1]  = paradise->read_bank[3]  = ((svga->gdcreg[0x9] & mask) << 12) + ((svga->gdcreg[6] & 0x08) ? 0 : 0x8000);
                         paradise->write_bank[1] = paradise->write_bank[3] = ((svga->gdcreg[0x9] & mask) << 12) + ((svga->gdcreg[6] & 0x08) ? 0 : 0x8000);
-                }
-                else
-                {
+                } else {
                         paradise->read_bank[0] = paradise->write_bank[0] =  (svga->gdcreg[0xa] & mask) << 12;
                         paradise->read_bank[1] = paradise->write_bank[1] = ((svga->gdcreg[0xa] & mask) << 12) + ((svga->gdcreg[6] & 0x08) ? 0 : 0x8000);
                         paradise->read_bank[2] = paradise->write_bank[2] =  (svga->gdcreg[0x9] & mask) << 12;
                         paradise->read_bank[3] = paradise->write_bank[3] = ((svga->gdcreg[0x9] & mask) << 12) + ((svga->gdcreg[6] & 0x08) ? 0 : 0x8000);
                 }
-        }
-        else
-        {
+        } else {
                 paradise->read_bank[0]  = paradise->read_bank[2]  =  (svga->gdcreg[0x9] & mask) << 12;
                 paradise->read_bank[1]  = paradise->read_bank[3]  = ((svga->gdcreg[0x9] & mask) << 12) + ((svga->gdcreg[6] & 0x08) ? 0 : 0x8000);
                 paradise->write_bank[0] = paradise->write_bank[2] =  (svga->gdcreg[0x9] & mask) << 12;
@@ -449,7 +437,7 @@ pvga1a_pc2086_init(const device_t *info, UNUSED(void *parent))
     paradise_t *paradise = pvga1a_init(info, 1 << 18);
 
     if (paradise)
-                rom_init(&paradise->bios_rom, info->path,
+	rom_init(&paradise->bios_rom, info->path,
 			 0xc0000, 0x8000, 0x7fff, 0, MEM_MAPPING_EXTERNAL);
 
     return (priv_t)paradise;
@@ -607,7 +595,7 @@ const device_t paradise_pvga1a_pc2086_device = {
     "Paradise PVGA1A (Amstrad PC2086)",
     DEVICE_VIDEO(VID_TYPE_SPEC) | 0,
     0,
-    L"machines/pc2086/40186.ic171",
+    L"machines/amstrad/pc2086/40186.ic171",
     pvga1a_pc2086_init, paradise_close, NULL,
     NULL,
     speed_changed,
@@ -620,7 +608,7 @@ const device_t paradise_pvga1a_pc3086_device = {
     "Paradise PVGA1A (Amstrad PC3086)",
     DEVICE_VIDEO(VID_TYPE_SPEC) | 0,
     0,
-    L"machines/pc3086/c000.bin",
+    L"machines/amstrad/pc3086/c000.bin",
     pvga1a_pc3086_init, paradise_close, NULL,
     NULL,
     speed_changed,

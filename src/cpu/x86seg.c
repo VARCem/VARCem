@@ -8,7 +8,7 @@
  *
  *		x86 CPU segment emulation.
  *
- * Version:	@(#)x86seg.c	1.0.12	2020/12/18
+ * Version:	@(#)x86seg.c	1.0.13	2021/11/03
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -194,18 +194,23 @@ void x86_doabrt(int x86_abrt)
 }
 void x86gpf(UNUSED(char *s), uint16_t error)
 {
-        cpu_state.abrt = ABRT_GPF;
-        abrt_error = error;
+    cpu_state.abrt = ABRT_GPF;
+    abrt_error = error;
+}
+void x86gpf_expected(UNUSED(char *s), uint16_t error)
+{
+    cpu_state.abrt = ABRT_GPF | ABRT_EXPECTED;
+    abrt_error = error;
 }
 void x86ss(UNUSED(char *s), uint16_t error)
 {
-        cpu_state.abrt = ABRT_SS;
-        abrt_error = error;
+    cpu_state.abrt = ABRT_SS;
+    abrt_error = error;
 }
 void x86ts(UNUSED(char *s), uint16_t error)
 {
-        cpu_state.abrt = ABRT_TS;
-        abrt_error = error;
+    cpu_state.abrt = ABRT_TS;
+    abrt_error = error;
 }
 void x86np(UNUSED(char *s), uint16_t error)
 {
@@ -216,25 +221,22 @@ void x86np(UNUSED(char *s), uint16_t error)
 
 static void set_stack32(int s)
 {
-        stack32 = s;
-	if (stack32)
-	       cpu_cur_status |= CPU_STATUS_STACK32;
-	else
-	       cpu_cur_status &= ~CPU_STATUS_STACK32;
+    stack32 = s;
+    if (stack32)
+	cpu_cur_status |= CPU_STATUS_STACK32;
+    else
+	cpu_cur_status &= ~CPU_STATUS_STACK32;
 }
 
 static void set_use32(int u)
 {
-        if (u) 
-        {
-                use32 = 0x300;
-                cpu_cur_status |= CPU_STATUS_USE32;
-        }
-        else
-        {
-                use32 = 0;
-                cpu_cur_status &= ~CPU_STATUS_USE32;
-        }
+    if (u) {
+	use32 = 0x300;
+	cpu_cur_status |= CPU_STATUS_USE32;
+    } else {
+	use32 = 0;
+	cpu_cur_status &= ~CPU_STATUS_USE32;
+    }
 }
 
 void do_seg_load(x86seg *s, uint16_t *segdat)
@@ -1640,20 +1642,15 @@ void pmodeint(int num, int soft)
                 return;
         }
         addr=(num<<3);
-        if (addr>=idt.limit)
-        {
-                if (num==8)
-                {
+        if (addr>=idt.limit) {
+                if (num==8) {
                         /*Triple fault - reset!*/
                         cpu_reset(0);
-			cpu_set_edx();
+                        cpu_set_edx();
                 }
-                else if (num==0xD)
-                {
+                else if (num==0xD) {
                         pmodeint(8,0);
-                }
-                else
-                {
+                } else {
                         x86gpf(NULL,(num*8)+2+((soft)?0:1));
                 }
 #if 0
@@ -1672,23 +1669,22 @@ void pmodeint(int num, int soft)
 #if 0
         DEBUG("Addr %08X seg %04X %04X %04X %04X\n",addr,segdat[0],segdat[1],segdat[2],segdat[3]);
 #endif
-        if (!(segdat[2]&0x1F00))
-        {
-                x86gpf(NULL,(num*8)+2);
+        if (!(segdat[2]&0x1F00)) {
+                if (cpu_state.eflags & VM_FLAG) /*This fires on all V86 interrupts in EMM386. Mark as expected to prevent code churn*/
+                        x86gpf_expected(NULL,(num*8)+2);
+                else
+                        x86gpf(NULL,(num*8)+2);
                 return;
         }
-        if (DPL<CPL && soft)
-        {
+        if (DPL<CPL && soft) {
                 x86gpf(NULL,(num*8)+2);
                 return;
         }
         type=segdat[2]&0x1F00;
-        switch (type)
-        {
+        switch (type) {
                 case 0x600: case 0x700: case 0xE00: case 0xF00: /*Interrupt and trap gates*/
                         intgatesize=(type>=0x800)?32:16;
-                        if (!(segdat[2]&0x8000))
-                        {
+                        if (!(segdat[2]&0x8000)) {
                                 x86np("Int gate not present\n", (num << 3) | 2);
                                 return;
                         }
@@ -1696,19 +1692,14 @@ void pmodeint(int num, int soft)
                         new_cpl = seg & 3;
                         
                         addr=seg&~7;
-                        if (seg&4)
-                        {
-                                if (addr>=ldt.limit)
-                                {
+                        if (seg&4) {
+                                if (addr>=ldt.limit) {
                                         x86gpf(NULL,seg&~3);
                                         return;
                                 }
                                 addr+=ldt.base;
-                        }
-                        else
-                        {
-                                if (addr>=gdt.limit)
-                                {
+                        } else {
+                                if (addr>=gdt.limit) {
                                         x86gpf(NULL,seg&~3);
                                         return;
                                 }
@@ -1721,23 +1712,18 @@ void pmodeint(int num, int soft)
                         segdat2[3]=readmemw(0,addr+6); cpl_override=0; if (cpu_state.abrt) return;
                         oaddr = addr;
                         
-                        if (DPL2 > CPL)
-                        {
+                        if (DPL2 > CPL) {
                                 x86gpf(NULL,seg&~3);
                                 return;
                         }
-                        switch (segdat2[2]&0x1F00)
-                        {
+                        switch (segdat2[2]&0x1F00) {
                                 case 0x1800: case 0x1900: case 0x1A00: case 0x1B00: /*Non-conforming*/
-                                if (DPL2<CPL)
-                                {
-                                        if (!(segdat2[2]&0x8000))
-                                        {
+                                if (DPL2<CPL) {
+                                        if (!(segdat2[2]&0x8000)) {
                                                 x86np("Int gate CS not present\n", segdat[1] & 0xfffc);
                                                 return;
                                         }
-                                        if ((cpu_state.eflags&VM_FLAG) && DPL2)
-                                        {
+                                        if ((cpu_state.eflags&VM_FLAG) && DPL2) {
                                                 x86gpf(NULL,segdat[1]&0xFFFC);
                                                 return;
                                         }
