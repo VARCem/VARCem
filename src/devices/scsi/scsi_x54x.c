@@ -12,7 +12,7 @@
  *
  *		These controllers were designed for various buses.
  *
- * Version:	@(#)scsi_x54x.c	1.0.21	2021/04/28
+ * Version:	@(#)scsi_x54x.c	1.0.22	2021/11/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -55,6 +55,8 @@
 #include "../../device.h"
 #include "../../nvr.h"
 #include "../../plat.h"
+#include "../floppy/fdd.h"
+#include "../floppy/fdc.h"
 #include "../system/dma.h"
 #include "../system/pic.h"
 #include "../system/pci.h"

@@ -6,7 +6,7 @@
  *
  *		This file is part of the VARCem Project.
  *
- *		DDC monitor emulation definitions.
+ *		isa pnp emulation definitions.
  *
  * Version:	@(#)pnp.h	1.0.1	2021/11/11
  *

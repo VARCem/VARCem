@@ -8,14 +8,14 @@
  *
  *		Handling of the SCSI controllers.
  *
- * Version:	@(#)scsi.c	1.0.19	2020/06/01
+ * Version:	@(#)scsi.c	1.0.20	2021/11/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		TheCollector1995, <mariogplayer@gmail.com>
  *
- *		Copyright 2017-2019 Fred N. van Kempen.
- *		Copyright 2016-2018 Miran Grca.
+ *		Copyright 2017-2021 Fred N. van Kempen.
+ *		Copyright 2016-2021 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -79,6 +79,7 @@ static const struct {
     { "aha1540b",	&aha1540b_device		},
     { "aha1542c",	&aha1542c_device		},
     { "aha1542cf",	&aha1542cf_device		},
+    { "aha1542cp",	&aha1542cp_device		},
     { "bt542bh",	&buslogic_device		},
     { "bt542b", 	&buslogic_542b_device	},
     { "bt545s",		&buslogic_545s_device		},

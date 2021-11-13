@@ -8,7 +8,7 @@
  *
  *		Definitions for the common AHA/BL code.
  *
- * Version:	@(#)scsi_x54x.h	1.0.12	2021/04/28
+ * Version:	@(#)scsi_x54x.h	1.0.13	2021/11/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -392,6 +392,7 @@ typedef struct {
     uint32_t	Base;
     uint8_t	IrqEnabled;
     const wchar_t *bios_path;			/* path to BIOS image file */
+    const wchar_t *mcode_path;			/* path to microcode image file, needed by the AHA-1542CP */
 
     char	name[16];			/* name of device */
     char	vendor[16];			/* name of device vendor */
@@ -404,14 +405,19 @@ typedef struct {
     uint8_t	pos_regs[8];			/* MCA */
 
     uint32_t	rom_addr;			/* address of BIOS ROM */
-    uint16_t	rom_ioaddr;			/* offset in BIOS of I/O addr */
-    uint16_t	rom_shram;			/* index to shared RAM */
-    uint16_t	rom_shramsz;			/* size of shared RAM */
-    uint16_t	rom_fwhigh;			/* offset in BIOS of ver ID */
+    uint16_t	rom_ioaddr,			/* offset in BIOS of I/O addr */
+		rom_shram,			/* index to shared RAM */
+		rom_shramsz,			/* size of shared RAM */
+		rom_fwhigh;			/* offset in BIOS of ver ID */
     rom_t	bios;				/* BIOS memory descriptor */
     rom_t	uppersck;			/* BIOS memory descriptor */
     uint8_t	*rom1;				/* main BIOS image */
     uint8_t	*rom2;				/* SCSI-Select image */
+
+    uint16_t	pnp_len,			/* length of the PnP ROM */
+		pnp_offset,			/* offset in the microcode ROM of the PnP ROM */
+		cmd_33_len,			/* length of the SCSISelect code decompressor program */
+		cmd_33_offset;			/* offset in the microcode ROM of the SCSISelect code decompressor program */
 
     wchar_t	*nvr_path;			/* path to NVR image file */
     uint8_t	*nvr;				/* EEPROM buffer */
@@ -437,6 +443,8 @@ typedef struct {
     uint16_t	DataReply;
     uint16_t	DataReplyLeft;
 
+    uint32_t	fdc_address;
+
     volatile uint32_t
 		MailboxInit,
 		MailboxCount,
@@ -453,14 +461,14 @@ typedef struct {
 		PendingInterrupt,
 		Lock;
 
-    uint8_t	shadow_ram[128];
+    uint8_t	shadow_ram[128],
+		dma_buffer[128],
+		cmd_33_buf[4096];
 
     uint8_t	shram_mode;
 
     uint8_t	sync;
     uint8_t	parity;
-
-    uint8_t	dma_buffer[128];
 
     volatile
     uint32_t	BIOSMailboxInit,
@@ -512,6 +520,8 @@ typedef struct {
     uint8_t	(*interrupt_type)(void *p);
     /* Pointer to a function that resets vendor-specific data */
     void	(*ven_reset)(void *p);
+
+    fdc_t	*fdc;
 } x54x_t;
 
 

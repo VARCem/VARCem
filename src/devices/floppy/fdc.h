@@ -8,7 +8,7 @@
  *
  *		Definitions for the floppy disk	controller driver.
  *
- * Version:	@(#)fdc.h	1.0.11	2021/04/06
+ * Version:	@(#)fdc.h	1.0.12	2021/11/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -194,6 +194,8 @@ extern void	fdc_track_finishread(fdc_t *fdc, int condition);
 extern int	fdc_is_verify(fdc_t *fdc);
 
 extern void	fdc_overrun(fdc_t *fdc);
+extern void	fdc_set_irq(fdc_t *fdc, int irq);
+extern void	fdc_set_dma_ch(fdc_t *fdc, int dma_ch);
 extern void	fdc_set_base(fdc_t *fdc, int base);
 extern int	fdc_getdata(fdc_t *fdc, int last);
 extern int	fdc_data(fdc_t *fdc, uint8_t data);
