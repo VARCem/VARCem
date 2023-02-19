@@ -33,7 +33,8 @@ Community and Support
 ---------------------
 Information, downloads, additional modules and such can be found on our
 [Website](http://www.VARCem.com/). Live support and general help can
-also be found on our [IRC channel](https://kiwiirc.com/client/irc.varcem.com/?nick=VARCem_Guest|?#VARCem)
+also be found on our [Discord server](https://discord.gg/TeubH2bxzT). We
+no longer use the IRC network.
 
 Additionally, documentation can be found (once it is written..) on the [Wiki](http://www.VARCem.com/?page=wiki),
 and general discussions and support can be found at the [Forum](http://www.VARCem.com/?page=forum) where you
@@ -59,4 +60,4 @@ BUILD STATUS
 ------------
 The auto-builds handled by Travis-CI are [![Build Status](https://travis-ci.org/VARCem/VARCem.svg?branch=master)](https://travis-ci.org/VARCem/VARCem)
 
-Last Updated: 2021/05/27
+Last Updated: 2023/02/20

@@ -1,9 +1,9 @@
 ## Building VARCem from Source
 
 
-#### Fred N. van Kempen, <decwiz@yahoo.com>
+#### Fred N. van Kempen, <waltje@varcem.com>
 
-#### Last Updated: 10/20/2020
+#### Last Updated: 2/20/2023
 
 
 These instructions guide you in building the **VARCem** emulator from
@@ -27,7 +27,7 @@ unpack them (if needed) into a folder:
 
   `cd src`
 
-  `unzip varcem-1.7.4.zip`
+  `unzip varcem-1.8.0.zip`
 
 which puts the source tree into the *D:\VARCem\src* folder.
 
@@ -46,12 +46,11 @@ With the default placement, all is ready.  If you used a different path for the 
 For the Windows environment, two methods of compiling these sources are currently possible:
 
 ##### Using Microsoft's Visual Studio development system.
-Tested with versions **2015** ("VC14") and **2017*** ("VC15"), this is now a
-fairly easy process.
+Tested with versions **2019** ("VC16"), this is now a fairly easy process.
 
 1.  Install the Visual Studio system (the *Community* release is sufficient) and make sure it works.
 
-2.  Go to the *win\* folder, then to the *vc14* folder for Visual Studio 2015, or to the *vc15* folder for the 2017 release of Visual Studio.
+2.  Go to the *win\* folder, then to the *vc16* folder for Visual Studio 2019, or to the *vc17* folder for the 2022 release of Visual Studio.
 
 3.  Double-click on the *VARCem.sln* solution file, and Visual Studio will load the project for you.
 
@@ -65,7 +64,7 @@ For those who prefer to use **command-line tools** to process a *Makefile* (the 
 
   `cd \VARCem\src`
 
-  `make -f win\Makefile.VC`
+  `make -f plat\win\Makefile.VC`
   
 and voila, there it goes. If things are set up properly, this is about the fastest way to compile the sources on Windows.
 
@@ -125,7 +124,7 @@ Building the emulator is also possible using the free **MinGW** compiler toolset
 
     You are now ready to build, using a command like:
 
-      `make -f win/Makefile.MinGW`
+      `make -f plat/win/Makefile.MinGW`
 
     which will hopefully build the application's executables.
 
@@ -135,8 +134,98 @@ Windows.
 
 There is also a **Makefile.local** file, which you can use as a base for
 yourself.  Copy it to just **Makefile**, and use your favorite text editor
-to update the settings the way you want them. You can now just type
+to update the settings the way you want them. Then, can just type
 
       `make`
 
 and it should build.
+
+
+#### Variables for Building
+
+Many parts of the emulator are configurable at build time, usually to
+include or exclude them in a build. Configuration of such features is
+normally done using **variables** in the respecive Makefiles, which
+can be set either in those files, on the command-line, or both.
+
+For example, the default target architecture is x86 (Intel 80x86, the
+32bit mode) for both the Windows and UN*X platforms. To build a 64bit
+binary for the Windows platform we can type:
+
+	`make -f plat\win\Makefile.MinGW ARCH=x64`
+
+and it should be building that. The variable **ARCH** indicates the
+architecture for which we want to build. Other variables set levels of
+optimization and debugging, locations of supporting files, modules to
+include or exclude, and so on.
+
+A partial list of these variables is as follows. Always check the actual
+Makefile, because the list may have changed!
+
+**STUFF**		Various compile-time options.
+
+**EXTRAS**		Add feature selections here.
+
+**PROG**		Name of the program executable (for Windows, without .exe)
+
+
+**EXT_PATH**	Location of external dependencies [../external]
+
+
+**DEBUG**		Create a build for debugging [n,y]
+**LOGGING**		Create a build with logging support [y,n]
+**ARCH**		Select architecture to build for [x86,x64,arm,arm64]
+**OPTIM**		Create an architecture-optimized build [n,y]
+
+
+**CROSS**		Cross-compile for Windows [n,y]
+**DEV_BUILD**	Create a development build [n,y]
+**PROFILER**	Create a profiled build for analysis [n,y]
+**RELEASE**		Create a release (signed) build [n,y]
+
+
+#### Optional Modules selection
+
+Many of the optional modules can be either linked into the application, or
+they can be loaded at run-time, if they exist, as loadable shared libraries.
+For the modules listed below, **n** means not supported; **y** means linked
+in as a shared library, **s** means linked in as a static library, and
+**d** means try to load at run-time.
+
+**DYNAREC**		Dynamic Recompiler [y,n]
+
+**SLIRP**		SLiRP network provider [d,n,y,s]
+
+**PCAP**		PCap network provider [d,n,y,s]
+
+**UDP**		UDPlink network provider [d,n,y,s]
+
+**VNS**		VNS network provider [d,n,y,s]
+
+**FREETYPE**	FreeType fonts handler [d,n]
+
+**OPENAL**		OpenAL sound handler [d,n]
+
+**FLUIDSYNTH**	FluidSynth MIDI handler [d,n]
+
+**MUNT**		MunT MIDI handler [d,n,y,s]
+
+**RESID**		reSID sound handler [d,n,y,s]
+
+**SDL**		SDL video renderer [d,n]
+
+**VNC**		VNC remote video renderer [d,n,y,s]
+
+**RDP**		RDP remote video renderer [n,y,s,d]
+
+**PNG**		PNG bitmap graphics handler [d,n,y,s]
+
+**MINIVHD**		MiniVHD VHD disk format handler [d,n,y,s]
+
+**ZLIB**		ZLIB compression handler [d,n,y,s]
+
+**WX**		Use the WxWidgets toolkit [n,y,s]
+
+For the above variables, a variabled named **variable_PATH** can be set to
+the location where the library files can be found, if different from their
+defaults.
