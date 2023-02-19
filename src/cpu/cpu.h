@@ -8,7 +8,7 @@
  *
  *		Definitions for the CPU module.
  *
- * Version:	@(#)cpu.h	1.0.18	2021/09/12
+ * Version:	@(#)cpu.h	1.0.19	2021/11/02
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -48,7 +48,7 @@
 #define MANU_CYRIX	2
 #define MANU_IDT	3
 #define MANU_NEC	4
-#define MANU_IBM 5
+#define MANU_IBM	5
 
 /*
  * Supported CPU types.
@@ -73,7 +73,7 @@
 #define CPU_iDX4	16
 #define CPU_Cx5x86	17
 #define CPU_WINCHIP	18		/* 586 class CPUs */
-#define CPU_WINCHIP2 19	
+#define CPU_WINCHIP2	19
 #define CPU_PENTIUM	20
 #define CPU_PENTIUM_MMX	21
 #define CPU_Cx6x86 	22
@@ -189,7 +189,7 @@ typedef struct {
     int8_t	checked; /*Non-zero if selector is known to be valid*/
     uint16_t	seg;
     uint32_t	base, limit, limit_low,
-		limit_high;
+		limit_high, limit_raw;
 } x86seg;
 
 typedef union {
@@ -205,10 +205,16 @@ typedef union {
 } MMX_REG;
 
 typedef struct {
+    /* IDT WinChip and WinChip 2 MSR's */
     uint32_t	tr1, tr12;
     uint32_t	cesr;
     uint32_t	fcr;
     uint64_t	fcr2, fcr3;
+     /* Pentium II Klamath and Pentium II Deschutes MSR's 
+     Note : SYSENTER exists also on Pentium Pro */
+    uint16_t	sysenter_cs;		/* 0x00000174 - SYSENTER/SYSEXIT MSR's */
+    uint32_t	sysenter_esp;		/* 0x00000175 - SYSENTER/SYSEXIT MSR's */
+    uint32_t	sysenter_eip;		/* 0x00000176 - SYSENTER/SYSEXIT MSR's */
 } msr_t;
 
 typedef union {
@@ -351,6 +357,7 @@ extern int		is_nec, is_rapidcad, is_cyrix, is_pentium;
 #define CPU_FEATURE_VME   (1 << 4)
 #define CPU_FEATURE_CX8   (1 << 5)
 #define CPU_FEATURE_3DNOW (1 << 6)
+#define CPU_FEATURE_SYSCALL (1 << 7)
 
 extern uint32_t cpu_features;
 
@@ -430,6 +437,11 @@ extern int	timing_call_pm_gate, timing_call_pm_gate_inner;
 extern int	timing_retf_rm, timing_retf_pm, timing_retf_pm_outer;
 extern int	timing_jmp_rm, timing_jmp_pm, timing_jmp_pm_gate;
 extern int	timing_misaligned;
+
+extern int	cpu_end_block_after_ins;
+
+/* Cycles counting */
+extern int	acycs;
 
 
 /* Functions. */

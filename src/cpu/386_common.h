@@ -8,7 +8,7 @@
  *
  *		Common 386 CPU code.
  *
- * Version:	@(#)386_common.h	1.0.8	2020/12/14
+ * Version:	@(#)386_common.h	1.0.9	2021/11/03
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -59,8 +59,11 @@ extern uint16_t ea_rseg;
                         if (cpu_state.abrt) return 1; \
                         if (tempi) \
                         { \
-                                x86gpf("check_io_perm(): no permission",0); \
-                                return 1; \
+                                if (cpu_state.eflags & VM_FLAG) \
+                                        x86gpf_expected(NULL,0); \
+                                else                             \
+                                        x86gpf(NULL,0);          \
+                                return 1;                        \
                         } \
                 }
 

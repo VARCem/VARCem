@@ -8,7 +8,7 @@
  *
  *		String definitions for "Portuguese (Brazil)" language.
  *
- * Version:	@(#)VARCem-PT_BR.str	1.0.4	2021/06/20
+ * Version:	@(#)VARCem-PT_BR.str	1.0.5	2021/11/03
  *
  * Author:	Altieres Lima da Silva, <altieres.lima@gmail.com>
  *		Fred N. van Kempen, <decwiz@yahoo.com>
@@ -310,7 +310,7 @@
 
 /* UI: Status Bar (3900.) */
 #define STR_3900	"(vazio)"
-#define STR_3901	"(unidade anfitriã %c:)"
+#define STR_3901	"(unidade %c: do anfitrião)"
 #define STR_3902	" [Protegido contra escrita]"
 #define STR_3903	" [Bloqueada]"
 #define STR_3904	"&Nova imagem.."
@@ -348,7 +348,7 @@
 
 /* UI menu: Action (4000.) */
 #define STR_ACTION	"&Ação"
-#define  STR_4001	"&Reiniciar hardware"
+#define  STR_4001	"&Reinicialização completa"
 #define  STR_4002	"&Ctrl+Alt+Del"
 #define  STR_4003	"Enviar Ctrl+Alt+&Esc"
 #define  STR_4004	"Enviar Ctrl+Alt+&Break"

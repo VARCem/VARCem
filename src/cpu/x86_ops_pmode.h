@@ -8,7 +8,7 @@
  *
  *		Miscellaneous x86 CPU Instructions.
  *
- * Version:	@(#)x86_ops_pmode.h	1.0.4	2020/12/11
+ * Version:	@(#)x86_ops_pmode.h	1.0.5	2021/11/02
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -222,8 +222,7 @@ static int op0F00_common(uint32_t fetchdat, int ea32)
                 PREFETCH_RUN(4, 2, rmdat, 0,0,(cpu_mod == 3) ? 0:1,0, ea32);
                 break;
                 case 0x10: /*LLDT*/
-                if ((CPL || cpu_state.eflags & VM_FLAG) && (cr0&1))
-                {
+                if ((CPL || cpu_state.eflags & VM_FLAG) && (cr0&1)) {
                         ERRLOG("CPU: invalid LLDT!\n");
                         x86gpf(NULL,0);
                         return 1;
@@ -238,9 +237,9 @@ static int op0F00_common(uint32_t fetchdat, int ea32)
                 granularity = readmemb(0, addr + 6) & 0x80;
                 if (cpu_state.abrt) return 1;
                 ldt.limit = limit;
+                ldt.limit_raw = limit;
                 ldt.access = access;
-                if (granularity)
-                {
+                if (granularity) {
                         ldt.limit <<= 12;
                         ldt.limit |= 0xfff;
                 }
@@ -250,8 +249,7 @@ static int op0F00_common(uint32_t fetchdat, int ea32)
                 PREFETCH_RUN(20, 2, rmdat, (cpu_mod == 3) ? 0:1,2,0,0, ea32);
                 break;
                 case 0x18: /*LTR*/
-                if ((CPL || cpu_state.eflags & VM_FLAG) && (cr0&1))
-                {
+                if ((CPL || cpu_state.eflags & VM_FLAG) && (cr0&1)) {
                         ERRLOG("CPU: invalid LTR!\n");
                         x86gpf(NULL,0);
                         break;
@@ -270,9 +268,9 @@ static int op0F00_common(uint32_t fetchdat, int ea32)
                 if (cpu_state.abrt) return 1;
                 tr.seg = sel;
                 tr.limit = limit;
+                tr.limit_raw = limit;
                 tr.access = access;
-                if (granularity)
-                {
+                if (granularity) {
                         tr.limit <<= 12;
                         tr.limit |= 0xFFF;
                 }

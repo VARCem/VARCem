@@ -8,13 +8,13 @@
  *
  *		Instruction parsing and generation.
  *
- * Version:	@(#)codegen.c	1.0.4	2021/11/02
+ * Version:	@(#)codegen_accumulate_x86.c	1.0.1	2021/10/29
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2008-2018 Sarah Walker.
- *		Copyright 2016-2018 Miran Grca.
+ *		Copyright 2008-2020 Sarah Walker.
+ *		Copyright 2016-2020 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -41,33 +41,56 @@
 #include "../emu.h"
 #include "../mem.h"
 #include "cpu.h"
-#include "x86.h"
-#include "x86_ops.h"
 #include "codegen.h"
+#include "codegen_accumulate.h"
 
 
-void (*codegen_timing_start)();
-void (*codegen_timing_prefix)(uint8_t prefix, uint32_t fetchdat);
-void (*codegen_timing_opcode)(uint8_t opcode, uint32_t fetchdat, int op_32, uint32_t op_pc);
-void (*codegen_timing_block_start)();
-void (*codegen_timing_block_end)();
-int (*codegen_timing_jump_cycles)();
-
-
-void codegen_timing_set(codegen_timing_t *timing)
+static struct
 {
-    codegen_timing_start = timing->start;
-    codegen_timing_prefix = timing->prefix;
-    codegen_timing_opcode = timing->opcode;
-    codegen_timing_block_start = timing->block_start;
-    codegen_timing_block_end = timing->block_end;
-    codegen_timing_jump_cycles = timing->jump_cycles;
+    int count;
+    uintptr_t dest_reg;
+} acc_regs[] =
+{
+    [ACCREG_cycles] = {0, (uintptr_t) &(cycles)}
+};
+
+void codegen_accumulate(int acc_reg, int delta)
+{
+    acc_regs[acc_reg].count += delta;
+
+    if ((acc_reg == ACCREG_cycles) && (delta != 0)) {
+	if (delta == -1) {
+		/* -delta = 1 */
+		addbyte(0xff); /*inc dword ptr[&acycs]*/
+		addbyte(0x05);
+		addlong((uint32_t) (uintptr_t) &(acycs));
+	} else if (delta == 1) {
+		/* -delta = -1 */
+		addbyte(0xff); /*dec dword ptr[&acycs]*/
+		addbyte(0x0d);
+		addlong((uint32_t) (uintptr_t) &(acycs));
+	} else {
+		addbyte(0x81); /*ADD $acc_regs[c].count,acc_regs[c].dest*/
+		addbyte(0x05);
+		addlong((uint32_t) (uintptr_t) &(acycs));
+		addlong((uintptr_t) -delta);
+	}
+    }
 }
 
-int codegen_in_recompile;
-
-/* This is for compatibility with new x87 code. */
-void codegen_set_rounding_mode(int mode)
+void codegen_accumulate_flush(void)
 {
-    cpu_state.new_npxc = (cpu_state.old_npxc & ~0xc00) | (mode << 10);
+    if (acc_regs[0].count) {
+	addbyte(0x81); /*ADD $acc_regs[0].count,acc_regs[0].dest*/
+	addbyte(0x05);
+	addlong((uint32_t) acc_regs[0].dest_reg);
+	addlong(acc_regs[0].count);
+    }
+
+    acc_regs[0].count = 0;
+}
+
+void codegen_accumulate_reset()
+{
+    acc_regs[0].count = 0;
 }

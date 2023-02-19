@@ -8,7 +8,7 @@
  *
  *		Emulation of the 3DFX Voodoo Graphics Banshee controller.
  *
- * Version:	@(#)vid_voodoo_banshee.c	1.0.2	2021/10/11
+ * Version:	@(#)vid_voodoo_banshee.c	1.0.5	2021/11/04
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -76,64 +76,75 @@
 #endif
 
 #define ROM_VOODOO_BANSHEE_PCI	L"video/creativelabs/banshee/blasterpci.rom"
-
-typedef struct banshee_t
-{
-        svga_t svga;
-
-        rom_t bios_rom;
-
-        uint8_t pci_regs[256];
-
-	int mem_size;
-
-        uint32_t memBaseAddr0;
-        uint32_t memBaseAddr1;
-        uint32_t ioBaseAddr;
-
-        uint32_t agpInit0;
-        uint32_t dramInit0, dramInit1;
-        uint32_t lfbMemoryConfig;
-        uint32_t miscInit0, miscInit1;
-        uint32_t pciInit0;
-        uint32_t vgaInit0, vgaInit1;
-
-        uint32_t command_2d;
-        uint32_t srcBaseAddr_2d;
-
-        uint32_t pllCtrl0, pllCtrl1, pllCtrl2;
-
-        uint32_t dacMode;
-        int dacAddr;
-
-        uint32_t vidDesktopOverlayStride;
-        uint32_t vidDesktopStartAddr;
-        uint32_t vidProcCfg;
-        uint32_t vidScreenSize;
-        uint32_t vidSerialParallelPort;
-
-        int overlay_pix_fmt;
-
-        uint32_t hwCurPatAddr, hwCurLoc, hwCurC0, hwCurC1;
-
-        uint32_t intrCtrl;
-
-        uint32_t overlay_buffer[2][4096];
-        uint32_t desktop_addr,
-		desktop_stride_tiled;
-
-        int desktop_y;
-
-        mem_map_t linear_mapping;
-
-        mem_map_t reg_mapping_low;  /*0000000-07fffff*/
-        mem_map_t reg_mapping_high; /*0c00000-1ffffff - Windows 2000 puts the BIOS ROM in between these two areas*/
-
-        voodoo_t *voodoo;
-	void *i2c, *i2c_ddc, *ddc;
-} banshee_t;
+#define ROM_VOODOO3_2000_PCI	L"video/3dfx/voodoo3_2000/2k11sd.rom"
+#define ROM_VOODOO3_3000_PCI	L"video/3dfx/voodoo3_3000/3k12sd.rom"
 
 static const video_timings_t banshee_pci_timing	= {VID_BUS, 2,  2,  1,  20, 20, 21};
+typedef struct banshee_t
+{
+    svga_t svga;
+
+    uint8_t has_bios;
+    rom_t bios_rom;
+
+    uint8_t pci_regs[256];
+
+    int vram_size, type;
+
+    uint32_t memBaseAddr0;
+    uint32_t memBaseAddr1;
+    uint32_t ioBaseAddr;
+
+    uint32_t agpInit0;
+    uint32_t dramInit0, dramInit1;
+    uint32_t lfbMemoryConfig;
+    uint32_t miscInit0, miscInit1;
+    uint32_t pciInit0;
+    uint32_t vgaInit0, vgaInit1;
+
+    uint32_t command_2d;
+    uint32_t srcBaseAddr_2d;
+
+    uint32_t pllCtrl0, pllCtrl1, pllCtrl2;
+
+    uint32_t dacMode;
+    int dacAddr;
+
+    uint32_t vidDesktopOverlayStride;
+    uint32_t vidDesktopStartAddr;
+    uint32_t vidProcCfg;
+    uint32_t vidScreenSize;
+    uint32_t vidSerialParallelPort;
+
+    int overlay_pix_fmt;
+
+    uint32_t hwCurPatAddr, hwCurLoc, hwCurC0, hwCurC1;
+
+    uint32_t intrCtrl;
+
+    uint32_t overlay_buffer[2][4096];
+    uint32_t desktop_addr,
+	desktop_stride_tiled;
+
+    int desktop_y;
+
+    mem_map_t linear_mapping;
+
+    mem_map_t reg_mapping_low;  /*0000000-07fffff*/
+    mem_map_t reg_mapping_high; /*0c00000-1ffffff - Windows 2000 puts the BIOS ROM in between these two areas*/
+
+    voodoo_t *voodoo;
+    void *i2c, *i2c_ddc, *ddc;
+
+} banshee_t;
+
+enum
+{
+        TYPE_BANSHEE = 0,
+        TYPE_V3_2000,
+        TYPE_V3_3000,
+        TYPE_VELOCITY100
+};
 
 enum
 {
@@ -179,15 +190,15 @@ enum
 
 enum
 {
-        cmdBaseAddr0  = 0x20,
-        cmdBaseSize0  = 0x24,
-        cmdBump0      = 0x28,
-        cmdRdPtrL0    = 0x2c,
-        cmdRdPtrH0    = 0x30,
-        cmdAMin0      = 0x34,
-        cmdAMax0      = 0x3c,
-        cmdFifoDepth0 = 0x44,
-        cmdHoleCnt0   = 0x48
+    cmdBaseAddr0  = 0x20,
+    cmdBaseSize0  = 0x24,
+    cmdBump0      = 0x28,
+    cmdRdPtrL0    = 0x2c,
+    cmdRdPtrH0    = 0x30,
+    cmdAMin0      = 0x34,
+    cmdAMax0      = 0x3c,
+    cmdFifoDepth0 = 0x44,
+    cmdHoleCnt0   = 0x48
 };
 
 #define VGAINIT0_EXTENDED_SHIFT_OUT (1 << 12)
@@ -2034,8 +2045,8 @@ banshee_overlay_draw(svga_t *svga, int displine)
 			break;
 		case VIDPROCCFG_FILTER_MODE_DITHER_4X4:
 			if (banshee->voodoo->scrfilter && banshee->voodoo->scrfilterEnabled) {
-				uint8_t fil[(svga->overlay_latch.xsize) * 3];
-				uint8_t fil3[(svga->overlay_latch.xsize) * 3];
+				uint8_t *fil = mem_alloc((svga->overlay_latch.xsize) * 3);
+				uint8_t *fil3 = mem_alloc((svga->overlay_latch.xsize) * 3);
 
 				if (banshee->vidProcCfg & VIDPROCCFG_H_SCALE_ENABLE) { /* leilei HACK - don't know of real 4x1 hscaled behavior yet, double for now */
 					for (x=0; x<svga->overlay_latch.xsize;x++) {
@@ -2086,6 +2097,8 @@ banshee_overlay_draw(svga_t *svga, int displine)
 					fil[(x)*3+2] = vb_filter_v1_rb [fil[x*3+2]] [fil3[(x+1) *3+2]];
 					priv[x].val = (fil[x*3+2] << 16) | (fil[x*3+1] << 8) | fil[x*3];
 				}
+                free(fil);
+                free(fil3);
 			} else { /* filter disabled by emulator option */
 				if (banshee->vidProcCfg & VIDPROCCFG_H_SCALE_ENABLE) {
 					for (x = 0; x < svga->overlay_latch.xsize; x++) {
@@ -2101,14 +2114,14 @@ banshee_overlay_draw(svga_t *svga, int displine)
 
 		case VIDPROCCFG_FILTER_MODE_DITHER_2X2:
 			if (banshee->voodoo->scrfilter && banshee->voodoo->scrfilterEnabled) {
-				uint8_t fil[(svga->overlay_latch.xsize) * 3];
-				uint8_t soak[(svga->overlay_latch.xsize) * 3];
-				uint8_t soak2[(svga->overlay_latch.xsize) * 3];
+				uint8_t *fil = mem_alloc((svga->overlay_latch.xsize) * 3);
+				uint8_t *soak = mem_alloc((svga->overlay_latch.xsize) * 3);
+				uint8_t *soak2 = mem_alloc ((svga->overlay_latch.xsize) * 3);
 
-				uint8_t samp1[(svga->overlay_latch.xsize) * 3];
-				uint8_t samp2[(svga->overlay_latch.xsize) * 3];
-				uint8_t samp3[(svga->overlay_latch.xsize) * 3];
-				uint8_t samp4[(svga->overlay_latch.xsize) * 3];
+				uint8_t *samp1 = mem_alloc ((svga->overlay_latch.xsize) * 3);
+				uint8_t *samp2 = mem_alloc ((svga->overlay_latch.xsize) * 3);
+				uint8_t *samp3 = mem_alloc ((svga->overlay_latch.xsize) * 3);
+				uint8_t *samp4 = mem_alloc ((svga->overlay_latch.xsize) * 3);
 
 				src = &svga->vram[src_addr2 & svga->vram_mask];
 				OVERLAY_SAMPLE(banshee->overlay_buffer[1]);
@@ -2154,6 +2167,13 @@ banshee_overlay_draw(svga_t *svga, int displine)
 						priv[x].val = (fil[x*3+2] << 16) | (fil[x*3+1] << 8) | fil[x*3];
 					}
 				}
+                free(fil);
+                free(soak);
+                free(soak2);
+                free(samp1);
+                free(samp2);
+                free(samp3);
+                free(samp4);
 			} else { /* filter disabled by emulator option */
 				if (banshee->vidProcCfg & VIDPROCCFG_H_SCALE_ENABLE) {
 					for (x = 0; x < svga->overlay_latch.xsize; x++) {
@@ -2232,19 +2252,21 @@ uint8_t banshee_pci_read(int func, int addr, void *priv)
 
         uint8_t ret = 0;
 
+        if (func)
+                return 0xff;
         //DEBUG("Banshee PCI read %08X  ", addr);
         switch (addr) {
                 case 0x00: ret = 0x1a; break; /*3DFX*/
                 case 0x01: ret = 0x12; break;
 
-                case 0x02: ret = 0x03; break;
+                case 0x02: ret =(banshee->type == TYPE_BANSHEE) ? 0x03 : 0x05; break;
                 case 0x03: ret = 0x00; break;
 
                 case 0x04: ret = banshee->pci_regs[0x04] & 0x27; break;
 
                 case 0x07: ret = banshee->pci_regs[0x07] & 0x36; break;
 
-                case 0x08: ret = 3; break; /*Revision ID*/
+                case 0x08: ret = (banshee->type == TYPE_BANSHEE) ? 3 : 1; break; /*Revision ID*/
                 case 0x09: ret = 0; break; /*Programming interface*/
 
                 case 0x0a: ret = 0x00; break; /*Supports VGA interface*/
@@ -2295,6 +2317,8 @@ void banshee_pci_write(int func, int addr, uint8_t val, void *priv)
 {
         banshee_t *banshee = (banshee_t *)priv;
         
+        if (func)
+                return;
         //DEBUG("Banshee PCI write %08X %02X %04X:%08X\n", addr, val, CS, cpu_state.pc);
         switch (addr) {
                 case 0x00: case 0x01: case 0x02: case 0x03:
@@ -2366,17 +2390,67 @@ static priv_t
 banshee_init(const device_t *info, UNUSED(void *parent))
 {
     banshee_t *banshee;
+    int voodoo_type = VOODOO_BANSHEE;
 
     banshee = (banshee_t *)mem_alloc(sizeof(banshee_t));
     memset(banshee, 0, sizeof(banshee_t));
 
-    rom_init(&banshee->bios_rom, info->path, 
-	0xc0000, 0x10000, 0xffff, 0, MEM_MAPPING_EXTERNAL);
-    mem_map_disable(&banshee->bios_rom.mapping);
+    switch(info->local) {
+		case TYPE_BANSHEE:
+			voodoo_type = VOODOO_BANSHEE;
+			banshee->type = info->local;
+			if (info->path != NULL)
+				    video_inform(DEVICE_VIDEO_GET(info->flags),
+					    (const video_timings_t *)info->vid_timing);
+			banshee->vram_size = device_get_config_int("Memory");
+			/* Creative Labs 3D Blaster Banshee PCI => SDRAM init */
+			banshee->pci_regs[0x2c] = 0x02;
+			banshee->pci_regs[0x2d] = 0x11;
+			banshee->pci_regs[0x2e] = 0x17;
+			banshee->pci_regs[0x2f] = 0x10;
+			/* AGP => SGRAM init */
+#if 0
+			banshee->pci_regs[0x2c] = 0x1a;
+			banshee->pci_regs[0x2d] = 0x12;
+			banshee->pci_regs[0x2e] = 0x04;
+			banshee->pci_regs[0x2f] = 0x00;
+#endif
+			break;
+		case TYPE_V3_2000:
+			voodoo_type = VOODOO_3;
+			banshee->type = info->local;
+			if (info->path != NULL)
+				video_inform(DEVICE_VIDEO_GET(info->flags),
+					    (const video_timings_t *)info->vid_timing);
+			banshee->vram_size = 16;
+			banshee->pci_regs[0x2c] = 0x1a;
+			banshee->pci_regs[0x2d] = 0x12;
+			banshee->pci_regs[0x2e] = 0x30;
+			banshee->pci_regs[0x2f] = 0x00;
+			break;
+		case TYPE_V3_3000:
+			voodoo_type = VOODOO_3;
+			banshee->type = info->local;
+			if (info->path != NULL)
+				video_inform(DEVICE_VIDEO_GET(info->flags),
+					    (const video_timings_t *)info->vid_timing);
+			banshee->vram_size = 16;
+			banshee->pci_regs[0x2c] = 0x1a;
+			banshee->pci_regs[0x2d] = 0x12;
+			banshee->pci_regs[0x2e] = 0x3a;
+			banshee->pci_regs[0x2f] = 0x00;
+			break;
+    }
 
-    banshee->mem_size = device_get_config_int("Memory");
+    banshee->has_bios = (info->path != NULL);
+    if (banshee->has_bios) {
+	rom_init(&banshee->bios_rom, info->path, 
+		0xc0000, 0x10000, 0xffff, 0, MEM_MAPPING_EXTERNAL);
+	if (info->flags & DEVICE_PCI)
+		mem_map_disable(&banshee->bios_rom.mapping);
+    }
 
-    svga_init(&banshee->svga, banshee, (banshee->mem_size << 20),
+    svga_init(&banshee->svga, banshee, (banshee->vram_size << 20),
 	banshee_recalctimings,
 	banshee_in, banshee_out,
 	banshee_hwcursor_draw,
@@ -2402,21 +2476,18 @@ banshee_init(const device_t *info, UNUSED(void *parent))
 //    io_sethandler(0x03c0, 0x0020, 
 //	banshee_in, NULL, NULL, banshee_out, NULL, NULL, banshee);
 
-    video_inform(DEVICE_VIDEO_GET(info->flags),
-	(const video_timings_t *)info->vid_timing);
-
     banshee->svga.bpp = 8;
     banshee->svga.miscout = 1;
 
     banshee->dramInit0 = 1 << 27;
-    //if (banshee->mem_size == 16)
+    //if (banshee->vram_size == 16)
 	//banshee->dramInit0 |= (1 << 26); /*2xSGRAM = 16 MB*/
     banshee->dramInit1 = 1 << 30; /*SDRAM*/
     banshee->svga.decode_mask = 0x1ffffff;
 
     pci_add_card(PCI_ADD_VIDEO, banshee_pci_read, banshee_pci_write, banshee);
 
-    banshee->voodoo = voodoo_2d3d_card_init(VOODOO_BANSHEE);
+    banshee->voodoo = voodoo_2d3d_card_init(voodoo_type);
     banshee->voodoo->priv = banshee;
     banshee->voodoo->vram = banshee->svga.vram;
     banshee->voodoo->changedvram = banshee->svga.changedvram;
@@ -2428,19 +2499,6 @@ banshee_init(const device_t *info, UNUSED(void *parent))
     banshee->voodoo->tex_mem_w[1] = (uint16_t *)banshee->svga.vram;
     banshee->voodoo->texture_mask = banshee->svga.vram_mask;
     voodoo_generate_filter_v1(banshee->voodoo);
-
-/* Creative Labs 3D Blaster Banshee PCI => SDRAM init */
-    banshee->pci_regs[0x2c] = 0x02;
-    banshee->pci_regs[0x2d] = 0x11;
-    banshee->pci_regs[0x2e] = 0x17;
-    banshee->pci_regs[0x2f] = 0x10;
-/* AGP => SGRAM init */
-#if 0
-    banshee->pci_regs[0x2c] = 0x1a;
-    banshee->pci_regs[0x2d] = 0x12;
-    banshee->pci_regs[0x2e] = 0x04;
-    banshee->pci_regs[0x2f] = 0x00;
-#endif
 
     banshee->vidSerialParallelPort = VIDSERIAL_DDC_DCK_W | VIDSERIAL_DDC_DDA_W;
 
@@ -2516,7 +2574,45 @@ static const device_config_t banshee_config[] =
                         {
                                 "2",2
                         },
-			{
+                        {
+                                "4",4
+                        },
+                        {
+                                NULL
+                        }
+                },
+        },
+#ifndef NO_CODEGEN
+        {
+                "recompiler","Recompiler",CONFIG_BINARY,"",1
+        },
+#endif
+        {
+                NULL
+        }
+};
+
+static const device_config_t voodoo3_config[] =
+{
+        {
+                "bilinear","Bilinear filtering",CONFIG_BINARY,"",1
+        },
+        {
+                "dithersub","Dither substraction",CONFIG_BINARY,"",1
+        },
+        {
+                "dacfilter","Screen Filter",CONFIG_BINARY,"",0
+        },
+        {
+                "render_threads","Render threads",CONFIG_SELECTION,"",2,
+                {
+                        {
+                                "1",1
+                        },
+                        {
+                                "2",2
+                        },
+                        {
                                 "4",4
                         },
                         {
@@ -2537,7 +2633,7 @@ static const device_config_t banshee_config[] =
 const device_t voodoo_banshee_device = {
     "Creative Labs 3D Blaster Banshee PCI",
     DEVICE_PCI,
-    0,
+    TYPE_BANSHEE,
     ROM_VOODOO_BANSHEE_PCI,
     banshee_init, banshee_close, NULL,
     NULL,
@@ -2545,4 +2641,30 @@ const device_t voodoo_banshee_device = {
     banshee_force_redraw,
     &banshee_pci_timing,
     banshee_config
+};
+
+const device_t voodoo3_2000_pci_device = {
+    "3DFX Voodoo3 2000 PCI",
+    DEVICE_PCI,
+    TYPE_V3_2000,
+    ROM_VOODOO3_2000_PCI,
+    banshee_init, banshee_close, NULL,
+    NULL,
+    banshee_speed_changed,
+    banshee_force_redraw,
+    &banshee_pci_timing,
+    voodoo3_config
+};
+
+const device_t voodoo3_3000_pci_device = {
+    "3DFX Voodoo3 3000 PCI",
+    DEVICE_PCI,
+    TYPE_V3_3000,
+    ROM_VOODOO3_3000_PCI,
+    banshee_init, banshee_close, NULL,
+    NULL,
+    banshee_speed_changed,
+    banshee_force_redraw,
+    &banshee_pci_timing,
+    voodoo3_config
 };

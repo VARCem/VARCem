@@ -8,15 +8,15 @@
  *
  *		Implementation of the CPU's dynamic recompiler.
  *
- * Version:	@(#)386_dynarec.c	1.0.14	2020/12/11
+ * Version:	@(#)386_dynarec.c	1.0.15	2021/11/02
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
  *
- *		Copyright 2018-2020 Fred N. van Kempen.
+ *		Copyright 2018-2021 Fred N. van Kempen.
  *		Copyright 2016-2019 Miran Grca.
- *		Copyright 2008-2018 Sarah Walker.
+ *		Copyright 2008-2020 Sarah Walker.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -90,6 +90,8 @@ int		cpu_block_end = 0;
 int cpl_override=0;
 int fpucount=0;
 int oddeven=0;
+int acycs = 0;
+int cpu_end_block_after_ins = 0;
 
 
 uint32_t rmdat32;
@@ -548,17 +550,17 @@ void exec386_dynarec(int cycs)
 
         int cyc_period = cycs / 2000; /*5us*/
 
+        /* Cycles counting */
+        acycs = 0;
         cycles_main += cycs;
-        while (cycles_main > 0)
-        {
+        while (cycles_main > 0) {
                 int cycles_start;
 
 		cycles += cyc_period;
                 cycles_start = cycles;
 
                 timer_start_period(cycles << TIMER_SHIFT);
-        while (cycles>0)
-        {
+        while (cycles>0) {
                 oldcs = CS;
                 cpu_state.oldpc = cpu_state.pc;
                 cpu_state.op32 = use32;
@@ -566,12 +568,10 @@ void exec386_dynarec(int cycs)
 
                 cycdiff=0;
                 oldcyc=cycles;
-                if (!CACHE_ON()) /*Interpret block*/
-                {
+                if (!CACHE_ON()) {/*Interpret block*/
                         cpu_block_end = 0;
-			x86_was_reset = 0;
-                        while (!cpu_block_end)
-                        {
+                        x86_was_reset = 0;
+                        while (!cpu_block_end) {
                                 oldcs=CS;
                                 cpu_state.oldpc = cpu_state.pc;
                                 cpu_state.op32 = use32;
@@ -580,8 +580,7 @@ void exec386_dynarec(int cycs)
                                 cpu_state.ssegs = 0;
                 
                                 fetchdat = fastreadl(cs + cpu_state.pc);
-                                if (!cpu_state.abrt)
-                                {               
+                                if (!cpu_state.abrt) {               
                                         trap = cpu_state.flags & T_FLAG;
                                         opcode = fetchdat & 0xFF;
                                         fetchdat >>= 8;
@@ -609,6 +608,12 @@ void exec386_dynarec(int cycs)
                                 if (nmi && nmi_enable && nmi_mask)
                                         CPU_BLOCK_END();
 
+                                if (cpu_end_block_after_ins) {
+					cpu_end_block_after_ins--;
+						if (!cpu_end_block_after_ins)
+						CPU_BLOCK_END();
+                                }
+
                                 ins++;
                                 
 /*                                if ((cs + pc) == 4)
@@ -616,17 +621,31 @@ void exec386_dynarec(int cycs)
 /*                                if (ins >= 141400000)
                                         output = 3;*/
                         }
-                }
-                else
-                {
+                        if (trap) {
+                                flags_rebuild();
+                                if (msw&1) {
+                                        pmodeint(1,0);
+                                } else {
+                                writememw(ss,(SP-2)&0xFFFF,cpu_state.flags);
+                                writememw(ss,(SP-4)&0xFFFF,CS);
+                                writememw(ss,(SP-6)&0xFFFF,cpu_state.pc);
+                                SP-=6;
+                                addr = (1 << 2) + idt.base;
+                                cpu_state.flags&=~I_FLAG;
+                                cpu_state.flags&=~T_FLAG;
+                                cpu_state.pc=readmemw(0,addr);
+                                loadcs(readmemw(0,addr+2));
+                                }
+                        }
+                        cpu_end_block_after_ins = 0;
+                } else {
                 uint32_t phys_addr = get_phys(cs+cpu_state.pc);
                 int hash = HASH(phys_addr);
                 codeblock_t *block = codeblock_hash[hash];
                 int valid_block = 0;
                 trap = 0;
 
-                if (block && !cpu_state.abrt)
-                {
+                if (block && !cpu_state.abrt) {
                         page_t *page = &pages[phys_addr >> 12];
 
                         /*Block must match current CS, PC, code segment size,
@@ -635,16 +654,14 @@ void exec386_dynarec(int cycs)
                         valid_block = (block->pc == cs + cpu_state.pc) && (block->_cs == cs) &&
                                       (block->phys == phys_addr) && !((block->status ^ cpu_cur_status) & CPU_STATUS_FLAGS) &&
                                       ((block->status & cpu_cur_status & CPU_STATUS_MASK) == (cpu_cur_status & CPU_STATUS_MASK));
-                        if (!valid_block)
-                        {
+                        if (!valid_block) {
                                 uint64_t mask = (uint64_t)1 << ((phys_addr >> PAGE_MASK_SHIFT) & PAGE_MASK_MASK);
                                 
                                 if (page->code_present_mask[(phys_addr >> PAGE_MASK_INDEX_SHIFT) & PAGE_MASK_INDEX_MASK] & mask)
                                 {
                                         /*Walk page tree to see if we find the correct block*/
                                         codeblock_t *new_block = codeblock_tree_find(phys_addr, cs);
-                                        if (new_block)
-                                        {
+                                        if (new_block) {
                                                 valid_block = (new_block->pc == cs + cpu_state.pc) && (new_block->_cs == cs) &&
                                                                 (new_block->phys == phys_addr) && !((new_block->status ^ cpu_cur_status) & CPU_STATUS_FLAGS) &&
                                                                 ((new_block->status & cpu_cur_status & CPU_STATUS_MASK) == (cpu_cur_status & CPU_STATUS_MASK));
@@ -654,15 +671,13 @@ void exec386_dynarec(int cycs)
                                 }
                         }
 
-                        if (valid_block && (block->page_mask & *block->dirty_mask))
-                        {
+                        if (valid_block && (block->page_mask & *block->dirty_mask)) {
                                 codegen_check_flush(page, page->dirty_mask[(phys_addr >> 10) & 3], phys_addr);
                                 page->dirty_mask[(phys_addr >> 10) & 3] = 0;
                                 if (!block->valid)
                                         valid_block = 0;
                         }
-                        if (valid_block && block->page_mask2)
-                        {
+                        if (valid_block && block->page_mask2) {
                                 /*We don't want the second page to cause a page
                                   fault at this stage - that would break any
                                   code crossing a page boundary where the first
@@ -692,20 +707,20 @@ void exec386_dynarec(int cycs)
                         }
                 }
 
-                if (valid_block && block->was_recompiled)
-                {
+                if (valid_block && block->was_recompiled) {
                         void (*code)() = (void (*)())&block->data[BLOCK_START];
 
                         codeblock_hash[hash] = block;
 
-inrecomp=1;
-                        code();
-inrecomp=0;
+			inrecomp=1;
+			code();
+			/* Cycle Counting */
+                        acycs = 0;
+			inrecomp=0;
                         if (!use32) cpu_state.pc &= 0xffff;
                         cpu_recomp_blocks++;
                 }
-                else if (valid_block && !cpu_state.abrt)
-                {
+                else if (valid_block && !cpu_state.abrt) {
                         start_pc = cpu_state.pc;
                         
                         cpu_block_end = 0;
@@ -716,8 +731,7 @@ inrecomp=0;
                         codegen_block_start_recompile(block);
                         codegen_in_recompile = 1;
 
-                        while (!cpu_block_end)
-                        {
+                        while (!cpu_block_end) {
                                 oldcs=CS;
                                 cpu_state.oldpc = cpu_state.pc;
                                 cpu_state.op32 = use32;
@@ -726,9 +740,8 @@ inrecomp=0;
                                 cpu_state.ssegs = 0;
                 
                                 fetchdat = fastreadl(cs + cpu_state.pc);
-                                if (!cpu_state.abrt)
-                                {               
-                                        trap = cpu_state.flags & T_FLAG;
+                                
+                                if (!cpu_state.abrt) {
                                         opcode = fetchdat & 0xFF;
                                         fetchdat >>= 8;
 
@@ -751,32 +764,37 @@ inrecomp=0;
                                 if ((cpu_state.pc - start_pc) > 1000)
                                         CPU_BLOCK_END();
                                         
-                                if (trap)
+                                if (cpu_state.flags & T_FLAG)
                                         CPU_BLOCK_END();
 
                                 if (nmi && nmi_enable && nmi_mask)
                                         CPU_BLOCK_END();
 
 
-                                if (cpu_state.abrt)
-                                {
-                                        codegen_block_remove();
-                                        CPU_BLOCK_END();
-                                }
+				if (cpu_end_block_after_ins) {
+					cpu_end_block_after_ins--;
+					if (!cpu_end_block_after_ins)
+						CPU_BLOCK_END();
+				}
+				if (cpu_state.abrt) {
+					if (!(cpu_state.abrt & ABRT_EXPECTED))
+						codegen_block_remove();
+					CPU_BLOCK_END();
+				}
 
-                                ins++;
-                        }
+				ins++;
+			}
+			cpu_end_block_after_ins = 0;
                         
-                        if (!cpu_state.abrt && !x86_was_reset)
-                                codegen_block_end_recompile(block);
+			if ((!cpu_state.abrt || (cpu_state.abrt & ABRT_EXPECTED)) && !x86_was_reset)
+				codegen_block_end_recompile(block);
                         
-                        if (x86_was_reset)
-                                codegen_reset();
+			if (x86_was_reset)
+				codegen_reset();
 
-                        codegen_in_recompile = 0;
+			codegen_in_recompile = 0;
                 }
-                else if (!cpu_state.abrt)
-                {
+                else if (!cpu_state.abrt) {
                         /*Mark block but do not recompile*/
                         start_pc = cpu_state.pc;
 
@@ -785,9 +803,9 @@ inrecomp=0;
 
                         codegen_block_init(phys_addr);
 
-                        while (!cpu_block_end)
-                        {
+                        while (!cpu_block_end) {
                                 oldcs=CS;
+                                //oldcpl = CPL;
                                 cpu_state.oldpc = cpu_state.pc;
                                 cpu_state.op32 = use32;
 
@@ -797,9 +815,7 @@ inrecomp=0;
                                 codegen_endpc = (cs + cpu_state.pc) + 8;
                                 fetchdat = fastreadl(cs + cpu_state.pc);
 
-                                if (!cpu_state.abrt)
-                                {               
-                                        trap = cpu_state.flags & T_FLAG;
+                                if (!cpu_state.abrt) {
                                         opcode = fetchdat & 0xFF;
                                         fetchdat >>= 8;
 
@@ -820,102 +836,80 @@ inrecomp=0;
                                 if ((cpu_state.pc - start_pc) > 1000)
                                         CPU_BLOCK_END();
                                         
-                                if (trap)
-                                        CPU_BLOCK_END();
+				if (cpu_state.flags & T_FLAG)
+					CPU_BLOCK_END();
 
-                                if (nmi && nmi_enable && nmi_mask)
-                                        CPU_BLOCK_END();
+				if (nmi && nmi_enable && nmi_mask)
+					CPU_BLOCK_END();
 
+				if (cpu_end_block_after_ins) {
+					cpu_end_block_after_ins--;
+					if (!cpu_end_block_after_ins)
+						CPU_BLOCK_END();
+				}
+				if (cpu_state.abrt) {
+					if (!(cpu_state.abrt & ABRT_EXPECTED))
+						codegen_block_remove();
+					CPU_BLOCK_END();
+				}
 
-                                if (cpu_state.abrt)
-                                {
-                                        codegen_block_remove();
-                                        CPU_BLOCK_END();
-                                }
+				ins++;
+			}
+			cpu_end_block_after_ins = 0;
 
-                                ins++;
-                        }
-                        
-                        if (!cpu_state.abrt && !x86_was_reset)
-                                codegen_block_end();
-                        
-                        if (x86_was_reset)
-                                codegen_reset();
-                }
-                }
+			if ((!cpu_state.abrt || (cpu_state.abrt & ABRT_EXPECTED)) && !x86_was_reset)
+				codegen_block_end();
+
+			if (x86_was_reset)
+				codegen_reset();
+		}
+		}
 
                 cycdiff=oldcyc-cycles;
+                /* Cycles counting */
+                if (inrecomp)
+                        cycdiff += acycs;
+                /* */
                 tsc += cycdiff;
                 
-                if (cpu_state.abrt)
-                {
+                if (cpu_state.abrt) {
                         flags_rebuild();
-                        tempi = cpu_state.abrt;
+                        tempi = cpu_state.abrt & ABRT_MASK;
                         cpu_state.abrt = 0;
                         x86_doabrt(tempi);
-                        if (cpu_state.abrt)
-                        {
+                        if (cpu_state.abrt) {
                                 cpu_state.abrt = 0;
                                 CS = oldcs;
                                 cpu_state.pc = cpu_state.oldpc;
                                 ERRLOG("CPU: double fault %i\n", ins);
                                 pmodeint(8, 0);
-                                if (cpu_state.abrt)
-                                {
+                                if (cpu_state.abrt) {
                                         cpu_state.abrt = 0;
                                         cpu_reset(0);
-					cpu_set_edx();
+                                        cpu_set_edx();
                                         ERRLOG("CPU: triple fault - reset\n");
                                 }
                         }
                 }
                 
-                if (trap)
-                {
-
-                        flags_rebuild();
-                        if (msw&1)
-                        {
-                                pmodeint(1,0);
-                        }
-                        else
-                        {
-                                writememw(ss,(SP-2)&0xFFFF,cpu_state.flags);
-                                writememw(ss,(SP-4)&0xFFFF,CS);
-                                writememw(ss,(SP-6)&0xFFFF,cpu_state.pc);
-                                SP-=6;
-                                addr = (1 << 2) + idt.base;
-                                cpu_state.flags&=~I_FLAG;
-                                cpu_state.flags&=~T_FLAG;
-                                cpu_state.pc=readmemw(0,addr);
-                                loadcs(readmemw(0,addr+2));
-                        }
-                }
-                else if (nmi && nmi_enable && nmi_mask)
-                {
+                if (nmi && nmi_enable && nmi_mask) {
                         cpu_state.oldpc = cpu_state.pc;
                         oldcs = CS;
                         x86_int(2);
                         nmi_enable = 0;
-                        if (nmi_auto_clear)
-                        {
+                        if (nmi_auto_clear) {
                                 nmi_auto_clear = 0;
                                 nmi = 0;
                         }
                 }
-                else if (cpu_state.flags&I_FLAG)
-                {
+                else if (cpu_state.flags&I_FLAG) {
                         temp=pic_interrupt();
-                        if (temp!=0xFF)
-                        {
+                        if (temp!=0xFF) {
                                 CPU_BLOCK_END();
                                 flags_rebuild();
-                                if (msw&1)
-                                {
+                                if (msw&1) {
                                         pmodeint(temp,0);
-                                }
-                                else
-                                {
+                                } else {
                                         writememw(ss,(SP-2)&0xFFFF,cpu_state.flags);
                                         writememw(ss,(SP-4)&0xFFFF,CS);
                                         writememw(ss,(SP-6)&0xFFFF,cpu_state.pc);

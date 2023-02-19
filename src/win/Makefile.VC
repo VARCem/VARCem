@@ -240,11 +240,11 @@ ifeq ($(PROFILER), y)
  LOPTS		+= /MAP
 endif
 ifeq ($(X64), y)
- PLATCG		:= codegen_x86-64.obj
+ PLATCG		:= codegen_x86-64.obj codegen_accumulate_x64.obj
  CGOPS		:= codegen_ops_x86-64.h
  VCG		:= vid_voodoo_codegen_x86-64.h
 else
- PLATCG		:= codegen_x86.obj
+ PLATCG		:= codegen_x86.obj codegen_accumulate_x86.obj
  CGOPS		:= codegen_ops_x86.h
  VCG		:= vid_voodoo_codegen_x86.h
 endif
@@ -276,6 +276,7 @@ ifeq ($(DYNAREC), y)
 		    codegen_ops.obj \
 		    codegen_timing_common.obj codegen_timing_486.obj \
 		    codegen_timing_686.obj codegen_timing_pentium.obj \
+			codegen_timing_p6.obj \
 		    codegen_timing_winchip.obj codegen_timing_winchip2.obj \
 		    $(PLATCG)
 endif

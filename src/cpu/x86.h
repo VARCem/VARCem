@@ -8,12 +8,12 @@
  *
  *		Definitions for the X86 architecture.
  *
- * Version:	@(#)x86.h	1.0.3	2020/11/19
+ * Version:	@(#)x86.h	1.0.4	2021/11/03
  *
  * Authors:	Sarah Walker, <tommowalker@tommowalker.co.uk>
  *		Miran Grca, <mgrca8@gmail.com>
  *
- *		Copyright 2008-2018 Sarah Walker.
+ *		Copyright 2008-2020 Sarah Walker.
  *		Copyright 2016-2018 Miran Grca.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -118,6 +118,16 @@ extern uint8_t flags_p;
 
 extern int gpf;
 
+#define ABRT_MASK 0x7f
+/*An 'expected' exception is one that would be expected to occur on every execution
+  of this code path; eg a GPF due to being in v86 mode. An 'unexpected' exception is
+  one that would be unlikely to occur on the next exception, eg a page fault may be
+  fixed up by the exception handler and the next execution would not hit it.
+  
+  This distinction is used by the dynarec; a block that hits an 'expected' exception
+  would be compiled, a block that hits an 'unexpected' exception would be rejected so
+  that we don't end up with an unnecessarily short block*/
+#define ABRT_EXPECTED  0x80
 
 enum
 {
@@ -153,6 +163,7 @@ extern void	x86illegal(void);
 
 extern void	x86seg_reset(void);
 extern void	x86gpf(char *s, uint16_t error);
+extern void	x86gpf_expected(char *s, uint16_t error);
 
 extern void	execx86(int cycs);
 extern void	exec386(int cycs);
