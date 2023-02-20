@@ -1,0 +1,125 @@
+#
+# VARCem	Virtual ARchaeological Computer EMulator.
+#		An emulator of (mostly) x86-based PC systems and devices,
+#		using the ISA,EISA,VLB,MCA  and PCI system buses, roughly
+#		spanning the era between 1981 and 1995.
+#
+#		This file is part of the VARCem Project.
+#
+#		Project file for the CircleCI remote builder service.
+#
+# Version:	@(#)config.yml	1.0.1	2023/02/20
+#
+# Author:	Fred N. van Kempen, <waltje@varcem.com>
+#
+#		Copyright 2023 Fred N. van Kempen.
+#
+#		Redistribution and  use  in source  and binary forms, with
+#		or  without modification, are permitted  provided that the
+#		following conditions are met:
+#
+#		1. Redistributions of  source  code must retain the entire
+#		   above notice, this list of conditions and the following
+#		   disclaimer.
+#
+#		2. Redistributions in binary form must reproduce the above
+#		   copyright  notice,  this list  of  conditions  and  the
+#		   following disclaimer in  the documentation and/or other
+#		   materials provided with the distribution.
+#
+#		3. Neither the  name of the copyright holder nor the names
+#		   of  its  contributors may be used to endorse or promote
+#		   products  derived from  this  software without specific
+#		   prior written permission.
+#
+# THIS SOFTWARE  IS  PROVIDED BY THE  COPYRIGHT  HOLDERS AND CONTRIBUTORS
+# "AS IS" AND  ANY EXPRESS  OR  IMPLIED  WARRANTIES,  INCLUDING, BUT  NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+# PARTICULAR PURPOSE  ARE  DISCLAIMED. IN  NO  EVENT  SHALL THE COPYRIGHT
+# HOLDER OR  CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+# SPECIAL,  EXEMPLARY,  OR  CONSEQUENTIAL  DAMAGES  (INCLUDING,  BUT  NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE  GOODS OR SERVICES;  LOSS OF USE,
+# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED  AND ON  ANY
+# THEORY OF  LIABILITY, WHETHER IN  CONTRACT, STRICT  LIABILITY, OR  TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING  IN ANY  WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+# Use the latest version of the CircleCI pipeline process engine.
+version: 2.1
+
+# Old stuff from Travis.
+#env:
+#  global:
+#    - MAKEFLAGS="-j 4"
+#
+#  matrix:
+#    - PROG=VARCem CROSS=y DEBUG=n
+#    - PROG=VARCem CROSS=y DEBUG=n LOGGING=y
+#    - PROG=VARCem CROSS=y DEBUG=y
+#    - PROG=VARCem_dev CROSS=y DEBUG=y DEV_BUILD=y
+
+# Define a job to be invoked later in a workflow.
+jobs:
+  "varcem":
+    # Specify the execution environment. You can specify an image from
+    # Dockerhub or use one of our Convenience Images from CircleCI's
+    # Developer Hub.
+	docker:
+#         - image: "cimg/base:2022.03"
+          - image: "cimg/base:stable"
+
+          steps:
+            - checkout
+
+            - run:
+              name: Installing updates
+              command: 'sudo apt-get update && sudo apt-get install -y && sudo rm -rf /var/lib/apt/lists/*'
+
+            - run:
+              name: Install dependencies
+              command: |
+                sudo apt-get install -y binutils-mingw-w64-i686
+                sudo apt-get install -y gcc-mingw-w64-i686
+                sudo apt-get install -y binutils-mingw-w64-x86-64
+                sudo apt-get install -y gcc-mingw-w64-x86-64
+                sudo apt-get install -y gcc-mingw-w64
+                sudo apt-get install -y mingw-w64
+                sudo apt-get install -y cmake
+#               sudo apt-get install -y libz-mingw-w64-dev
+
+            - run:
+                name: Show relevant versions
+                command: |
+                  gcc --version
+                  cmake --version
+
+            - run:
+                name: Building project
+                command: chmod +x .circleci/build.sh .circleci/deploy.sh
+                command: ./.circleci/build.sh PROG=VARCem CROSS=y DEBUG=n
+#               command: ./.circleci/build.sh PROG=VARCem CROSS=y DEBUG=n LOGGING=y
+#               command: ./.circleci/build.sh PROG=VARCem CROSS=y DEBUG=y
+#               command: ./.circleci/build.sh PROG=VARCem_dev CROSS=y DEBUG=y DEV_BUILD=y
+
+# Old stuff from Travis.
+#after_success:
+#  - ./.circleci/deploy.sh
+
+#notifications:
+#  irc:
+#    channels:
+#      - "ircs://irc.varcem.com:6697#varcem-dev"
+#    template:
+#      - "Build #%{build_number} for #%{commit} by %{author} in %{branch} %{result}."
+#      - "Commit subject: %{commit_subject}"
+#      - "View changes at %{compare_url}"
+#      - "View build details at %{build_url}"
+
+# Invoke jobs via workflows
+workflows:
+  varcem-workflow:
+    jobs:
+      - "varcem"
+
+
+# End of file.
