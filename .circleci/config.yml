@@ -119,7 +119,7 @@ jobs:
       # Actually perform the build.
       - run:
         environment:
-          MAKEFLAGS="-j 4"
+          MAKEFLAGS: "-j 4"
         command: chmod +x .circleci/build.sh .circleci/deploy.sh
         command: ./.circleci/build.sh << parameters.flags >>
 
