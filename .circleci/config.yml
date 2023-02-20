@@ -81,7 +81,7 @@ jobs:
         type: executor
       tag:
         type: string
-      flags
+      flags:
         type: string
 
     executor: << parameters.os >>
