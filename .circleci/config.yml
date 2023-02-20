@@ -92,11 +92,12 @@ jobs:
 
       # Say hello.
       - run:
-        command: echo Building $MY_NAME<< parameters.tag >> (flags=<< parameters.flags >>)
+        # echo "Building $MY_NAME<< parameters.tag >> (<< parameters.flags >>)
 
       # Install updates.
       - run:
-        command: 'sudo apt-get update && sudo apt-get install -y && sudo rm -rf /var/lib/apt/lists/*'
+        command: |
+                sudo apt-get update && sudo apt-get install -y && sudo rm -rf /var/lib/apt/lists/*
 
       # Install dependencies such as MinGW and friends.
       - run:
@@ -165,9 +166,9 @@ workflows:
             tag: ["","-log","-dbg","-dev"]
             flags: |
               ["PROG=VARCem CROSS=y DEBUG=n",
-              ["PROG=VARCem CROSS=y DEBUG=n LOGGING=y",
-              ["PROG=VARCem CROSS=y DEBUG=n",
-              ["PROG=VARCem_dev CROSS=y DEBUG=y DEV_BUILD=y"]
+               "PROG=VARCem CROSS=y DEBUG=n LOGGING=y",
+               "PROG=VARCem CROSS=y DEBUG=n",
+               "PROG=VARCem_dev CROSS=y DEBUG=y DEV_BUILD=y"]
         requires:
           build<< matrix.tag >>
 
