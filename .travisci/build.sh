@@ -1,3 +1,4 @@
+#!/bin/bash
 #
 # VARCem	Virtual ARchaeological Computer EMulator.
 #		An emulator of (mostly) x86-based PC systems and devices,
@@ -6,15 +7,13 @@
 #
 #		This file is part of the VARCem Project.
 #
-#		Project file for the Travis CI remote builder service.
+#		Build script for the Travis CI remote builder service.
 #
-# Version:	@(#).travis.yml	1.0.17	2021/10/23
+# Version:	@(#)build.sh	1.0.12	2023/02/20
 #
-# Authors:	Natalia Portillo, <claunia@claunia.com>
-#		Fred N. van Kempen, <decwiz@yahoo.com>
+# Author:	Fred N. van Kempen, <waltje@varcem.com>
 #
-#		Copyright 2018-2021 Fred N. van Kempen.
-#		Copyright 2018 Natalia Portillo.
+#		Copyright 2018-2023 Fred N. van Kempen.
 #
 #		Redistribution and  use  in source  and binary forms, with
 #		or  without modification, are permitted  provided that the
@@ -46,58 +45,49 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING  IN ANY  WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-sudo: required
-dist: trusty
+    # Define the build options here.
+    OPTS="VNC=d VNS=n RDP=n CHD=n"
 
-language: c
+    if [ "x${DEV_BUILD}" = "xy" ]; then
+	TARGET="win-${TRAVIS_BUILD_NUMBER}_dev-x86"
+    elif [ "x${DEBUG}" = "xy" ]; then
+	TARGET="win-${TRAVIS_BUILD_NUMBER}_dbg-x86"
+    elif [ "x${LOGGING}" = "xy" ]; then
+	TARGET="win-${TRAVIS_BUILD_NUMBER}_log-x86"
+    else
+	TARGET="win-${TRAVIS_BUILD_NUMBER}-x86"
+    fi
 
-env:
-  global:
-    - MAKEFLAGS="-j 4"
+    # We only need the first few characters of the commit ID.
+    export COMMIT=${TRAVIS_COMMIT::7}
 
-  matrix:
-    - PROG=VARCem CROSS=y DEBUG=n
-    - PROG=VARCem CROSS=y DEBUG=n LOGGING=y
-    - PROG=VARCem CROSS=y DEBUG=y
-    - PROG=VARCem_dev CROSS=y DEBUG=y DEV_BUILD=y
+    echo ; echo "Downloading VARCem build dependencies.."
+    curl -# "${EXTDEP_URL}" | tar xzf -
+    export EXT_PATH=../external
 
-before_install:
-  # Kill off the (most likely running) APT daily update.
-# - sudo systemctl stop apt-daily.service
-# - sudo systemctl kill --kill-who=all apt-daily.service
-# - sleep 10
-# - sudo rm -f /var/lib/dpkg/lock
-  # Now install some packages we need.
-# - sudo apt-get install libz-mingw-w64-dev
-# - sudo apt-get install libpng-mingw-w64-dev
+    # Build the project.
+    echo ; echo "Building VARCem #${TRAVIS_BUILD_NUMBER} target ${TARGET}"
+    echo "Options selected: ${OPTS}"
 
-script:
-  - chmod +x .travis-build.sh .travis-deploy.sh
-  - ./.travis-build.sh
+    cd src
 
-addons:
-  apt:
-    packages:
-      - binutils-mingw-w64-i686
-      - gcc-mingw-w64-i686
-      - binutils-mingw-w64-x86-64
-      - gcc-mingw-w64-x86-64
-      - gcc-mingw-w64
-      - mingw-w64
-#     - libz-mingw-w64-dev
+    make -f win/Makefile.MinGW ${OPTS} BUILD=${TRAVIS_BUILD_NUMBER}
+    if [ $? != 0 ]; then
+	echo "Build failed, not uploading." 
 
-notifications:
-  irc:
-    channels:
-      - "ircs://irc.varcem.com:6697#varcem-dev"
-    template:
-      - "Build #%{build_number} for #%{commit} by %{author} in %{branch} %{result}."
-      - "Commit subject: %{commit_subject}"
-      - "View changes at %{compare_url}"
-      - "View build details at %{build_url}"
+	exit 1
+    fi
 
-after_success:
-  - ./.travis-deploy.sh
+    # Package the results so we can upload them.
+    echo ; echo "Build #${TRAVIS_BUILD_NUMBER} OK, packing up."
 
+    zip -q -9 ../${TARGET}.zip *.exe
+    if [ $? != 0 ]; then
+	echo "ZIP failed, not uploading." 
+
+	exit 1
+    fi
+
+    exit 0
 
 # End of file.
