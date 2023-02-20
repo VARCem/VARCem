@@ -47,63 +47,88 @@
 # Use the latest version of the CircleCI pipeline process engine.
 version: 2.1
 
-# Old stuff from Travis.
-#env:
-#  global:
-#    - MAKEFLAGS="-j 4"
-#
-#  matrix:
-#    - PROG=VARCem CROSS=y DEBUG=n
-#    - PROG=VARCem CROSS=y DEBUG=n LOGGING=y
-#    - PROG=VARCem CROSS=y DEBUG=y
-#    - PROG=VARCem_dev CROSS=y DEBUG=y DEV_BUILD=y
+
+environment:
+  MY_NAME: "VARCem"
+  MY_FILES: "/tmp/files"
+
+
+# List the various executor types we will be using.
+executors:
+  # Docker using the Base Convenience Image.
+  docker:
+    - image: "cimg/base:stable"
+      auth:
+        username: mydockerhub-user
+        password: $DOCKERHUB_PASSWORD
+
+  # A Linux VM running Ubuntu 20.04.
+  linux:
+    machine:
+      image: ubuntu-2004:202107-02
+
+  # macOS executor running Xcode.
+  macos:
+    macos:
+      xcode: 12.5.1
+
 
 # Define a job to be invoked later in a workflow.
 jobs:
-  "varcem":
-    # Specify the execution environment. You can specify an image from
-    # Dockerhub or use one of our Convenience Images from CircleCI's
-    # Developer Hub.
-	docker:
-#         - image: "cimg/base:2022.03"
-          - image: "cimg/base:stable"
+  build:
+    parameters:
+      os:
+        type: executor
+      tag:
+        type: string
+      flags
+        type: string
 
-          steps:
-            - checkout
+    executor: << parameters.os >>
 
-            - run:
-              name: Installing updates
-              command: 'sudo apt-get update && sudo apt-get install -y && sudo rm -rf /var/lib/apt/lists/*'
+    steps:
+      # Get the repository from GitHub.
+      - checkout
 
-            - run:
-              name: Install dependencies
-              command: |
+      # Say hello.
+      - run:
+        command: echo Building $MY_NAME<< parameters.tag >> (flags=<< parameters.flags >>)
+
+      # Install updates.
+      - run:
+        command: 'sudo apt-get update && sudo apt-get install -y && sudo rm -rf /var/lib/apt/lists/*'
+
+      # Install dependencies such as MinGW and friends.
+      - run:
+        command: |
                 sudo apt-get install -y binutils-mingw-w64-i686
                 sudo apt-get install -y gcc-mingw-w64-i686
-                sudo apt-get install -y binutils-mingw-w64-x86-64
-                sudo apt-get install -y gcc-mingw-w64-x86-64
                 sudo apt-get install -y gcc-mingw-w64
                 sudo apt-get install -y mingw-w64
+#               sudo apt-get install -y binutils-mingw-w64-x86-64
+#               sudo apt-get install -y gcc-mingw-w64-x86-64
                 sudo apt-get install -y cmake
 #               sudo apt-get install -y libz-mingw-w64-dev
 
-            - run:
-                name: Show relevant versions
-                command: |
-                  gcc --version
-                  cmake --version
+      # Show relevant versions.
+      - run:
+        command: |
+                gcc --version
+                cmake --version
 
-            - run:
-                name: Building project
-                command: chmod +x .circleci/build.sh .circleci/deploy.sh
-                command: ./.circleci/build.sh PROG=VARCem CROSS=y DEBUG=n
-#               command: ./.circleci/build.sh PROG=VARCem CROSS=y DEBUG=n LOGGING=y
-#               command: ./.circleci/build.sh PROG=VARCem CROSS=y DEBUG=y
-#               command: ./.circleci/build.sh PROG=VARCem_dev CROSS=y DEBUG=y DEV_BUILD=y
+      # Actually perform the build.
+      - run:
+        environment:
+          MAKEFLAGS="-j 4"
+        command: chmod +x .circleci/build.sh .circleci/deploy.sh
+        command: ./.circleci/build.sh << parameters.flags >>
 
-# Old stuff from Travis.
-#after_success:
-#  - ./.circleci/deploy.sh
+      # On success, we should save the build results!
+      - run:
+        command: |
+                mkdir -p ${MY_FILES}
+                cp *.exe ${MY_FILES}
+
 
 #notifications:
 #  irc:
@@ -115,11 +140,53 @@ jobs:
 #      - "View changes at %{compare_url}"
 #      - "View build details at %{build_url}"
 
-# Invoke jobs via workflows
+
+# Invoke jobs via workflows.
+#
+# We use a matrix to generate builds for several platforms with
+# a number of selected features. In Travis-CI, this was:
+#
+#  matrix:
+#    - PROG=VARCem CROSS=y DEBUG=n
+#    - PROG=VARCem CROSS=y DEBUG=n LOGGING=y
+#    - PROG=VARCem CROSS=y DEBUG=y
+#    - PROG=VARCem_dev CROSS=y DEBUG=y DEV_BUILD=y
+#
+# and we define that here using parametrized jobs and a matrix.
 workflows:
-  varcem-workflow:
+  workflow:
     jobs:
-      - "varcem"
+      # Build one member job of the matrix.
+      - build:
+        name: build<< matrix.tag >>
+        matrix:
+          parameters:
+            os: [docker,linux]
+            tag: ["","-log","-dbg","-dev"]
+            flags: |
+              ["PROG=VARCem CROSS=y DEBUG=n",
+              ["PROG=VARCem CROSS=y DEBUG=n LOGGING=y",
+              ["PROG=VARCem CROSS=y DEBUG=n",
+              ["PROG=VARCem_dev CROSS=y DEBUG=y DEV_BUILD=y"]
+        requires:
+          build<< matrix.tag >>
+
+      # Save files from one member job of the matrix.
+#      - save:
+#        name: save<< matrix.tag >>
+#        matrix:
+#          parameters:
+#            os: [docker,linux]
+#            tag: ["","-log","-dbg","-dev"]
+#        requires:
+#          save<< matrix.tag >>
+
+      # Upload the results to our webserver.
+#      - upload:
+#          requires:
+#            save
+#          run:
+#            command: ./.circleci/deploy.sh
 
 
 # End of file.
