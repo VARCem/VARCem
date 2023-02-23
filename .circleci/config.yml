@@ -105,11 +105,11 @@ jobs:
       - run:
           command: |
                 echo Installing dependencies..
-#               sudo apt-get install -y binutils-mingw-w64-i686
                 sudo apt-get install -y gcc-mingw-w64-i686
                 sudo apt-get install -y gcc-mingw-w64
                 sudo apt-get install -y mingw-w64
                 sudo apt-get install -y cmake
+#               sudo apt-get install -y binutils-mingw-w64-i686
 #               sudo apt-get install -y binutils-mingw-w64-x86-64
 #               sudo apt-get install -y gcc-mingw-w64-x86-64
 #               sudo apt-get install -y libz-mingw-w64-dev
