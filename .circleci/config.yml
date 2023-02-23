@@ -96,14 +96,15 @@ jobs:
       - checkout
 
       # Say hello.
-      - run: echo Building $MY_NAME-<< parameters.tag >> for << parameters.os >>
+      - run: echo Building ${MY_NAME}-<< parameters.tag >> for << parameters.os >>
 
       # Install updates.
       - run:
           command: |
                 echo Installing updates..
-                sudo apt-get update && sudo apt-get install -y && sudo rm -rf /var/lib/apt/lists/*
-                sudo apt list --installed
+                sudo apt-get update && sudo apt-get install -y
+#                sudo apt-get update && sudo apt-get install -y && sudo rm -rf /var/lib/apt/lists/*
+#               sudo apt list --installed
 
       # Install dependencies such as MinGW and friends.
       - run:
@@ -138,6 +139,8 @@ jobs:
                 echo ./.circleci/build.sh << parameters.tag >>
 
 
+# We will probably have to use one of the non-registered Discord
+# orbs for this sometime soon.
 #notifications:
 #  irc:
 #    channels:
