@@ -88,6 +88,8 @@ jobs:
       tag:
         type: string
 
+    resource-class: small
+
     executor: << parameters.os >>
 
     steps:
@@ -95,7 +97,7 @@ jobs:
       - checkout
 
       # Say hello.
-      - run: echo Building \"<< parameters.tag >>\" for << parameters.os >>
+      - run: echo Building "<< parameters.tag >>" for << parameters.os >>
 
       # Install updates.
       - run:
@@ -113,9 +115,9 @@ jobs:
       # Show relevant versions.
       - run:
           command: |
-                gcc --version
                 cmake --version
-                ls -l /usr/
+                /usr/i686-w64-mingw32/usr/bin/gcc --version
+                /usr/x86_64-w64-mingw32/usr/bin/gcc --version
 
       # Create temp folder where artifacts are collected.
       - run:
