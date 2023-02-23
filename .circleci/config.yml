@@ -48,6 +48,7 @@
 version: 2.1
 
 
+# Global (public) variables.
 environment:
   MY_NAME: "VARCem"
   MY_FILES: "/tmp/files"
@@ -55,20 +56,21 @@ environment:
 
 # List the various executor types we will be using.
 executors:
-  # Docker using the Base Convenience Image.
-  docker:
-    - image: "cimg/base:stable"
-      auth:
-        username: mydockerhub-user
-        password: $DOCKERHUB_PASSWORD
+  windows:
+    # Docker using the Base Convenience Image.
+    docker:
+      - image: cimg/base:stable
+        auth:
+          username: mydockerhub-user
+          password: $DOCKERHUB_PASSWORD
 
-  # A Linux VM running Ubuntu 20.04.
   linux:
+    # A Linux VM running Ubuntu 20.04.
     machine:
       image: ubuntu-2004:202107-02
 
-  # macOS executor running Xcode.
   macos:
+    # macOS VM running Xcode.
     macos:
       xcode: 12.5.1
 
@@ -91,44 +93,45 @@ jobs:
       - checkout
 
       # Say hello.
-      - run:
-        # echo "Building $MY_NAME<< parameters.tag >> (<< parameters.flags >>)
+      - run: echo "Building $MY_NAME<< parameters.tag >> (<< parameters.flags >>) for << parameters.os >>"
 
       # Install updates.
       - run:
-        command: |
+          command: |
+                echo Installing updates..
                 sudo apt-get update && sudo apt-get install -y && sudo rm -rf /var/lib/apt/lists/*
 
       # Install dependencies such as MinGW and friends.
       - run:
-        command: |
+          command: |
+                echo Installing dependencies..
                 sudo apt-get install -y binutils-mingw-w64-i686
                 sudo apt-get install -y gcc-mingw-w64-i686
                 sudo apt-get install -y gcc-mingw-w64
                 sudo apt-get install -y mingw-w64
+                sudo apt-get install -y cmake
 #               sudo apt-get install -y binutils-mingw-w64-x86-64
 #               sudo apt-get install -y gcc-mingw-w64-x86-64
-                sudo apt-get install -y cmake
 #               sudo apt-get install -y libz-mingw-w64-dev
 
       # Show relevant versions.
       - run:
-        command: |
+          command: |
                 gcc --version
                 cmake --version
 
+      # Create temp folder where artifacts are collected.
+      - run:
+          command: |
+                chmod +x .circleci/build.sh .circleci/deploy.sh
+                mkdir -p ${MY_FILES}
+
       # Actually perform the build.
       - run:
-        environment:
-          MAKEFLAGS: "-j 4"
-        command: chmod +x .circleci/build.sh .circleci/deploy.sh
-        command: ./.circleci/build.sh << parameters.flags >>
-
-      # On success, we should save the build results!
-      - run:
-        command: |
-                mkdir -p ${MY_FILES}
-                cp *.exe ${MY_FILES}
+          environment:
+            MAKEFLAGS: "-j 4"
+          command: |
+                echo ./.circleci/build.sh << parameters.flags >>
 
 
 #notifications:
@@ -145,42 +148,30 @@ jobs:
 # Invoke jobs via workflows.
 #
 # We use a matrix to generate builds for several platforms with
-# a number of selected features. In Travis-CI, this was:
-#
-#  matrix:
-#    - PROG=VARCem CROSS=y DEBUG=n
-#    - PROG=VARCem CROSS=y DEBUG=n LOGGING=y
-#    - PROG=VARCem CROSS=y DEBUG=y
-#    - PROG=VARCem_dev CROSS=y DEBUG=y DEV_BUILD=y
-#
-# and we define that here using parametrized jobs and a matrix.
+# a number of selected features and we define that here using
+# parametrized jobs and a matrix.
 workflows:
-  workflow:
+  build_all:
     jobs:
-      # Build one member job of the matrix.
       - build:
-        name: build<< matrix.tag >>
-        matrix:
-          parameters:
-            os: [docker,linux]
-            tag: ["","-log","-dbg","-dev"]
-            flags: |
-              ["PROG=VARCem CROSS=y DEBUG=n",
-               "PROG=VARCem CROSS=y DEBUG=n LOGGING=y",
-               "PROG=VARCem CROSS=y DEBUG=n",
-               "PROG=VARCem_dev CROSS=y DEBUG=y DEV_BUILD=y"]
-        requires:
-          build<< matrix.tag >>
+          matrix:
+            parameters: &params
+              os: [windows,linux]
+              tag: ["","-log","-dbg","-dev"]
+              flags:
+                ["PROG=VARCem CROSS=y DEBUG=n",
+                 "PROG=VARCem CROSS=y DEBUG=n LOGGING=y",
+                 "PROG=VARCem CROSS=y DEBUG=n",
+                 "PROG=VARCem_dev CROSS=y DEBUG=y DEV_BUILD=y"]
+          name: build-<< matrix.os >><< matrix.tag >>
 
-      # Save files from one member job of the matrix.
 #      - save:
 #        name: save<< matrix.tag >>
 #        matrix:
 #          parameters:
-#            os: [docker,linux]
-#            tag: ["","-log","-dbg","-dev"]
+#            <<: *params
 #        requires:
-#          save<< matrix.tag >>
+#          build-<< matrix.os >><< matrix.tag >>
 
       # Upload the results to our webserver.
 #      - upload:
