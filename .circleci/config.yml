@@ -115,7 +115,7 @@ jobs:
       # Show relevant versions.
       - run:
           command: |
-                ls -l /usr/i686-w64-mingw32/usr/bin
+                ls -l /usr/i686-w64-mingw32/bin
 #               /usr/i686-w64-mingw32/usr/bin/gcc --version
 #               /usr/x86_64-w64-mingw32/usr/bin/gcc --version
 
