@@ -105,7 +105,7 @@ jobs:
       - run:
           command: |
                 echo Installing dependencies..
-                sudo apt-get install -y binutils-mingw-w64-i686
+#               sudo apt-get install -y binutils-mingw-w64-i686
                 sudo apt-get install -y gcc-mingw-w64-i686
                 sudo apt-get install -y gcc-mingw-w64
                 sudo apt-get install -y mingw-w64
