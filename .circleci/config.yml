@@ -56,7 +56,7 @@ environment:
 
 # List the various executor types we will be using.
 executors:
-  windows:
+  "windows":
     # Docker using the Base Convenience Image.
     docker:
       - image: cimg/base:stable
@@ -64,12 +64,12 @@ executors:
           username: mydockerhub-user
           password: $DOCKERHUB_PASSWORD
 
-  linux:
+  "linux":
     # A Linux VM running Ubuntu 20.04.
     machine:
       image: ubuntu-2004:202107-02
 
-  macos:
+  "macos":
     # macOS VM running Xcode.
     macos:
       xcode: 12.5.1
@@ -80,10 +80,8 @@ jobs:
   build:
     parameters:
       os:
-        type: executor
-      tag:
         type: string
-      flags:
+      tag:
         type: string
 
     executor: << parameters.os >>
@@ -93,7 +91,7 @@ jobs:
       - checkout
 
       # Say hello.
-      - run: echo "Building $MY_NAME<< parameters.tag >> (<< parameters.flags >>) for << parameters.os >>"
+      - run: echo Building $MY_NAME-<< parameters.tag >> for << parameters.os >>
 
       # Install updates.
       - run:
@@ -105,13 +103,13 @@ jobs:
       - run:
           command: |
                 echo Installing dependencies..
-                sudo apt-get install -y gcc-mingw-w64-i686
-                sudo apt-get install -y gcc-mingw-w64
-                sudo apt-get install -y mingw-w64
                 sudo apt-get install -y cmake
+                sudo apt-get install -y mingw-w64
+#               sudo apt-get install -y mingw-w64-common
+#               sudo apt-get install -y mingw-w64-i686
+#               sudo apt-get install -y mingw-w64-x86-64
 #               sudo apt-get install -y binutils-mingw-w64-i686
 #               sudo apt-get install -y binutils-mingw-w64-x86-64
-#               sudo apt-get install -y gcc-mingw-w64-x86-64
 #               sudo apt-get install -y libz-mingw-w64-dev
 
       # Show relevant versions.
@@ -131,7 +129,7 @@ jobs:
           environment:
             MAKEFLAGS: "-j 4"
           command: |
-                echo ./.circleci/build.sh << parameters.flags >>
+                echo ./.circleci/build.sh << parameters.tag >>
 
 
 #notifications:
@@ -157,13 +155,8 @@ workflows:
           matrix:
             parameters: &params
               os: [windows]
-              tag: ["","-log","-dbg","-dev"]
-              flags:
-                ["PROG=VARCem CROSS=y DEBUG=n",
-                 "PROG=VARCem CROSS=y DEBUG=n LOGGING=y",
-                 "PROG=VARCem CROSS=y DEBUG=n",
-                 "PROG=VARCem_dev CROSS=y DEBUG=y DEV_BUILD=y"]
-          name: build-<< matrix.os >><< matrix.tag >>
+              tag: ["std","log","dbg","dev"]
+          name: build-<< matrix.os >>-<< matrix.tag >>
 
 #      - save:
 #        name: save<< matrix.tag >>
@@ -171,7 +164,7 @@ workflows:
 #          parameters:
 #            <<: *params
 #        requires:
-#          build-<< matrix.os >><< matrix.tag >>
+#          build-<< matrix.os >>-<< matrix.tag >>
 
       # Upload the results to our webserver.
 #      - upload:

@@ -45,33 +45,41 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING  IN ANY  WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-    # Define the build options here.
+    # Set up variables for the build.
+    export COMMIT=${CIRCLE_SHA1::7}
+    export BUILD=${CIRCLE_BUILD_NUM}
+    export EXT_PATH=../external
+
+    # Define the default build options here.
     OPTS="VNC=d VNS=n RDP=n CHD=n"
-
-    if [ "x${DEV_BUILD}" = "xy" ]; then
-	TARGET="win-${TRAVIS_BUILD_NUMBER}_dev-x86"
-    elif [ "x${DEBUG}" = "xy" ]; then
-	TARGET="win-${TRAVIS_BUILD_NUMBER}_dbg-x86"
-    elif [ "x${LOGGING}" = "xy" ]; then
-	TARGET="win-${TRAVIS_BUILD_NUMBER}_log-x86"
-    else
-	TARGET="win-${TRAVIS_BUILD_NUMBER}-x86"
-    fi
-
-    # We only need the first few characters of the commit ID.
-    export COMMIT=${TRAVIS_COMMIT::7}
 
     echo ; echo "Downloading VARCem build dependencies.."
     curl -# "${EXTDEP_URL}" | tar xzf -
-    export EXT_PATH=../external
 
     # Build the project.
-    echo ; echo "Building VARCem #${CIRCLE_BUILD_NUM} target ${TARGET}"
+    TARGET="win-${BUILD}-x86"
+    if [ "x$1" = "xstd" ]; then
+	PROG=VARCem
+	FLAGS="CROSS=y DEBUG=n"
+    elif [ "x$1" = "xlog" ]; then
+	PROG=VARCem
+	FLAGS="CROSS=y DEBUG=n LOGGING=y"
+    elif [ "x$1" = "xdbg" ]; then
+	PROG=VARCem
+	FLAGS="CROSS=y DEBUG=n"
+    elif [ "x$1" = "xdev" ]; then
+	PROG=VARCem_dev
+	FLAGS="CROSS=y DEBUG=y DEV_BUILD=y"
+	TARGET="win-${BUILD}_dev-x86"
+    fi
+    export PROG FLAGS
+
+    echo ; echo "Building VARCem #${BUILD} target ${TARGET}"
     echo "Options selected: ${OPTS}"
 
     cd src
 
-    make -f win/Makefile.MinGW ${OPTS} BUILD=${CIRCLE_BUILD_NUM}
+    make -f win/Makefile.MinGW ${OPTS}
     if [ $? != 0 ]; then
 	echo "Build failed, not uploading." 
 
@@ -79,7 +87,7 @@
     fi
 
     # Package the results so we can upload them.
-    echo ; echo "Build #${CIRCLE_BUILD_NUM} OK, packing up."
+    echo ; echo "Build #${BUILD} OK, packing up."
 
     zip -q -9 ../${TARGET}.zip *.exe
     if [ $? != 0 ]; then
