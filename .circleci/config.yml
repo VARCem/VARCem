@@ -156,7 +156,7 @@ workflows:
       - build:
           matrix:
             parameters: &params
-              os: [windows,linux]
+              os: [windows]
               tag: ["","-log","-dbg","-dev"]
               flags:
                 ["PROG=VARCem CROSS=y DEBUG=n",
