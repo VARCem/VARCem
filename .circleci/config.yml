@@ -8,7 +8,7 @@
 #
 #		Project file for the CircleCI remote builder service.
 #
-# Version:	@(#)config.yml	1.0.1	2023/02/20
+# Version:	@(#)config.yml	1.0.1	2023/02/23
 #
 # Author:	Fred N. van Kempen, <waltje@varcem.com>
 #
@@ -115,9 +115,9 @@ jobs:
       # Show relevant versions.
       - run:
           command: |
-                cmake --version
-                /usr/i686-w64-mingw32/usr/bin/gcc --version
-                /usr/x86_64-w64-mingw32/usr/bin/gcc --version
+                ls -l /usr/i686-w64-mingw32/usr/bin
+#               /usr/i686-w64-mingw32/usr/bin/gcc --version
+#               /usr/x86_64-w64-mingw32/usr/bin/gcc --version
 
       # Create temp folder where artifacts are collected.
       - run:
