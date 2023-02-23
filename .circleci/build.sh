@@ -79,6 +79,7 @@
 
     cd src
 
+exit 0
     make -f win/Makefile.MinGW ${OPTS}
     if [ $? != 0 ]; then
 	echo "Build failed, not uploading." 

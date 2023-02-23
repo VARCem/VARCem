@@ -115,9 +115,8 @@ jobs:
       # Show relevant versions.
       - run:
           command: |
-                ls -l /usr/i686-w64-mingw32/bin
-#               /usr/i686-w64-mingw32/usr/bin/gcc --version
-#               /usr/x86_64-w64-mingw32/usr/bin/gcc --version
+                /usr/i686-w64-mingw32/bin/gcc --version
+                /usr/x86_64-w64-mingw32/bin/gcc --version
 
       # Create temp folder where artifacts are collected.
       - run:
@@ -127,10 +126,8 @@ jobs:
 
       # Actually perform the build.
       - run:
-          environment:
-            MAKEFLAGS: "-j 4"
           command: |
-                echo ./.circleci/build.sh << parameters.tag >>
+                ./.circleci/build.sh << parameters.tag >>
 
 
 # We will probably have to use one of the non-registered Discord
