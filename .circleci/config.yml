@@ -59,6 +59,7 @@ executors:
     # Linux VM for installing MinGW.
     machine:
       image: ubuntu-2204:current
+    resource_class: medium
 
   "windows-docker":
     # Docker using the Base Convenience Image.
@@ -67,11 +68,13 @@ executors:
         auth:
           username: mydockerhub-user
           password: $DOCKERHUB_PASSWORD
+      resource_class: small
 
   "linux":
     # A Linux VM running Ubuntu 20.04.
     machine:
       image: ubuntu-2004:202107-02
+    resource_class: medium
 
   "macos":
     # macOS VM running Xcode.
@@ -87,8 +90,6 @@ jobs:
         type: string
       tag:
         type: string
-
-    resource-class: small
 
     executor: << parameters.os >>
 
