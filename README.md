@@ -58,6 +58,6 @@ fix, but will try the best we can !
 
 BUILD STATUS
 ------------
-The auto-builds handled by Travis-CI are [![Build Status](https://travis-ci.org/VARCem/VARCem.svg?branch=master)](https://travis-ci.org/VARCem/VARCem)
+The auto-builds handled by CircleCI are [![Build Status](https://circleci.com/gh/VARCem/VARCem/tree/master.svg?style=svg)](https://circleci.com/gh/VARCem/VARCem)
 
-Last Updated: 2023/02/20
+Last Updated: 2023/02/23
