@@ -66,12 +66,12 @@
     export EXT_PATH=../external
 
     # Build the project.
-    echo ; echo "Building VARCem #${TRAVIS_BUILD_NUMBER} target ${TARGET}"
+    echo ; echo "Building VARCem #${CIRCLE_BUILD_NUM} target ${TARGET}"
     echo "Options selected: ${OPTS}"
 
     cd src
 
-    make -f win/Makefile.MinGW ${OPTS} BUILD=${TRAVIS_BUILD_NUMBER}
+    make -f win/Makefile.MinGW ${OPTS} BUILD=${CIRCLE_BUILD_NUM}
     if [ $? != 0 ]; then
 	echo "Build failed, not uploading." 
 
@@ -79,7 +79,7 @@
     fi
 
     # Package the results so we can upload them.
-    echo ; echo "Build #${TRAVIS_BUILD_NUMBER} OK, packing up."
+    echo ; echo "Build #${CIRCLE_BUILD_NUM} OK, packing up."
 
     zip -q -9 ../${TARGET}.zip *.exe
     if [ $? != 0 ]; then
