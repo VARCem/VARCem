@@ -57,6 +57,11 @@ environment:
 # List the various executor types we will be using.
 executors:
   "windows":
+    # Linux VM for installing MinGW.
+    machine:
+      image: ubuntu-2204:current
+
+  "windows-docker":
     # Docker using the Base Convenience Image.
     docker:
       - image: cimg/base:stable
@@ -98,6 +103,7 @@ jobs:
           command: |
                 echo Installing updates..
                 sudo apt-get update && sudo apt-get install -y && sudo rm -rf /var/lib/apt/lists/*
+                sudo apt list --installed
 
       # Install dependencies such as MinGW and friends.
       - run:
