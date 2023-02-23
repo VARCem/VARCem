@@ -79,9 +79,9 @@
 
     cd src
 
-    ls -l /usr/i686-w64-mingw32
-    /usr/i686-w64-mingw32/gcc --version
-    /usr/x86_64-w64-mingw32/gcc --version
+    ls -l /usr/i686-w64-mingw32/bin
+    /usr/i686-w64-mingw32/bin/gcc --version
+    /usr/x86_64-w64-mingw32/bin/gcc --version
 
 exit 0
     make -f win/Makefile.MinGW ${OPTS}
