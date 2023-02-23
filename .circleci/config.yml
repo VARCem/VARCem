@@ -50,7 +50,6 @@ version: 2.1
 
 # Global (public) variables.
 environment:
-  MY_NAME: "VARCem"
   MY_FILES: "/tmp/files"
 
 
@@ -96,27 +95,19 @@ jobs:
       - checkout
 
       # Say hello.
-      - run: echo Building ${MY_NAME}-<< parameters.tag >> for << parameters.os >>
+      - run: echo Building \"<< parameters.tag >>\" for << parameters.os >>
 
       # Install updates.
       - run:
           command: |
                 echo Installing updates..
                 sudo apt-get update && sudo apt-get install -y
-#                sudo apt-get update && sudo apt-get install -y && sudo rm -rf /var/lib/apt/lists/*
-#               sudo apt list --installed
 
       # Install dependencies such as MinGW and friends.
       - run:
           command: |
                 echo Installing dependencies..
-                sudo apt-get install -y cmake
                 sudo apt-get install -y mingw-w64
-#               sudo apt-get install -y mingw-w64-common
-#               sudo apt-get install -y mingw-w64-i686
-#               sudo apt-get install -y mingw-w64-x86-64
-#               sudo apt-get install -y binutils-mingw-w64-i686
-#               sudo apt-get install -y binutils-mingw-w64-x86-64
 #               sudo apt-get install -y libz-mingw-w64-dev
 
       # Show relevant versions.
@@ -124,12 +115,13 @@ jobs:
           command: |
                 gcc --version
                 cmake --version
+                ls -l /usr/
 
       # Create temp folder where artifacts are collected.
       - run:
           command: |
                 chmod +x .circleci/build.sh .circleci/deploy.sh
-                mkdir -p ${MY_FILES}
+                mkdir -p /tmp/files
 
       # Actually perform the build.
       - run:
