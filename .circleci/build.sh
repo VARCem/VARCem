@@ -69,19 +69,19 @@
     fi
     export PROG FLAGS
 
-    echo ; echo "Downloading build dependencies.."
+    echo ; echo "Downloading external build dependencies.."
     curl -# "${EXTDEP_URL}" | tar xzf -
-#   if [ $? != 0 ]; then
-#exit 1
-#   fi
+    if [ $? != 0 ]; then
+	exit 1
+    fi
 
     # Build the project.
     echo ; echo "Building #${BUILD} target ${TARGET}"
+    echo "Compile flags: ${FLAGS}"
     echo "Options selected: ${OPTS}"
     cd src
-    ls -l /usr/i686-w64-mingw32/bin
-    /usr/i686-w64-mingw32/bin/gcc --version
-    /usr/x86_64-w64-mingw32/bin/gcc --version
+    /usr/bin/i686-w64-mingw32-gcc --version
+    /usr/bin/x86_64-w64-mingw32-gcc --version
 
 exit 0
     make -f win/Makefile.MinGW ${OPTS}
