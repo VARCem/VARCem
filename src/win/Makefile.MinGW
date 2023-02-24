@@ -8,11 +8,11 @@
 #
 #		Makefile for Windows systems using the MinGW32 environment.
 #
-# Version:	@(#)Makefile.minGW	1.0.109	2021/10/30
+# Version:	@(#)Makefile.MinGW	1.0.110	2023/02/23
 #
-# Author:	Fred N. van Kempen, <decwiz@yahoo.com>
+# Author:	Fred N. van Kempen, <waltje@varcem.com>
 #
-#		Copyright 2017-2021 Fred N. van Kempen.
+#		Copyright 2017-2023 Fred N. van Kempen.
 #
 #		Redistribution and  use  in source  and binary forms, with
 #		or  without modification, are permitted  provided that the
@@ -157,7 +157,7 @@ endif
 ifeq ($(CROSS), y)
  # Where are the cross-compiler tools located?
  ifndef CROSS_PATH
-  # NO NOT CHANGE THIS DEFAULT VALUE - needed for TravisCI.
+  # DO NOT CHANGE THIS DEFAULT VALUE - needed for CI systems!
   CROSS_PATH	:= /usr/bin/
  endif
 
