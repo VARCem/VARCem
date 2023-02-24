@@ -8,7 +8,7 @@
 #
 #		Project file for the CircleCI remote builder service.
 #
-# Version:	@(#)config.yml	1.0.1	2023/02/23
+# Version:	@(#)config.yml	1.0.2	2023/02/24
 #
 # Author:	Fred N. van Kempen, <waltje@varcem.com>
 #
@@ -51,6 +51,11 @@ version: 2.1
 # Global (public) variables.
 environment:
   MY_FILES: "/tmp/files"
+
+
+# Import orbs.
+orbs:
+  discord: antonioned/discord@0.1.0
 
 
 # List the various executor types we will be using.
@@ -128,18 +133,12 @@ jobs:
           command: |
                 ./.circleci/build.sh << parameters.tag >>
 
-
-# We will probably have to use one of the non-registered Discord
-# orbs for this sometime soon.
-#notifications:
-#  irc:
-#    channels:
-#      - "ircs://irc.varcem.com:6697#varcem-dev"
-#    template:
-#      - "Build #%{build_number} for #%{commit} by %{author} in %{branch} %{result}."
-#      - "Commit subject: %{commit_subject}"
-#      - "View changes at %{compare_url}"
-#      - "View build details at %{build_url}"
+      # Send notification to the Discord channel.
+      - discord/status:
+          fail_only: false
+          webhook: "${DISCORD_STATUS_WEBHOOK}"
+          failure_message: "Build **${CIRCLE_PIPELINE_NUM}** for commit **${CIRCLE_PIPELINE_TAG}** failed."
+          success_message: "Build **${CIRCLE_PIPELINE_NUM}** for commit **${CIRCLE_PIPELINE_TAG}** OK."
 
 
 # Invoke jobs via workflows.
