@@ -81,6 +81,7 @@
     echo "Options selected: ${OPTS}"
 #   /usr/bin/i686-w64-mingw32-gcc --version
 #   /usr/bin/x86_64-w64-mingw32-gcc --version
+    ls -l /usr/bin/i686-w64-mingw32*
 
     cd src
     make -f win/Makefile.MinGW ${OPTS}
