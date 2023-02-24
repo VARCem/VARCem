@@ -802,6 +802,8 @@ CFLAGS		:= $(WX_FLAGS) $(OPTS) $(DFLAGS) $(COPTIM) $(AOPTIM) \
 ifdef xWALTJE
 CFLAGS		+= -Wundef -Wunused-parameter -Wshadow -Wmissing-declarations
 endif
+# FIXME: temporary fix for GCC 10.3.0 "zero region" warnings in voodoo code
+CFLAGS		+= -Wstringop-overflow=0
 
 CXXFLAGS	:= $(WX_FLAGS) $(OPTS) $(DFLAGS) $(COPTIM) $(AOPTIM) \
 		   $(AFLAGS) -fomit-frame-pointer -mstackrealign \
