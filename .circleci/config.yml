@@ -81,16 +81,15 @@ executors:
 
 # Define a job to be invoked later in a workflow.
 jobs:
-  build:
+  build_windows_mingw:
     parameters:
-      os:
-        type: string
       tag:
         type: string
 
-    resource_class: medium
+    # CircleCI advises to use Large to speed up building.
+    resource_class: large
 
-    executor: << parameters.os >>
+    executor: windows
 
     environment:
       # Export these dynamic variables to the build environment.
@@ -103,7 +102,7 @@ jobs:
       - checkout
 
       # Say hello.
-      - run: echo Building "<< parameters.tag >>" for << parameters.os >>
+      - run: echo Building "<< parameters.tag >>" for Windows using MinGW
 
       # Install updates.
       - run:
@@ -148,27 +147,25 @@ jobs:
 # We use a matrix to generate builds for several platforms with
 # a number of selected features and we define that here using
 # parametrized jobs and a matrix.
+#
+# Since we want to upload all artifacts to the website on a
+# successful run, we must attach a workspace for the workflow
+# where we save the individual ZIP files for later uploading.
 workflows:
   build_all:
     jobs:
-      - build:
+      # Build for Windows using the MinGW cross-compile toolset on Linux.
+      - build_windows_mingw:
           matrix:
             parameters: &params
-              os: [windows]
               tag: ["std","log","dbg","dev"]
-          name: build-<< matrix.os >>-<< matrix.tag >>
+          name: build_windows_mingw-<< matrix.tag >>
 
-#      - save:
-#        name: save<< matrix.tag >>
-#        matrix:
-#          parameters:
-#            <<: *params
-#        requires:
-#          build-<< matrix.os >>-<< matrix.tag >>
+      # Add more builds here.
 
       # Upload the results to our webserver.
 #      - upload:
-#          requires:
+#          requires: build_windows_mingw-<< matrix.tag >>
 #            save
 #          run:
 #            command: ./.circleci/deploy.sh

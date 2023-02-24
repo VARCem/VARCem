@@ -83,7 +83,7 @@
 #   /usr/bin/x86_64-w64-mingw32-gcc --version
 
     cd src
-    make -f win/Makefile.MinGW PROG=${PROG} ${FLAGS} ${OPTS}
+    make -f win/Makefile.MinGW -j 4 PROG=${PROG} ${FLAGS} ${OPTS}
     if [ $? != 0 ]; then
 	echo "Build failed, not uploading." 
 
