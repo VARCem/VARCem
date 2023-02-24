@@ -79,11 +79,10 @@
     echo ; echo "Building #${BUILD} target ${TARGET}"
     echo "Compile flags: ${FLAGS}"
     echo "Options selected: ${OPTS}"
-    cd src
     /usr/bin/i686-w64-mingw32-gcc --version
     /usr/bin/x86_64-w64-mingw32-gcc --version
 
-exit 0
+    cd src
     make -f win/Makefile.MinGW ${OPTS}
     if [ $? != 0 ]; then
 	echo "Build failed, not uploading." 
