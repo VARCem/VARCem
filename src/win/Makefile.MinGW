@@ -830,7 +830,7 @@ CPUOBJ		:= cpu.o cpu_table.o \
 		   386_dynarec.o $(DYNARECOBJ)
 
 SYSOBJ		:= apm.o clk.o dma.o nmi.o pic.o pit.o ppi.o pci.o \
-		   mca.o mcr.o memregs.o nvr_at.o nvr_ps2.o port92.o
+		   mca.o mcr.o memregs.o nvr_at.o nvr_ps2.o pnp.o port92.o
 
 CHIPOBJ		:= neat.o scat.o scamp.o \
 		   headland.o \

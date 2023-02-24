@@ -9,7 +9,7 @@
  *		Implementation of the NEC uPD-765 and compatible floppy disk
  *		controller.
  *
- * Version:	@(#)fdc.c	1.0.30	2021/05/24
+ * Version:	@(#)fdc.c	1.0.31	2021/11/13
  *
  * Authors:	Miran Grca, <mgrca8@gmail.com>
  *		Sarah Walker, <tommowalker@tommowalker.co.uk>
@@ -2133,6 +2133,17 @@ fdc_set_swap(fdc_t *fdc, uint8_t swap)
     fdc->swap = swap;
 }
 
+void
+fdc_set_irq(fdc_t *fdc, int irq)
+{
+    fdc->irq = irq;
+}
+
+void
+fdc_set_dma_ch(fdc_t *fdc, int dma_ch)
+{
+    fdc->dma_ch = dma_ch;
+}
 
 void
 fdc_set_base(fdc_t *fdc, int base)

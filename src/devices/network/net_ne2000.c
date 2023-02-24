@@ -16,7 +16,7 @@
  *
  * FIXME:	move statbar calls to upper layer
  *
- * Version:	@(#)net_ne2000.c	1.0.22	2021/03/18
+ * Version:	@(#)net_ne2000.c	1.0.23	2021/11/11
  *
  * Based on	@(#)ne2k.cc v1.56.2.1 2004/02/02 22:37:22 cbothamy
  *
@@ -26,7 +26,7 @@
  *		Peter Grehan, <grehan@iprg.nokia.com>
  *
  *		Copyright 2017-2021 Fred N. van Kempen.
- *		Copyright 2016-2018 Miran Grca.
+ *		Copyright 2016-2021 Miran Grca.
  *		Portions Copyright (C) 2002  MandrakeSoft S.A.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -65,6 +65,7 @@
 #include "../system/mca.h"
 #include "../system/pci.h"
 #include "../system/pic.h"
+#include "../system/pnp.h"
 #include "network.h"
 #include "net_ne2000.h"
 #include "net_dp8390.h"
@@ -80,13 +81,6 @@ enum {
     NE2K_RTL8029AS			// 32-bit PCI Realtek 8029AS
 };
 
-enum {
-    PNP_PHASE_WAIT_FOR_KEY = 0,
-    PNP_PHASE_CONFIG,
-    PNP_PHASE_ISOLATION,
-    PNP_PHASE_SLEEP
-};
-
 
 /* ROM BIOS file paths. */
 #define ROM_PATH_NE1000		L"network/ne1000/ne1000.rom"
@@ -95,21 +89,22 @@ enum {
 #define ROM_PATH_RTL8029	L"network/rtl8029as/rtl8029as.rom"
 
 /* PCI info. */
-#define PNP_VENDID		0x4a8c		// Realtek, Inc
 #define PCI_VENDID		0x10ec		// Realtek, Inc
-#define PNP_DEVID		0x8019		// RTL8029AS
 #define PCI_DEVID		0x8029		// RTL8029AS
 #define PCI_REGSIZE		256		// size of PCI space
 
+static uint8_t rtl8019as_pnp_rom[] = {
+    0x4a, 0x8c, 0x80, 0x19, 0x00, 0x00, 0x00, 0x00, 0x00, /* RTL8019, dummy checksum (filled in by isapnp_add_card) */
+    0x0a, 0x10, 0x10, /* PnP version 1.0, vendor version 1.0 */
+    0x82, 0x22, 0x00, 'R', 'E', 'A', 'L', 'T', 'E', 'K', ' ', 'P', 'L', 'U', 'G', ' ', '&', ' ', 'P', 'L', 'A', 'Y', ' ', 'E', 'T', 'H', 'E', 'R', 'N', 'E', 'T', ' ', 'C', 'A', 'R', 'D', 0x00, /* ANSI identifier */
 
-/* ISA-PNP data. */
-static const uint8_t pnp_init_key[32] = {
-    0x6a, 0xb5, 0xda, 0xed, 0xf6, 0xfb, 0x7d, 0xbe,
-    0xdf, 0x6f, 0x37, 0x1b, 0x0d, 0x86, 0xc3, 0x61,
-    0xb0, 0x58, 0x2c, 0x16, 0x8b, 0x45, 0xa2, 0xd1,
-    0xe8, 0x74, 0x3a, 0x9d, 0xce, 0xe7, 0x73, 0x39
+    0x16, 0x4a, 0x8c, 0x80, 0x19, 0x02, 0x00, /* logical device RTL8019 */
+	0x1c, 0x41, 0xd0, 0x80, 0xd6, /* compatible device PNP80D6 */
+	0x47, 0x00, 0x20, 0x02, 0x80, 0x03, 0x20, 0x20, /* I/O 0x220-0x380, decodes 10-bit, 32-byte alignment, 32 addresses */
+	0x23, 0x38, 0x9e, 0x01, /* IRQ 3/4/5/9/10/11/12/15, high true edge sensitive */
+
+    0x79, 0x00 /* end tag, dummy checksum (filled in by isapnp_add_card) */
 };
-
 
 /* Define the usable resources. */
 typedef struct {
@@ -143,22 +138,8 @@ typedef struct {
     uint8_t	pci_regs[PCI_REGSIZE];
 
     /* ISA PNP data. */
-    uint8_t	pnp_regs[256];
-    uint8_t	pnp_res_data[256];
-    uint8_t	pnp_phase;
-    uint8_t	pnp_magic_count;
-    uint8_t	pnp_address;
-    uint8_t	pnp_res_pos;
-    uint8_t	pnp_csn;
-    uint8_t	pnp_activate;
-    uint8_t	pnp_io_check;
+    void	*pnp_card;
     uint8_t	pnp_csnsav;
-    uint16_t	pnp_read;
-    uint64_t	pnp_id;
-    uint8_t	pnp_id_checksum;
-    uint8_t	pnp_serial_read_pos;
-    uint8_t	pnp_serial_read_pair;
-    uint8_t	pnp_serial_read;
 
     /* MCA POS registers */
     uint8_t	pos_regs[8];
@@ -1341,11 +1322,13 @@ page3_read(nic_t *dev, uint32_t off, unsigned int len)
 		break;
 
 	case 0x0e:	/* 8029ASID0 */
-		ret = 0x29;
+		if (dev->board == NE2K_RTL8029AS)
+			return(0x29);
 		break;
 
 	case 0x0f:	/* 8029ASID1 */
-		ret = 0x08;
+		if (dev->board == NE2K_RTL8029AS)
+			return(0x80); //return(0x08);
 		break;
 
 	default:
@@ -1656,13 +1639,7 @@ nic_ioset(nic_t *dev, uint16_t addr)
 		      nic_readb, nic_readw, nic_readl,
 		      nic_writeb, nic_writew, nic_writel, dev);
     } else if (dev->is_pci) {
-	io_sethandler(addr, 16,
-		      nic_readb, nic_readw, nic_readl,
-		      nic_writeb, nic_writew, nic_writel, dev);
-	io_sethandler(addr+16, 16,
-		      nic_readb, nic_readw, nic_readl,
-		      nic_writeb, nic_writew, nic_writel, dev);
-	io_sethandler(addr+0x1f, 1,
+	io_sethandler(addr, 32,
 		      nic_readb, nic_readw, nic_readl,
 		      nic_writeb, nic_writew, nic_writel, dev);
     } else {
@@ -1676,8 +1653,6 @@ nic_ioset(nic_t *dev, uint16_t addr)
 		io_sethandler(addr+16, 16,
 			      nic_readb, nic_readw, NULL,
 			      nic_writeb, nic_writew, NULL, dev);
-	io_sethandler(addr+0x1f, 1,
-		      nic_readb, NULL, NULL, nic_writeb, NULL, NULL, dev);
     }
 }
 
@@ -1696,13 +1671,7 @@ nic_ioremove(nic_t *dev, uint16_t addr)
 			 nic_readb, nic_readw, nic_readl,
 			 nic_writeb, nic_writew, nic_writel, dev);
     } else if (dev->is_pci) {
-	io_removehandler(addr, 16,
-			 nic_readb, nic_readw, nic_readl,
-			 nic_writeb, nic_writew, nic_writel, dev);
-	io_removehandler(addr+16, 16,
-			 nic_readb, nic_readw, nic_readl,
-			 nic_writeb, nic_writew, nic_writel, dev);
-	io_removehandler(addr+0x1f, 1,
+	io_removehandler(addr, 32,
 			 nic_readb, nic_readw, nic_readl,
 			 nic_writeb, nic_writew, nic_writel, dev);
     } else {
@@ -1717,339 +1686,71 @@ nic_ioremove(nic_t *dev, uint16_t addr)
 		io_removehandler(addr+16, 16,
 				 nic_readb, nic_readw, NULL,
 				 nic_writeb, nic_writew, NULL, dev);
-	io_removehandler(addr+0x1f, 1,
-			 nic_readb, NULL, NULL,
-			 nic_writeb, NULL, NULL, dev);
     }
 }
 
 
 /* FIXME: ISA-PNP handlers, should be moved to devices/system/isa.c */
+static void
+pnp_config_changed(uint8_t ld, isapnp_device_config_t *config, priv_t priv)
+{
+    nic_t *dev = (nic_t *)priv;
+
+    if (ld)
+	return;
+    if (dev->base_address) {
+	nic_ioremove(dev, dev->base_address);
+	dev->base_address = 0;
+    }
+
+    dev->base_address = config->io[0].base;
+    dev->base_irq = config->irq[0].irq;
+
+    if (config->activate && (dev->base_address != ISAPNP_IO_DISABLED))
+	nic_ioset(dev, dev->base_address);
+}
+
+static void
+pnp_csn_changed(uint8_t csn, priv_t priv)
+{
+    nic_t *dev = (nic_t *)priv;
+
+    dev->pnp_csnsav = csn;
+}
+
 static uint8_t
-pnp_io_check_readb(uint16_t addr, priv_t priv)
+pnp_read_vendor_reg(uint8_t ld, uint8_t reg, priv_t priv)
 {
     nic_t *dev = (nic_t *)priv;
 
-    return((dev->pnp_io_check & 0x01) ? 0x55 : 0xAA);
+        if (ld != 0)
+	return 0x00;
+
+    switch (reg) {
+	case 0xF0:
+		return dev->config0;
+	case 0xF2:
+		return dev->config2;
+	case 0xF3:
+		return dev->config3;
+	case 0xF5:
+		return dev->pnp_csnsav;
+    }
+    return 0x00;
 }
 
 
 static void
-pnp_io_checkset(nic_t *dev, uint16_t addr)
-{
-    io_sethandler(addr, 32,
-		  pnp_io_check_readb,NULL,NULL, NULL,NULL,NULL, dev);
-}
-
-
-static void
-pnp_io_checkremove(nic_t *dev, uint16_t addr)
-{
-    io_removehandler(addr, 32,
-		     pnp_io_check_readb,NULL,NULL, NULL,NULL,NULL, dev);
-}
-
-
-static uint8_t
-pnp_readb(uint16_t addr, priv_t priv)
+pnp_write_vendor_reg(uint8_t ld, uint8_t reg, uint8_t val, priv_t priv)
 {
     nic_t *dev = (nic_t *)priv;
-    uint8_t bit, next_shift;
-    uint8_t ret = 0xff;
 
-    /* Plug and Play Registers */
-    switch(dev->pnp_address) {
-	/* Card Control Registers */
-	case 0x01:	/* Serial Isolation */
-		if (dev->pnp_phase != PNP_PHASE_ISOLATION) {
-			ret = 0x00;
-			break;
-		}
-		if (dev->pnp_serial_read_pair) {
-			dev->pnp_serial_read <<= 1;
-			/* TODO: Support for multiple PnP devices.
-			if (pnp_get_bus_data() != dev->pnp_serial_read)
-				dev->pnp_phase = PNP_PHASE_SLEEP;
-			} else {
-			*/
-			if (!dev->pnp_serial_read_pos) {
-				dev->pnp_res_pos = 0x1B;
-				dev->pnp_phase = PNP_PHASE_CONFIG;
-				DBGLOG(1, "\nASSIGN CSN phase\n");
-			}
-		} else {
-			if (dev->pnp_serial_read_pos < 64) {
-				bit = (dev->pnp_id >> dev->pnp_serial_read_pos) & 0x01;
-				next_shift = (!!(dev->pnp_id_checksum & 0x02) ^ !!(dev->pnp_id_checksum & 0x01) ^ bit) & 0x01;
-				dev->pnp_id_checksum >>= 1;
-				dev->pnp_id_checksum |= (next_shift << 7);
-			} else {
-				if (dev->pnp_serial_read_pos == 64)
-					dev->eeprom[0x1A] = dev->pnp_id_checksum;
-				bit = (dev->pnp_id_checksum >> (dev->pnp_serial_read_pos & 0x07)) & 0x01;
-			}
-			dev->pnp_serial_read = bit ? 0x55 : 0x00;
-			dev->pnp_serial_read_pos = (dev->pnp_serial_read_pos + 1) % 72;
-		}
-		dev->pnp_serial_read_pair ^= 1;
-		ret = dev->pnp_serial_read;
-		break;
-
-	case 0x04:	/* Resource Data */
-		ret = dev->eeprom[dev->pnp_res_pos];
-		dev->pnp_res_pos++;
-		break;
-
-	case 0x05:	/* Status */
-		ret = 0x01;
-		break;
-
-	case 0x06:	/* Card Select Number (CSN) */
-		DBGLOG(1, "Card Select Number (CSN)\n");
-		ret = dev->pnp_csn;
-		break;
-
-	case 0x07:	/* Logical Device Number */
-		DBGLOG(1, "Logical Device Number\n");
-		ret = 0x00;
-		break;
-
-	case 0x30:	/* Activate */
-		DBGLOG(1, "Activate\n");
-		ret = dev->pnp_activate;
-		break;
-
-	case 0x31:	/* I/O Range Check */
-		DBGLOG(1, "I/O Range Check\n");
-		ret = dev->pnp_io_check;
-		break;
-
-	/* Logical Device Configuration Registers */
-	/* Memory Configuration Registers
-	   We currently force them to stay 0x00 because we currently do not
-	   support a RTL8019AS BIOS. */
-	case 0x40:	/* BROM base address bits[23:16] */
-	case 0x41:	/* BROM base address bits[15:0] */
-	case 0x42:	/* Memory Control */
-		ret = 0x00;
-		break;
-
-	/* I/O Configuration Registers */
-	case 0x60:	/* I/O base address bits[15:8] */
-		ret = (dev->base_address >> 8);
-		break;
-
-	case 0x61:	/* I/O base address bits[7:0] */
-		ret = (dev->base_address & 0xff);
-		break;
-
-	/* Interrupt Configuration Registers */
-	case 0x70:	/* IRQ level */
-		ret = dev->base_irq;
-		break;
-
-	case 0x71:	/* IRQ type */
-		ret = 0x02;	/* high, edge */
-		break;
-
-	/* DMA Configuration Registers */
-	case 0x74:	/* DMA channel select 0 */
-	case 0x75:	/* DMA channel select 1 */
-		ret = 0x04;	/* indicating no DMA channel is needed */
-		break;
-
-	/* Vendor Defined Registers */
-	case 0xF0:	/* CONFIG0 */
-	case 0xF1:	/* CONFIG1 */
-		ret = 0x00;
-		break;
-
-	case 0xF2:	/* CONFIG2 */
-		ret = (dev->config2 & 0xe0);
-		break;
-
-	case 0xF3:	/* CONFIG3 */
-		ret = (dev->config3 & 0x46);
-		break;
-
-	case 0xF5:	/* CSNSAV */
-		ret = (dev->pnp_csnsav);
-		break;
-    }
-    DBGLOG(1, "pnp_readb(%04X) = %02X\n", addr, ret);
-
-    return(ret);
-}
-
-
-static void
-pnp_io_set(nic_t *dev, uint16_t read_addr)
-{
-    if ((read_addr >= 0x0200) && (read_addr <= 0x03FF)) {
-	io_sethandler(read_addr, 1,
-		      pnp_readb,NULL,NULL, NULL,NULL,NULL, dev);
-    }
-
-    dev->pnp_read = read_addr;
-}
-
-
-static void
-pnp_io_remove(nic_t *dev)
-{
-    if ((dev->pnp_read >= 0x0200) && (dev->pnp_read <= 0x03FF)) {
-	io_removehandler(dev->pnp_read, 1,
-		         pnp_readb,NULL,NULL, NULL,NULL,NULL, dev);
+    if ((ld == 0) && (reg == 0xf6) && (val & 0x04)) {
+	uint8_t csn = dev->pnp_csnsav;
+	isapnp_set_csn(dev->pnp_card, 0);
+	dev->pnp_csnsav = csn;
     }
 }
-
-
-static void
-pnp_writeb(uint16_t addr, uint8_t val, priv_t priv)
-{
-    nic_t *dev = (nic_t *)priv;
-    uint16_t new_addr = 0;
-
-    DBGLOG(1, "pnp_writeb(%04X, %02X)\n", addr, val);
-
-    /* Plug and Play Registers */
-    switch(dev->pnp_address) {
-	/* Card Control Registers */
-	case 0x00:	/* Set RD_DATA port */
-		new_addr = val;
-		new_addr <<= 2;
-		new_addr |= 3;
-		pnp_io_remove(dev);
-		pnp_io_set(dev, new_addr);
-		DBGLOG(1, "PnP read data address now: %04X\n", new_addr);
-		break;
-
-	case 0x02:	/* Config Control */
-		if (val & 0x01) {
-			/* Reset command */
-			pnp_io_remove(dev);
-			memset(dev->pnp_regs, 0, 256);
-			DBGLOG(1, "All logical devices reset\n");
-		}
-		if (val & 0x02) {
-			/* Wait for Key command */
-			dev->pnp_phase = PNP_PHASE_WAIT_FOR_KEY;
-			DBGLOG(1, "WAIT FOR KEY phase\n");
-		}
-		if (val & 0x04) {
-			/* PnP Reset CSN command */
-			dev->pnp_csn = dev->pnp_csnsav = 0;
-			DBGLOG(1, "CSN reset\n");
-		}
-		break;
-
-	case 0x03:	/* Wake[CSN] */
-		DBGLOG(1, "Wake[%02X]\n", val);
-		if (val == dev->pnp_csn) {
-			dev->pnp_res_pos = 0x12;
-			dev->pnp_id_checksum = 0x6A;
-			if (dev->pnp_phase == PNP_PHASE_SLEEP) {
-				dev->pnp_phase = val ? PNP_PHASE_CONFIG : PNP_PHASE_ISOLATION;
-			}
-		} else {
-			if ((dev->pnp_phase == PNP_PHASE_CONFIG) || (dev->pnp_phase == PNP_PHASE_ISOLATION))
-				dev->pnp_phase = PNP_PHASE_SLEEP;
-		}
-		break;
-
-	case 0x06:	/* Card Select Number (CSN) */
-	    	dev->pnp_csn = dev->pnp_csnsav = val;
-		dev->pnp_phase = PNP_PHASE_CONFIG;
-		DBGLOG(1, "CSN set to %02X\n", dev->pnp_csn);
-		break;
-
-	case 0x30:	/* Activate */
-		if ((dev->pnp_activate ^ val) & 0x01) {
-			nic_ioremove(dev, dev->base_address);
-			if (val & 0x01)
-				nic_ioset(dev, dev->base_address);
-
-			DBGLOG(1, "I/O range %sabled\n",
-				val & 0x02 ? "en" : "dis");
-		}
-		dev->pnp_activate = val;
-		break;
-
-	case 0x31:	/* I/O Range Check */
-		if ((dev->pnp_io_check ^ val) & 0x02) {
-			pnp_io_checkremove(dev, dev->base_address);
-			if (val & 0x02)
-				pnp_io_checkset(dev, dev->base_address);
-
-			DBGLOG(1, "I/O range check %sabled\n",
-				val & 0x02 ? "en" : "dis");
-		}
-		dev->pnp_io_check = val;
-		break;
-
-	/* Logical Device Configuration Registers */
-	/* Memory Configuration Registers
-	   We currently force them to stay 0x00 because we currently do not
-	   support a RTL8019AS BIOS. */
-
-	/* I/O Configuration Registers */
-	case 0x60:	/* I/O base address bits[15:8] */
-		if ((dev->pnp_activate & 0x01) || (dev->pnp_io_check & 0x02))
-			nic_ioremove(dev, dev->base_address);
-		dev->base_address &= 0x00ff;
-		dev->base_address |= (((uint16_t) val) << 8);
-		if ((dev->pnp_activate & 0x01) || (dev->pnp_io_check & 0x02))
-			nic_ioset(dev, dev->base_address);
-		DBGLOG(1, "Base address now: %04X\n", dev->base_address);
-		break;
-
-	case 0x61:	/* I/O base address bits[7:0] */
-		if ((dev->pnp_activate & 0x01) || (dev->pnp_io_check & 0x02))
-			nic_ioremove(dev, dev->base_address);
-		dev->base_address &= 0xff00;
-		dev->base_address |= val;
-		if ((dev->pnp_activate & 0x01) || (dev->pnp_io_check & 0x02))
-			nic_ioset(dev, dev->base_address);
-		DBGLOG(1, "Base address now: %04X\n", dev->base_address);
-		break;
-
-	/* Interrupt Configuration Registers */
-	case 0x70:	/* IRQ level */
-		dev->base_irq = val;
-		DBGLOG(1, "IRQ now: %02i\n", dev->base_irq);
-		break;
-
-	/* Vendor Defined Registers */
-	case 0xF6:	/* Vendor Control */
-		dev->pnp_csn = 0;
-		break;
-    }
-}
-
-
-static void
-pnp_address_writeb(uint16_t addr, uint8_t val, void *priv)
-{
-    nic_t *dev = (nic_t *) priv;
-
-    /* DBGLOG(2, "pnp_address_writeb(%04X, %02X)\n", addr, val); */
-
-    switch(dev->pnp_phase) {
-	case PNP_PHASE_WAIT_FOR_KEY:
-		if (val == pnp_init_key[dev->pnp_magic_count]) {
-			dev->pnp_magic_count = (dev->pnp_magic_count + 1) & 0x1f;
-			if (!dev->pnp_magic_count)
-				dev->pnp_phase = PNP_PHASE_SLEEP;
-		} else
-			dev->pnp_magic_count = 0;
-		break;
-
-	default:
-		dev->pnp_address = val;
-		break;
-    }
-}
-
 
 static void
 nic_update_bios(nic_t *dev)
@@ -2389,11 +2090,9 @@ nic_close(priv_t priv)
 static priv_t
 nic_init(const device_t *info, UNUSED(void *parent))
 {
-    char *ansi_id = "REALTEK PLUG & PLAY ETHERNET CARD";
     const wchar_t *fn;
     uint32_t mac;
     nic_t *dev;
-    int c;
 
     dev = (nic_t *)mem_alloc(sizeof(nic_t));
     memset(dev, 0x00, sizeof(nic_t));
@@ -2562,15 +2261,6 @@ nic_init(const device_t *info, UNUSED(void *parent))
 		/* Add device to the PCI bus, keep its slot number. */
 		dev->card = pci_add_card(PCI_ADD_NORMAL,
 					 nic_pci_read, nic_pci_write, dev);
-	} else {
-		io_sethandler(0x0279, 1,
-			      NULL,NULL,NULL,
-			      pnp_address_writeb,NULL,NULL, dev);
-
-		dev->pnp_id = PNP_DEVID;
-		dev->pnp_id <<= 32LL;
-		dev->pnp_id |= PNP_VENDID;
-		dev->pnp_phase = PNP_PHASE_WAIT_FOR_KEY;
 	}
 
 	/* Initialize the RTL8029 EEPROM. */
@@ -2581,72 +2271,14 @@ nic_init(const device_t *info, UNUSED(void *parent))
 		memcpy(&dev->eeprom[0x02], dev->maclocal, 6);
 
 		/* Write our PNP or PCI ID into the EEPROM> */
-	        dev->eeprom[0x76] =
-		 dev->eeprom[0x7A] =
-		 dev->eeprom[0x7E] = (PCI_DEVID&0xff);
-	        dev->eeprom[0x77] =
-		 dev->eeprom[0x7B] =
-		 dev->eeprom[0x7F] = (dev->board == NE2K_RTL8019AS) ? (PNP_DEVID>>8) : (PCI_DEVID>>8);
-        	dev->eeprom[0x78] =
-		 dev->eeprom[0x7C] = (PCI_VENDID&0xff);
-        	dev->eeprom[0x79] =
-		 dev->eeprom[0x7D] = (PCI_VENDID>>8);
+	        dev->eeprom[0x76] = dev->eeprom[0x7A] = dev->eeprom[0x7E] = (PCI_DEVID & 0xff);
+	        dev->eeprom[0x77] = dev->eeprom[0x7B] = dev->eeprom[0x7F] = (PCI_DEVID >> 8);
+        	dev->eeprom[0x78] = dev->eeprom[0x7C] = (PCI_VENDID & 0xff);
+        	dev->eeprom[0x79] = dev->eeprom[0x7D] = (PCI_VENDID >> 8);
 	} else {
-		/* Set the PNP ID into the EEPROM. */
-		memcpy(&dev->eeprom[0x12], &dev->pnp_id, 8);
+		memcpy(&dev->eeprom[0x12], rtl8019as_pnp_rom, sizeof(rtl8019as_pnp_rom));
 
-		/* TAG: Plug and Play Version Number. */
-		dev->eeprom[0x1B] = 0x0A;	/* Item byte */
-		dev->eeprom[0x1C] = 0x10;	/* PnP version */
-		dev->eeprom[0x1D] = 0x10;	/* Vendor version */
-
-		/* TAG: ANSI Identifier String. */
-		dev->eeprom[0x1E] = 0x82;	/* Item byte */
-		dev->eeprom[0x1F] = 0x22;	/* Length bits 7-0 */
-		dev->eeprom[0x20] = 0x00;	/* Length bits 15-8 */
-		memcpy(&dev->eeprom[0x21], ansi_id, 0x22);
-
-		/* TAG: Logical Device ID. */
-		dev->eeprom[0x43] = 0x16;	/* Item byte */
-		dev->eeprom[0x44] = 0x4A;	/* Logical device ID0 */
-		dev->eeprom[0x45] = 0x8C;	/* Logical device ID1 */
-		dev->eeprom[0x46] = 0x80;	/* Logical device ID2 */
-		dev->eeprom[0x47] = 0x19;	/* Logical device ID3 */
-		dev->eeprom[0x48] = 0x02;	/* Flag0 (02=BROM/disabled) */
-		dev->eeprom[0x49] = 0x00;	/* Flag 1 */
-
-		/* TAG: Compatible Device ID (NE2000) */
-		dev->eeprom[0x4A] = 0x1C;	/* Item byte */
-		dev->eeprom[0x4B] = 0x41;	/* Compatible ID0 */
-		dev->eeprom[0x4C] = 0xD0;	/* Compatible ID1 */
-		dev->eeprom[0x4D] = 0x80;	/* Compatible ID2 */
-		dev->eeprom[0x4E] = 0xD6;	/* Compatible ID3 */
-
-		/* TAG: I/O Format */
-		dev->eeprom[0x4F] = 0x47;	/* Item byte */
-		dev->eeprom[0x50] = 0x00;	/* I/O information */
-		dev->eeprom[0x51] = 0x20;	/* Min. I/O base bits 7-0 */
-		dev->eeprom[0x52] = 0x02;	/* Min. I/O base bits 15-8 */
-		dev->eeprom[0x53] = 0x80;	/* Max. I/O base bits 7-0 */
-		dev->eeprom[0x54] = 0x03;	/* Max. I/O base bits 15-8 */
-		dev->eeprom[0x55] = 0x20;	/* Base alignment */
-		dev->eeprom[0x56] = 0x20;	/* Range length */
-
-		/* TAG: IRQ Format. */
-		dev->eeprom[0x57] = 0x23;	/* Item byte */
-		dev->eeprom[0x58] = 0x38;	/* IRQ mask bits 7-0 */
-		dev->eeprom[0x59] = 0x9E;	/* IRQ mask bits 15-8 */
-		dev->eeprom[0x5A] = 0x01;	/* IRQ information */
-
-		/* TAG: END Tag */
-		dev->eeprom[0x5B] = 0x79;	/* Item byte */
-		for (c = 0x1b; c < 0x5c; c++)	/* Checksum (2's compl) */
-			dev->eeprom[0x5C] += dev->eeprom[c];
-		dev->eeprom[0x5C] = -dev->eeprom[0x5C];
-
-		io_sethandler(0x0A79, 1,
-			      NULL, NULL, NULL,
-			      pnp_writeb, NULL, NULL, dev);
+		dev->pnp_card = isapnp_add_card(&dev->eeprom[0x12], sizeof(rtl8019as_pnp_rom), pnp_config_changed, pnp_csn_changed, pnp_read_vendor_reg, pnp_write_vendor_reg, dev);
 	}
     }
 

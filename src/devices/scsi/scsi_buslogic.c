@@ -13,7 +13,7 @@
  *		  1 - BT-545S ISA;
  *		  2 - BT-958D PCI
  *
- * Version:	@(#)scsi_buslogic.c	1.0.20	2021/04/27
+ * Version:	@(#)scsi_buslogic.c	1.0.21	2021/11/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -54,6 +54,8 @@
 #include "../../device.h"
 #include "../../nvr.h"
 #include "../../plat.h"
+#include "../floppy/fdd.h"
+#include "../floppy/fdc.h"
 #include "../system/dma.h"
 #include "../system/pic.h"
 #include "../system/pci.h"

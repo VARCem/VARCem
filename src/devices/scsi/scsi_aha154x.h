@@ -8,7 +8,7 @@
  *
  *		Definitions for the Adaptec 154x driver.
  *
- * Version:	@(#)scsi_154x.h	1.0.3	2020/06/01
+ * Version:	@(#)scsi_154x.h	1.0.4	2021/11/13
  *
  * Authors:	Fred N. van Kempen, <decwiz@yahoo.com>
  *		Miran Grca, <mgrca8@gmail.com>
@@ -42,6 +42,7 @@ extern const device_t aha1540a_device;
 extern const device_t aha1540b_device;
 extern const device_t aha1542c_device;
 extern const device_t aha1542cf_device;
+extern const device_t aha1542cp_device;
 extern const device_t aha1640_device;
 
 extern void	aha_device_reset(void *p);
