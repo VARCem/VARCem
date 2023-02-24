@@ -92,6 +92,12 @@ jobs:
 
     executor: << parameters.os >>
 
+    environment:
+      # Export these dynamic variables to the build environment.
+      CIRCLE_PIPELINE_NUM: << pipeline.number >>
+      CIRCLE_PIPELINE_TRIG: << pipeline.trigger_source >>
+      CIRCLE_PIPELINE_TAG: << pipeline.git.tag >>
+
     steps:
       # Get the repository from GitHub.
       - checkout

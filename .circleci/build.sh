@@ -9,7 +9,7 @@
 #
 #		Build script for the CircleCI remote builder service.
 #
-# Version:	@(#)build.sh	1.0.1	2023/02/20
+# Version:	@(#)build.sh	1.0.1	2023/02/23
 #
 # Author:	Fred N. van Kempen, <waltje@varcem.com>
 #
@@ -47,16 +47,11 @@
 
     # Set up variables for the build.
     export COMMIT=${CIRCLE_SHA1::7}
-    export BUILD=${CIRCLE_BUILD_NUM}
+    export BUILD=${CIRCLE_PIPELINE_NUM}
     export EXT_PATH=../external
 
     # Define the default build options here.
     OPTS="VNC=d VNS=n RDP=n CHD=n"
-
-    echo ; echo "Downloading VARCem build dependencies.."
-    curl -# "${EXTDEP_URL}" | tar xzf -
-
-    # Build the project.
     TARGET="win-${BUILD}-x86"
     if [ "x$1" = "xstd" ]; then
 	PROG=VARCem
@@ -74,11 +69,16 @@
     fi
     export PROG FLAGS
 
-    echo ; echo "Building VARCem #${BUILD} target ${TARGET}"
+    echo ; echo "Downloading build dependencies.."
+    curl -# "${EXTDEP_URL}" | tar xzf -
+    if [ $? != 0 ]; then
+	exit 1
+    fi
+
+    # Build the project.
+    echo ; echo "Building #${BUILD} target ${TARGET}"
     echo "Options selected: ${OPTS}"
-
     cd src
-
     ls -l /usr/i686-w64-mingw32/bin
     /usr/i686-w64-mingw32/bin/gcc --version
     /usr/x86_64-w64-mingw32/bin/gcc --version
